@@ -381,7 +381,7 @@ void loop() {
 
   /* MAIN LOOP */
 
-  if (_spi_read(0x0C)==0) // detect the locked module and reboot
+  if (spiReadRegister(0x0C)==0) // detect the locked module and reboot
   {
     Serial.println("module locked?");
     Red_LED_ON;
@@ -590,18 +590,15 @@ void setup() {
 //############ MAIN LOOP ##############
 void loop() {
 
-  time = millis();
-
-  if (_spi_read(0x0C)==0) { // detect the locked module and reboot
+  if (spiReadRegister(0x0C)==0) { // detect the locked module and reboot
     Serial.println("RX hang");
     RF22B_init_parameter();
     to_rx_mode();
   }
 
   if(RF_Mode == Received) {  // RFM22B INT pin Enabled by received Data
-    Serial.print("R");
     RF_Mode = Receive;
-    last_pack_time = time; // record last package time
+    last_pack_time = millis(); // record last package time
     lostpack=0;
 
     if (firstpack ==0)  firstpack =1;
@@ -609,10 +606,10 @@ void loop() {
     Red_LED_OFF;
     Green_LED_ON;
 
-    send_read_address(0x7f); // Send the package read command
+    spiSendAddress(0x7f); // Send the package read command
 
     for (int i=0; i<11; i++) {
-      rx_buf[i] = read_8bit_data();
+      rx_buf[i] = spiReadData();
     }
 
     cli();
@@ -626,7 +623,7 @@ void loop() {
     PPM[7]= rx_buf[9] + ((rx_buf[10] & 0xc0) << 2);
     sei();
 
-    RSSI_sum += _spi_read(0x26); // Read the RSSI value
+    RSSI_sum += spiReadRegister(0x26); // Read the RSSI value
     RSSI_count++;
     rx_reset();
 
@@ -715,80 +712,106 @@ void Hopping(void)
 
 unsigned char ItStatus1, ItStatus2;
 
-unsigned char read_8bit_data(void);
-void send_8bit_data(unsigned char i);
-void send_read_address(unsigned char i);
+void spiWriteBit ( unsigned char b );
+
+void spiSendCommand(unsigned char command);
+void spiSendAddress(unsigned char i);
+unsigned char spiReadData(void);
+void spiWriteData(unsigned char i);
+
+unsigned char spiReadRegister(unsigned char address);
 void spiWriteRegister(unsigned char address, unsigned char data);
 
-void port_init(void);
-unsigned char _spi_read(unsigned char address);
-void Write0( void );
-void Write1( void );
-void Write8bitcommand(unsigned char command);
 void to_sleep_mode(void);
 
+// **** SPI bit banging functions
 
-//*****************************************************************************
-//*****************************************************************************
-
-//--------------------------------------------------------------
-void Write0( void ) {
-    SCK_off;
-    NOP();
-    SDI_off;
-    NOP();
-    SCK_on;
-    NOP();
-}
-//--------------------------------------------------------------
-void Write1( void ) {
+void spiWriteBit( unsigned char b ) {
+  if (b) {  
     SCK_off;
     NOP();
     SDI_on;
     NOP();
     SCK_on;
     NOP();
+  } else {  
+    SCK_off;
+    NOP();
+    SDI_off;
+    NOP();
+    SCK_on;
+    NOP();
+  }
 }
-//--------------------------------------------------------------
-void Write8bitcommand(unsigned char command) {   // leave sel low
+
+unsigned char spiReadBit() {
+  unsigned char r = 0;
+  SCK_on;
+  NOP();
+  if (SDO_1) {
+    r=1;
+  }
+  SCK_off;
+  NOP();
+}
+
+void spiSendCommand(unsigned char command) {
 
   nSEL_on;
   SCK_off;
   nSEL_off;
   for (unsigned char n=0; n<8 ; n++) {
-    if(command&0x80)
-      Write1();
-    else
-      Write0();
+    spiWriteBit(command&0x80);
     command = command << 1;
   }
   SCK_off;
 }
 
+void spiSendAddress(unsigned char i) {
 
-//--------------------------------------------------------------
-unsigned char _spi_read(unsigned char address) {
+  spiSendCommand(i & 0x7f);
+}
+
+void spiWriteData(unsigned char i) {
+
+  for (n=0; n<8; n++) {
+    spiWriteBit(i&0x80);
+    i = i << 1;
+  }
+  SCK_off;
+}
+
+unsigned char spiReadData(void) {
+
+  unsigned char Result = 0;
+  SCK_off;
+  for(unsigned char i=0; i<8; i++) { //read fifo data byte
+    Result=(Result<<1) + spiReadBit();
+  }
+  return(Result);
+}
+
+unsigned char spiReadRegister(unsigned char address) {
   unsigned char result;
-  send_read_address(address);
-  result = read_8bit_data();
+  spiSendAddress(address);
+  result = spiReadData();
   nSEL_on;
   return(result);
 }
 
-//--------------------------------------------------------------
 void spiWriteRegister(unsigned char address, unsigned char data) {
   address |= 0x80; // 
-  Write8bitcommand(address);
-  send_8bit_data(data);
+  spiSendCommand(address);
+  spiWriteData(data);
   nSEL_on;
 }
 
+// **** RFM22 access functions
 
-//-------Defaults 38.400 baud----------------------------------------------
 void RF22B_init_parameter(void) {
   
-  ItStatus1 = _spi_read(0x03); // read status, clear interrupt
-  ItStatus2 = _spi_read(0x04);
+  ItStatus1 = spiReadRegister(0x03); // read status, clear interrupt
+  ItStatus2 = spiReadRegister(0x04);
   spiWriteRegister(0x06, 0x00);    // no wakeup up, lbd,
   spiWriteRegister(0x07, RF22B_PWRSTATE_READY);      // disable lbd, wakeup timer, use internal 32768,xton = 1; in ready mode
   spiWriteRegister(0x09, 0x7f);  // c = 12.5p
@@ -867,8 +890,6 @@ void RF22B_init_parameter(void) {
   spiWriteRegister(0x73, 0x00);
   spiWriteRegister(0x74, 0x00);    // no offset
 
-  //band 435.000
-
   #if (BAND== 0)
     spiWriteRegister(0x75, 0x53);
   #else
@@ -892,52 +913,16 @@ void RF22B_init_parameter(void) {
 
 }
 
-
-//--------------------------------------------------------------
-void send_read_address(unsigned char i) {
- i &= 0x7f;
- Write8bitcommand(i);
+void to_rx_mode(void)
+{
+  ItStatus1 = spiReadRegister(0x03);
+  ItStatus2 = spiReadRegister(0x04);
+  spiWriteRegister(0x07, RF22B_PWRSTATE_READY);
+  delay(10);
+  rx_reset();
+  NOP();
 }
 
-//--------------------------------------------------------------
-void send_8bit_data(unsigned char i) {
-  unsigned char n = 8;
-  SCK_off;
-    while(n--)
-    {
-         if(i&0x80) {
-           Write1();
-         } else {
-          Write0();
-         }
-         i = i << 1;
-    }
-   SCK_off;
-}
-//--------------------------------------------------------------
-
-unsigned char read_8bit_data(void) {
-
-  unsigned char Result, i;
-  SCK_off;
-  Result=0;
-  for(i=0;i<8;i++)
-  {                    //read fifo data byte
-    Result=Result<<1;
-    SCK_on;
-    NOP();
-    if(SDO_1)
-    {
-      Result|=1;
-    }
-    SCK_off;
-    NOP();
-  }
-  return(Result);
-}
-//--------------------------------------------------------------
-
-//-----------------------------------------------------------------------
 void rx_reset(void) {
 
   spiWriteRegister(0x07, RF22B_PWRSTATE_READY);
@@ -946,10 +931,9 @@ void rx_reset(void) {
   spiWriteRegister(0x08, 0x00);    // clear fifo, disable multi packet
   spiWriteRegister(0x07, RF22B_PWRSTATE_RX );  // to rx mode
   spiWriteRegister(0x05, RF22B_Rx_packet_received_interrupt);
-  ItStatus1 = _spi_read(0x03);  //read the Interrupt Status1 register
-  ItStatus2 = _spi_read(0x04);
+  ItStatus1 = spiReadRegister(0x03);  //read the Interrupt Status1 register
+  ItStatus2 = spiReadRegister(0x04);
 }
-//-----------------------------------------------------------------------
 
 
 void to_tx_mode(void) {
@@ -963,22 +947,10 @@ void to_tx_mode(void) {
   }
 
   spiWriteRegister(0x05, RF22B_PACKET_SENT_INTERRUPT);
-  ItStatus1 = _spi_read(0x03);      //read the Interrupt Status1 register
-  ItStatus2 = _spi_read(0x04);
+  ItStatus1 = spiReadRegister(0x03);      //read the Interrupt Status1 register
+  ItStatus2 = spiReadRegister(0x04);
   spiWriteRegister(0x07, RF22B_PWRSTATE_TX);    // to tx mode
 
   while(nIRQ_1);
 }
-
-void to_rx_mode(void)
-{
-  ItStatus1 = _spi_read(0x03);
-  ItStatus2 = _spi_read(0x04);
-  spiWriteRegister(0x07, RF22B_PWRSTATE_READY);
-  delay(10);
-  rx_reset();
-  NOP();
-}
-
-//--------------------------------------------------------------
 
