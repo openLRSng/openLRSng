@@ -81,9 +81,9 @@ static unsigned char RF_Header[4] = {'@','K','H','a'};
 //###### SERIAL PORT SPEED #######
 #define SERIAL_BAUD_RATE 115200 //115.200 baud serial port speed
 
-//#############################
-//### CONFIGURATION SECTION ###
-//#############################
+//####################
+//### CODE SECTION ###
+//####################
 
 #include <Arduino.h>
 #include <EEPROM.h>
@@ -230,6 +230,7 @@ static unsigned char RF_Header[4] = {'@','K','H','a'};
     #define BTN 7
   #else
     #define PPM_OUT 9 // OCP1A
+    #define RSSI_OUT 11 
   #endif
 
   #define Red_LED A3
@@ -563,6 +564,8 @@ void setup() {
   pinMode(0, INPUT); // Serial Rx
   pinMode(1, OUTPUT);// Serial Tx
 
+  pinMode(RSSI_OUT,OUTPUT);
+
   Serial.begin(SERIAL_BAUD_RATE); //Serial Transmission
 
   setupPPMout();
@@ -597,8 +600,13 @@ void loop() {
   }
 
   if(RF_Mode == Received) {  // RFM22B INT pin Enabled by received Data
+
     RF_Mode = Receive;
-    last_pack_time = millis(); // record last package time
+
+    unsigned long time = millis();
+     Serial.println(time - last_pack_time);
+    last_pack_time = time; // record last package time
+
     lostpack=0;
 
     if (firstpack ==0)  firstpack =1;
@@ -627,17 +635,10 @@ void loop() {
     RSSI_count++;
     rx_reset();
 
-
-    for (int i=0; i<8; i++) {
-      Serial.print(PPM[i]);
-      Serial.print(',');
-    }
-    Serial.println();
-
-
     if (RSSI_count > 20) {
-      RSSI_sum /=20;
+      RSSI_sum /= RSSI_count;
       //Serial.println(Rx_RSSI,DEC);
+      analogWrite(RSSI_OUT,map(constrain(RSSI_sum,45,120),40,120,0,255));
       RSSI_sum = 0;
       RSSI_count = 0;
     }
@@ -753,6 +754,7 @@ unsigned char spiReadBit() {
   }
   SCK_off;
   NOP();
+  return r;
 }
 
 void spiSendCommand(unsigned char command) {
@@ -774,7 +776,7 @@ void spiSendAddress(unsigned char i) {
 
 void spiWriteData(unsigned char i) {
 
-  for (n=0; n<8; n++) {
+  for (unsigned char n=0; n<8; n++) {
     spiWriteBit(i&0x80);
     i = i << 1;
   }
