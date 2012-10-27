@@ -71,7 +71,7 @@
 #define FREQUENCY_HOPPING 1
 
 //###### HOPPING CHANNELS #######
-static unsigned char hop_list[6] = {22,19,19,34,49,42};
+static unsigned char hop_list[6] = {22,19,19,34,49,41}; // {22,19,19,34,49,42};
 
 //###### RF DEVICE ID HEADERS #######
 // Change this 4 byte values for isolating your transmission,
@@ -648,6 +648,18 @@ void loop() {
     Green_LED_OFF;
   }
 
+  if (firstpack) {
+    if ((!lostpack) && (millis() - last_pack_time) > 24) {
+      lostpack = 1;
+      willhop = 1;
+      Serial.print("L");
+    } else if ((lostpack==1) && (millis() - last_pack_time) > 500) {
+      lostpack=2;
+      Red_LED_ON;
+      analogWrite(RSSI_OUT,0);
+      Serial.print("FS");
+    }
+  }
 #if (FREQUENCY_HOPPING==1)
   if (willhop==1) {
     Hopping();//Hop to the next frequency
@@ -688,7 +700,7 @@ void Green_LED_Blink(unsigned short blink_count) {
 void Hopping(void)
 {
   RF_channel++;
-  Serial.print(RF_channel);
+//  Serial.print(RF_channel);
   if ( RF_channel >= (sizeof(hop_list) / sizeof(hop_list[0])) ) RF_channel = 0;
   spiWriteRegister(0x79, hop_list[RF_channel]);
 }
@@ -827,21 +839,35 @@ void RF22B_init_parameter(void) {
   spiWriteRegister(0x70, 0x2C);    // disable manchest
 
        // 9.6Kbps data rate
-  spiWriteRegister(0x6e, 0x27); // WAS 0x27 (for 4k8)
-  spiWriteRegister(0x6f, 0x52); // WAS 0x52 (for 4k8)
+#if 1
+  spiWriteRegister(0x6e, 0x4e);
+  spiWriteRegister(0x6f, 0xa5);
 
-  spiWriteRegister(0x1c, 0x1A); // case RATE_384K
-  spiWriteRegister(0x20, 0xA1);//  0x20 calculate from the datasheet= 500*(1+2*down3_bypass)/(2^ndec*RB*(1+enmanch))
-  spiWriteRegister(0x21, 0x20); // 0x21 , rxosr[10--8] = 0; stalltr = (default), ccoff[19:16] = 0;
-  spiWriteRegister(0x22, 0x4E); // 0x22    ncoff =5033 = 0x13a9
-  spiWriteRegister(0x23, 0xA5); // 0x23
-  spiWriteRegister(0x24, 0x00); // 0x24
-  spiWriteRegister(0x25, 0x1B); // 0x25
-  spiWriteRegister(0x1D, 0x40); // 0x25
-  spiWriteRegister(0x1E, 0x0A); // 0x25
-
+  spiWriteRegister(0x1c, 0x01);
+  spiWriteRegister(0x20, 0xA1);
+  spiWriteRegister(0x21, 0x20);
+  spiWriteRegister(0x22, 0x4E);
+  spiWriteRegister(0x23, 0xA5);
+  spiWriteRegister(0x24, 0x00);
+  spiWriteRegister(0x25, 0x34);
+  spiWriteRegister(0x1D, 0x40);
+  spiWriteRegister(0x1E, 0x0A);
   spiWriteRegister(0x2a, 0x1e);
+#else
+  spiWriteRegister(0x6e, 0x27);
+  spiWriteRegister(0x6f, 0x52);
 
+  spiWriteRegister(0x1c, 0x1A);
+  spiWriteRegister(0x20, 0xA1);
+  spiWriteRegister(0x21, 0x20);
+  spiWriteRegister(0x22, 0x4E);
+  spiWriteRegister(0x23, 0xA5);
+  spiWriteRegister(0x24, 0x00);
+  spiWriteRegister(0x25, 0x1B);
+  spiWriteRegister(0x1D, 0x40);
+  spiWriteRegister(0x1E, 0x0A);
+  spiWriteRegister(0x2a, 0x1e);
+#endif
 
   spiWriteRegister(0x30, 0x8c);    // enable packet handler, msb first, enable crc,
 
