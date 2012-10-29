@@ -1,0 +1,16 @@
+## openLRSng  Timing info ##
+
+PPM is normally sent aroound 50Hz i.e. a frame every 20ms. This is not something we can trust and some TX:s use variable frame length.
+
+This is why openLRSng will use timing separate from PPM for radio communication to have well defined packet intervals for fast lost packet detection and recovery.
+
+We currently use 11 byte packets at defineable datarate
+
+Time needed for frame transmission at various data rates
+
+4800 - 40380 us --- send frames at 20Hz (50ms) 
+9600 - 20600 us -- send frames at 40Hz (25ms)
+19200 - 10688 us -- send frames at 50Hz (20ms) room for telemetry backlink with smaller packet ??
+38400 - ?us -- send frames at 50Hz telemetry frames at same rate
+
+
