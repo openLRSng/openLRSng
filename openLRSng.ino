@@ -81,12 +81,65 @@ static unsigned char RF_Header[4] = {'@','K','H','a'};
 //###### SERIAL PORT SPEED #######
 #define SERIAL_BAUD_RATE 115200 //115.200 baud serial port speed
 
+// RF Data Rate --- choose between range vs. performance
+
+//#define DATARATE 4800 // best range, 20Hz update rate
+#define DATARATE 9600 // medium range, 40Hz update rate
+//#define DATARATE 19200 // medium range, 50Hz update rate + telemetry backlink
+
+
 //####################
 //### CODE SECTION ###
 //####################
 
 #include <Arduino.h>
 #include <EEPROM.h>
+
+#if (DATARATE == 4800)
+  #define PACKET_INTERVAL 50000 //ms == 20Hz
+  #define RFM22REG_6E 0x27
+  #define RFM22REG_6F 0x52
+  #define RFM22REG_1C 0x1A
+  #define RFM22REG_20 0xA1
+  #define RFM22REG_21 0x20
+  #define RFM22REG_22 0x4E
+  #define RFM22REG_23 0xA5
+  #define RFM22REG_24 0x00
+  #define RFM22REG_25 0x1B
+  #define RFM22REG_1D 0x40
+  #define RFM22REG_1E 0x0A
+  #define RFM22REG_2A 0x1E
+#elif (DATARATE == 9600)
+  #define PACKET_INTERVAL 25000 //ms == 40Hz
+  #define RFM22REG_6E 0x4E
+  #define RFM22REG_6F 0xA5
+  #define RFM22REG_1C 0x05
+  #define RFM22REG_20 0xA1
+  #define RFM22REG_21 0x20
+  #define RFM22REG_22 0x4E
+  #define RFM22REG_23 0xA5
+  #define RFM22REG_24 0x00
+  #define RFM22REG_25 0x20
+  #define RFM22REG_1D 0x40
+  #define RFM22REG_1E 0x0A
+  #define RFM22REG_2A 0x24
+#elif (DATARATE == 19200)
+  #define PACKET_INTERVAL 20000 //ms == 50Hz
+  #define RFM22REG_6E 0x9D
+  #define RFM22REG_6F 0x49
+  #define RFM22REG_1C 0x06
+  #define RFM22REG_20 0xD0
+  #define RFM22REG_21 0x00
+  #define RFM22REG_22 0x9D
+  #define RFM22REG_23 0x49
+  #define RFM22REG_24 0x00
+  #define RFM22REG_25 0x7B
+  #define RFM22REG_1D 0x40
+  #define RFM22REG_1E 0x0A
+  #define RFM22REG_2A 0x28
+#else
+  #error invalid DATARATE
+#endif
 
 #if defined(COMPILE_TX)
   #define BOARD_TYPE TX_BOARD_TYPE
@@ -181,7 +234,7 @@ static unsigned char RF_Header[4] = {'@','K','H','a'};
 #endif
 
 #if (BOARD_TYPE == 2)
-    #define PPM_IN 3
+    #define PPM_IN 8 // NOTE needs hardware hack to connect D8 and  D3 (CPU pins 1 and 12)
     #define RF_OUT_INDICATOR A0
     #define BUZZER 10
     #define BTN 11
@@ -287,7 +340,9 @@ volatile int          PPM[PPM_CHANNELS] = { 512,512,512,512,512,512,512,512 };
 unsigned char FSstate = 0; // 1 = waiting timer, 2 = send FS, 3 sent waiting btn release
 unsigned long FStime = 0;  // time when button went down...
 
-volatile unsigned int newData = 0; // new data to be sent
+unsigned long lastSent = 0;
+
+volatile unsigned char ppmAge = 0; // age of PPM data
 
 
 volatile unsigned int startPulse = 0;
@@ -308,7 +363,7 @@ ISR(TIMER1_CAPT_vect) {
 
   if (pulseWidth > 5000) {      // Verify if this is the sync pulse (2.5ms)
     ppmCounter = 0;             // -> restart the channel counter
-    newData++;              // new data to be TX:ed
+    ppmAge = 0;                 // brand new PPM data received
   }
   else {
     if (ppmCounter < PPM_CHANNELS) { // extra channels will get ignored here
@@ -371,7 +426,7 @@ void setup() {
   digitalWrite(RF_OUT_INDICATOR,LOW);
   //digitalWrite(PPM_IN,HIGH);
 
-  newData = 0;
+  ppmAge = 255;
   rx_reset();
 
 }
@@ -391,44 +446,45 @@ void loop() {
     Red_LED_OFF;
   }
 
-  if (newData) {
-    unsigned long start = micros();
-    unsigned int now = newData;
-    newData = 0;
+  unsigned long time = micros();
 
-    if (FSstate == 2) {
-      tx_buf[0] = 0xF5; //DO FAILSAFE
+  if ((time - lastSent) >= PACKET_INTERVAL) {
+    lastSent = time;
+    if (ppmAge < 8) {
+      ppmAge++;
+
+      // Construct packet to be sent
+      if (FSstate == 2) {
+        tx_buf[0] = 0xF5; // save failsafe
+      } else {
+        tx_buf[0] = 0x5E; // servo positions
+      }
+
+      cli(); // disable interrupts when copying servo positions, to avoid race on 2 byte variable
+      tx_buf[1]=(PPM[0] & 0xff);
+      tx_buf[2]=(PPM[1] & 0xff);
+      tx_buf[3]=(PPM[2] & 0xff);
+      tx_buf[4]=(PPM[3] & 0xff);
+      tx_buf[5]=((PPM[0] >> 8) & 3) | (((PPM[1] >> 8) & 3)<<2) | (((PPM[2] >> 8) & 3)<<4) | (((PPM[3] >> 8) & 3)<<6);
+      tx_buf[6]=(PPM[4] & 0xff);
+      tx_buf[7]=(PPM[5] & 0xff);
+      tx_buf[8]=(PPM[6] & 0xff);
+      tx_buf[9]=(PPM[7] & 0xff);
+      tx_buf[10]=((PPM[4] >> 8) & 3) | (((PPM[5] >> 8) & 3)<<2) | (((PPM[6] >> 8) & 3)<<4) | (((PPM[7] >> 8) & 3)<<6);
+     sei();
+
+      //Green LED will be on during transmission
+      Green_LED_ON ;
+
+      // Send the data over RF
+      to_tx_mode();
+      #if (FREQUENCY_HOPPING==1)
+      Hopping();//Hop to the next frequency
+      #endif
     } else {
-      tx_buf[0] = 0x5E; //servo positions
+      // PPM data outdated - do not send packets
     }
 
-    cli(); // disable interrupts when copying servo positions, to avoid race on 2 byte variable
-    tx_buf[1]=(PPM[0] & 0xff);
-    tx_buf[2]=(PPM[1] & 0xff);
-    tx_buf[3]=(PPM[2] & 0xff);
-    tx_buf[4]=(PPM[3] & 0xff);
-    tx_buf[5]=((PPM[0] >> 8) & 3) | (((PPM[1] >> 8) & 3)<<2) | (((PPM[2] >> 8) & 3)<<4) | (((PPM[3] >> 8) & 3)<<6);
-    tx_buf[6]=(PPM[4] & 0xff);
-    tx_buf[7]=(PPM[5] & 0xff);
-    tx_buf[8]=(PPM[6] & 0xff);
-    tx_buf[9]=(PPM[7] & 0xff);
-    tx_buf[10]=((PPM[4] >> 8) & 3) | (((PPM[5] >> 8) & 3)<<2) | (((PPM[6] >> 8) & 3)<<4) | (((PPM[7] >> 8) & 3)<<6);
-    sei();
-
-    //Green LED will be on during transmission
-    Green_LED_ON ;
-
-    // Send the data over RF
-    to_tx_mode();
-    Serial.print("TX:");
-    Serial.print(now);
-    Serial.print(';');
-    Serial.print(RF_channel);
-    Serial.print(';');
-    Serial.println(micros()-start);
-    #if (FREQUENCY_HOPPING==1)
-    Hopping();//Hop to the next frequency
-    #endif
   }
 
   //Green LED will be OFF
@@ -838,36 +894,18 @@ void RF22B_init_parameter(void) {
 
   spiWriteRegister(0x70, 0x2C);    // disable manchest
 
-       // 9.6Kbps data rate
-#if 1
-  spiWriteRegister(0x6e, 0x4e);
-  spiWriteRegister(0x6f, 0xa5);
-
-  spiWriteRegister(0x1c, 0x01);
-  spiWriteRegister(0x20, 0xA1);
-  spiWriteRegister(0x21, 0x20);
-  spiWriteRegister(0x22, 0x4E);
-  spiWriteRegister(0x23, 0xA5);
-  spiWriteRegister(0x24, 0x00);
-  spiWriteRegister(0x25, 0x34);
-  spiWriteRegister(0x1D, 0x40);
-  spiWriteRegister(0x1E, 0x0A);
-  spiWriteRegister(0x2a, 0x1e);
-#else
-  spiWriteRegister(0x6e, 0x27);
-  spiWriteRegister(0x6f, 0x52);
-
-  spiWriteRegister(0x1c, 0x1A);
-  spiWriteRegister(0x20, 0xA1);
-  spiWriteRegister(0x21, 0x20);
-  spiWriteRegister(0x22, 0x4E);
-  spiWriteRegister(0x23, 0xA5);
-  spiWriteRegister(0x24, 0x00);
-  spiWriteRegister(0x25, 0x1B);
-  spiWriteRegister(0x1D, 0x40);
-  spiWriteRegister(0x1E, 0x0A);
-  spiWriteRegister(0x2a, 0x1e);
-#endif
+  spiWriteRegister(0x6e, RFM22REG_6E);
+  spiWriteRegister(0x6f, RFM22REG_6F);
+  spiWriteRegister(0x1c, RFM22REG_1C);
+  spiWriteRegister(0x20, RFM22REG_20);
+  spiWriteRegister(0x21, RFM22REG_21);
+  spiWriteRegister(0x22, RFM22REG_22);
+  spiWriteRegister(0x23, RFM22REG_23);
+  spiWriteRegister(0x24, RFM22REG_24);
+  spiWriteRegister(0x25, RFM22REG_25);
+  spiWriteRegister(0x1D, RFM22REG_1D);
+  spiWriteRegister(0x1E, RFM22REG_1E);
+  spiWriteRegister(0x2a, RFM22REG_2A);
 
   spiWriteRegister(0x30, 0x8c);    // enable packet handler, msb first, enable crc,
 
