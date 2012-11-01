@@ -87,6 +87,9 @@ static unsigned char RF_Header[4] = {'@','K','H','a'};
 #define DATARATE 9600 // medium range, 40Hz update rate
 //#define DATARATE 19200 // medium range, 50Hz update rate + telemetry backlink
 
+// PWM output on RX
+#define RX_OUTPUT_PWM
+
 
 //####################
 //### CODE SECTION ###
@@ -284,6 +287,24 @@ static unsigned char RF_Header[4] = {'@','K','H','a'};
   #else
     #define PPM_OUT 9 // OCP1A
     #define RSSI_OUT 11 
+
+    #define PWM_1 3
+    #define PWM_1_MASK 0x0008 //PD3
+    #define PWM_2 5
+    #define PWM_2_MASK 0x0020 //PD5
+    #define PWM_3 6
+    #define PWM_3_MASK 0x0040 //PD6
+    #define PWM_4 7
+    #define PWM_4_MASK 0x0080 //PD7
+    #define PWM_5 8
+    #define PWM_5_MASK 0x0100 // PB0
+    #define PWM_6 9
+    #define PWM_6_MASK 0x0200 // PB1
+    #define PWM_7 10
+    #define PWM_7_MASK 0x0400 // PB2
+    #define PWM_8 12 // note ch9 slot, RSSI at ch8 !!
+    #define PWM_8_MASK 0x1000 // PB4
+
   #endif
 
   #define Red_LED A3
@@ -451,6 +472,9 @@ void loop() {
   if ((time - lastSent) >= PACKET_INTERVAL) {
     lastSent = time;
     if (ppmAge < 8) {
+      Serial.print("Sending @");
+      Serial.print(time);
+      Serial.print('-');
       ppmAge++;
 
       // Construct packet to be sent
@@ -481,7 +505,13 @@ void loop() {
       #if (FREQUENCY_HOPPING==1)
       Hopping();//Hop to the next frequency
       #endif
+      Serial.println(micros());
+
     } else {
+      if (ppmAge==8) {
+        Serial.print("no input\n");
+      }
+      ppmAge=9;
       // PPM data outdated - do not send packets
     }
 
@@ -566,6 +596,9 @@ unsigned short RSSI_sum = 0;
 int ppmCountter=0;
 int ppmTotal=0;
 
+unsigned long pwmLastFrame=0;
+
+
 short FShop,firstpack =0;
 short lostpack =0;
 
@@ -596,6 +629,7 @@ ISR(TIMER1_OVF_vect) {
 }
 
 void setupPPMout() {
+
   TCCR1A = (1<<WGM11)|(1<<COM1A1)|(1<<COM1A0);
   TCCR1B = (1<<WGM13)|(1<<WGM12)|(1<<CS11);
   ICR1 = 40000; // just initial value, will be constantly updated
@@ -604,6 +638,34 @@ void setupPPMout() {
 
   pinMode(PPM_OUT, OUTPUT);
 }
+
+void setupPWMout() {
+
+  TCCR1A = (1<<COM1A1)|(1<<COM1A0);
+  TCCR1B = (1<<CS11);
+  ICR1 = 65535;
+
+  pinMode(PWM_1, OUTPUT);
+  pinMode(PWM_2, OUTPUT);
+  pinMode(PWM_3, OUTPUT);
+  pinMode(PWM_4, OUTPUT);
+  pinMode(PWM_5, OUTPUT);
+  pinMode(PWM_6, OUTPUT);
+  pinMode(PWM_7, OUTPUT);
+  pinMode(PWM_8, OUTPUT);
+
+}
+
+void pulsePWM() {
+  cli();
+  int target = 1976 + PPM[0] * 2;
+  TCNT1=0;
+  digitalWrite(PWM_1,HIGH);
+  while (TCNT1<target);
+  digitalWrite(PWM_1,LOW);
+  sei();
+}
+
 
 void setup() {
   //LEDs
@@ -624,8 +686,12 @@ void setup() {
 
   Serial.begin(SERIAL_BAUD_RATE); //Serial Transmission
 
-  setupPPMout();
-
+  #ifdef RX_OUTPUT_PWM
+    setupPWMout();
+  #else
+    setupPPMout();
+  #endif
+  
   attachInterrupt(IRQ_interrupt,RFM22B_Int,FALLING);
 
 //  receiver_mode = check_modes(); // Check the possible jumper positions for changing the receiver mode.
@@ -655,6 +721,14 @@ void loop() {
     to_rx_mode();
   }
 
+  #ifdef RX_OUTPUT_PWM
+  unsigned long time = micros();
+  if ((time - pwmLastFrame) >= 20000) {
+    pwmLastFrame=time;
+    pulsePWM();
+  }
+  #endif
+  
   if(RF_Mode == Received) {  // RFM22B INT pin Enabled by received Data
 
     RF_Mode = Receive;
@@ -705,7 +779,7 @@ void loop() {
   }
 
   if (firstpack) {
-    if ((!lostpack) && (millis() - last_pack_time) > 24) {
+    if ((!lostpack) && (millis() - last_pack_time) > 26) {
       lostpack = 1;
       willhop = 1;
       Serial.print("L");
