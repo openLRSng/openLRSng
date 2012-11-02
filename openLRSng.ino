@@ -66,12 +66,9 @@
 //######### TRANSMISSION VARIABLES ##########
 #define CARRIER_FREQUENCY 435000  //  startup frequency
 
-//####### Freq Hopping #######
-// 1 = Enabled  0 = Disabled
-#define FREQUENCY_HOPPING 1
-
 //###### HOPPING CHANNELS #######
-static unsigned char hop_list[6] = {22,10,19,34,49,41}; // {22,19,19,34,49,42};
+// put only single channel to the list to disable hopping
+static unsigned char hop_list[] = {22,10,19,34,49,41};
 
 //###### RF DEVICE ID HEADERS #######
 // Change this 4 byte values for isolating your transmission,
@@ -504,9 +501,7 @@ void loop() {
 
       // Send the data over RF
       to_tx_mode();
-      #if (FREQUENCY_HOPPING==1)
       Hopping();//Hop to the next frequency
-      #endif
 
     } else {
       if (ppmAge==8) {
@@ -893,12 +888,11 @@ void loop() {
       willhop = 1;
     } 
   }
-#if (FREQUENCY_HOPPING==1)
+
   if (willhop==1) {
     Hopping();//Hop to the next frequency
     willhop =0;
   }
-#endif
 
 }
 
@@ -929,14 +923,12 @@ void Green_LED_Blink(unsigned short blink_count) {
 }
 
 //############# FREQUENCY HOPPING ################# thUndead FHSS
-#if (FREQUENCY_HOPPING==1)
 void Hopping(void)
 {
   RF_channel++;
   if ( RF_channel >= (sizeof(hop_list) / sizeof(hop_list[0])) ) RF_channel = 0;
   spiWriteRegister(0x79, hop_list[RF_channel]);
 }
-#endif
 
 
 
@@ -1114,11 +1106,7 @@ void RF22B_init_parameter(void) {
     spiWriteRegister(0x6d, 0x06); // 6 set power 50mw for booster
   #endif
 
-  #if (FREQUENCY_HOPPING==1)
     spiWriteRegister(0x79, hop_list[0]);    // start channel
-  #else
-    spiWriteRegister(0x79, 0);    // no hopping
-  #endif
 
   #if (BAND== 0)
     spiWriteRegister(0x7a, 0x06);    // 60khz step size (10khz x value) // no hopping
