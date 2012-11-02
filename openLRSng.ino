@@ -71,7 +71,7 @@
 #define FREQUENCY_HOPPING 1
 
 //###### HOPPING CHANNELS #######
-static unsigned char hop_list[6] = {22,19,19,34,49,41}; // {22,19,19,34,49,42};
+static unsigned char hop_list[6] = {22,10,19,34,49,41}; // {22,19,19,34,49,42};
 
 //###### RF DEVICE ID HEADERS #######
 // Change this 4 byte values for isolating your transmission,
@@ -86,10 +86,6 @@ static unsigned char RF_Header[4] = {'@','K','H','a'};
 //#define DATARATE 4800 // best range, 20Hz update rate
 #define DATARATE 9600 // medium range, 40Hz update rate
 //#define DATARATE 19200 // medium range, 50Hz update rate + telemetry backlink
-
-// PWM output on RX
-#define RX_OUTPUT_PWM
-
 
 //####################
 //### CODE SECTION ###
@@ -305,6 +301,12 @@ static unsigned char RF_Header[4] = {'@','K','H','a'};
     #define PWM_8 12 // note ch9 slot, RSSI at ch8 !!
     #define PWM_8_MASK 0x1000 // PB4
 
+    const unsigned short PWM_MASK[8] = { PWM_1_MASK, PWM_2_MASK, PWM_3_MASK, PWM_4_MASK, PWM_5_MASK, PWM_6_MASK, PWM_7_MASK, PWM_8_MASK };
+    #define PWM_ALL_MASK 0x17E8 // all bits used for PWM (logic OR of above)
+
+    #define PWM_MASK_PORTB(x) (((x)>>8) & 0xff)
+    #define PWM_MASK_PORTD(x) ((x) & 0xff)
+
   #endif
 
   #define Red_LED A3
@@ -472,16 +474,16 @@ void loop() {
   if ((time - lastSent) >= PACKET_INTERVAL) {
     lastSent = time;
     if (ppmAge < 8) {
-      Serial.print("Sending @");
-      Serial.print(time);
-      Serial.print('-');
       ppmAge++;
 
       // Construct packet to be sent
       if (FSstate == 2) {
         tx_buf[0] = 0xF5; // save failsafe
+        Red_LED_ON
       } else {
         tx_buf[0] = 0x5E; // servo positions
+        Red_LED_OFF
+
       }
 
       cli(); // disable interrupts when copying servo positions, to avoid race on 2 byte variable
@@ -505,11 +507,10 @@ void loop() {
       #if (FREQUENCY_HOPPING==1)
       Hopping();//Hop to the next frequency
       #endif
-      Serial.println(micros());
 
     } else {
       if (ppmAge==8) {
-        Serial.print("no input\n");
+        Red_LED_ON
       }
       ppmAge=9;
       // PPM data outdated - do not send packets
@@ -563,7 +564,6 @@ void checkFS(void)
       if (digitalRead(BTN) == 0) {
         if ((millis() - FStime) > 1000) {
           FSstate = 2;
-          Red_LED_ON
         }
       } else {
         FSstate = 0;
@@ -572,7 +572,6 @@ void checkFS(void)
     case 2:
       if (digitalRead(BTN)) {
         FSstate=0;
-        Red_LED_OFF
       }
       break;
   }
@@ -598,11 +597,12 @@ int ppmTotal=0;
 
 unsigned long pwmLastFrame=0;
 
+boolean PWM_output = 1; // set if parallel PWM output is desired
 
 short FShop,firstpack =0;
 short lostpack =0;
 
-boolean willhop =0;
+boolean willhop,fs_saved =0;
 
 void RFM22B_Int()
 {
@@ -641,9 +641,9 @@ void setupPPMout() {
 
 void setupPWMout() {
 
-  TCCR1A = (1<<COM1A1)|(1<<COM1A0);
+  // Timer mode 0 , counts 0-65535, no output on pins, don't enable interrupts
+  TCCR1A = 0;
   TCCR1B = (1<<CS11);
-  ICR1 = 65535;
 
   pinMode(PWM_1, OUTPUT);
   pinMode(PWM_2, OUTPUT);
@@ -656,16 +656,97 @@ void setupPWMout() {
 
 }
 
+struct pwmstep {
+  unsigned short time;
+  unsigned short mask;
+};
+
 void pulsePWM() {
+  struct pwmstep pwmstep[8];
+  
+  int steps=0;
+  short done=-1;
+  for (int i=0; i<8; i++) {
+    unsigned short smallest=5000;
+    unsigned short mask=0;
+    for (int j=0; j<8; j++) {
+      if ((PPM[j] > done) && (PPM[j]<smallest)) {
+        smallest = PPM[j];
+        mask = PWM_MASK[j];
+      } else if (PPM[j] == smallest) {
+        mask |= PWM_MASK[j];
+      }
+    }
+    if (smallest!=5000) {
+      done=smallest;
+      pwmstep[steps].mask=mask;
+      pwmstep[steps].time=1976 + smallest * 2;
+      steps++;
+    } else {
+      break;
+    }
+  }
+  
+#if 0
+  for (int i=0; i<8; i++) {
+    Serial.print(i);
+    Serial.print('=');
+    Serial.println(PPM[i]);
+  }
+  for (int i=0; i<steps; i++) {
+    Serial.print(i);
+    Serial.print(':');
+    Serial.print(pwmstep[i].time);
+    Serial.print('-');
+    Serial.println(pwmstep[i].mask,HEX);
+  }
+
+  return;
+#endif
+
   cli();
-  int target = 1976 + PPM[0] * 2;
+  int step=0;
   TCNT1=0;
-  digitalWrite(PWM_1,HIGH);
-  while (TCNT1<target);
-  digitalWrite(PWM_1,LOW);
+  PORTB|=PWM_MASK_PORTB(PWM_ALL_MASK);
+  PORTD|=PWM_MASK_PORTD(PWM_ALL_MASK);
+  while (step<steps) {
+    while (TCNT1<pwmstep[step].time);
+    PORTB&=~PWM_MASK_PORTB(pwmstep[step].mask);
+    PORTD&=~PWM_MASK_PORTD(pwmstep[step].mask);
+    step++;
+  }
   sei();
 }
 
+void save_failsafe_values(void){
+
+  EEPROM.write(11,(PPM[0] & 0xff));
+  EEPROM.write(12,(PPM[1] & 0xff));
+  EEPROM.write(13,(PPM[2] & 0xff));
+  EEPROM.write(14,(PPM[3] & 0xff));
+  EEPROM.write(15,(((PPM[0] >> 8) & 3) | (((PPM[1] >> 8) & 3)<<2) | (((PPM[2] >> 8) & 3)<<4) | (((PPM[3] >> 8) & 3)<<6)));
+  EEPROM.write(16,(PPM[4] & 0xff));
+  EEPROM.write(17,(PPM[5] & 0xff));
+  EEPROM.write(18,(PPM[6] & 0xff));
+  EEPROM.write(19,(PPM[7] & 0xff));
+  EEPROM.write(20,(((PPM[4] >> 8) & 3) | (((PPM[5] >> 8) & 3)<<2) | (((PPM[6] >> 8) & 3)<<4) | (((PPM[7] >> 8) & 3)<<6)));
+}
+
+void load_failsafe_values(void){
+
+  unsigned char ee_buf[10];
+  for (int i=0; i<10; i++) {
+    ee_buf[i]=EEPROM.read(11+i);
+  }
+  PPM[0]= ee_buf[0] + ((ee_buf[4] & 0x03) << 8);
+  PPM[1]= ee_buf[1] + ((ee_buf[4] & 0x0c) << 6);
+  PPM[2]= ee_buf[2] + ((ee_buf[4] & 0x30) << 4);
+  PPM[3]= ee_buf[3] + ((ee_buf[4] & 0xc0) << 2);
+  PPM[4]= ee_buf[5] + ((ee_buf[9] & 0x03) << 8);
+  PPM[5]= ee_buf[6] + ((ee_buf[9] & 0x0c) << 6);
+  PPM[6]= ee_buf[7] + ((ee_buf[9] & 0x30) << 4);
+  PPM[7]= rx_buf[8] + ((rx_buf[9] & 0xc0) << 2);
+}
 
 void setup() {
   //LEDs
@@ -686,11 +767,11 @@ void setup() {
 
   Serial.begin(SERIAL_BAUD_RATE); //Serial Transmission
 
-  #ifdef RX_OUTPUT_PWM
+  if (PWM_output) {
     setupPWMout();
-  #else
+  } else {
     setupPPMout();
-  #endif
+  }
   
   attachInterrupt(IRQ_interrupt,RFM22B_Int,FALLING);
 
@@ -721,22 +802,19 @@ void loop() {
     to_rx_mode();
   }
 
-  #ifdef RX_OUTPUT_PWM
-  unsigned long time = micros();
-  if ((time - pwmLastFrame) >= 20000) {
-    pwmLastFrame=time;
-    pulsePWM();
+  if (PWM_output) {
+    unsigned long time = micros();
+    if ((time - pwmLastFrame) >= 20000) {
+      pwmLastFrame=time;
+      pulsePWM();
+    }
   }
-  #endif
   
   if(RF_Mode == Received) {  // RFM22B INT pin Enabled by received Data
 
     RF_Mode = Receive;
 
-    unsigned long time = millis();
-     Serial.println(time - last_pack_time);
-    last_pack_time = time; // record last package time
-
+    last_pack_time = micros(); // record last package time
     lostpack=0;
 
     if (firstpack ==0)  firstpack =1;
@@ -750,24 +828,34 @@ void loop() {
       rx_buf[i] = spiReadData();
     }
 
-    cli();
-    PPM[0]= rx_buf[1] + ((rx_buf[5] & 0x03) << 8);
-    PPM[1]= rx_buf[2] + ((rx_buf[5] & 0x0c) << 6);
-    PPM[2]= rx_buf[3] + ((rx_buf[5] & 0x30) << 4);
-    PPM[3]= rx_buf[4] + ((rx_buf[5] & 0xc0) << 2);
-    PPM[4]= rx_buf[6] + ((rx_buf[10] & 0x03) << 8);
-    PPM[5]= rx_buf[7] + ((rx_buf[10] & 0x0c) << 6);
-    PPM[6]= rx_buf[8] + ((rx_buf[10] & 0x30) << 4);
-    PPM[7]= rx_buf[9] + ((rx_buf[10] & 0xc0) << 2);
-    sei();
-
+    if ((rx_buf[0] == 0x5E) || (rx_buf[0] == 0xF5)) {
+      cli();
+      PPM[0]= rx_buf[1] + ((rx_buf[5] & 0x03) << 8);
+      PPM[1]= rx_buf[2] + ((rx_buf[5] & 0x0c) << 6);
+      PPM[2]= rx_buf[3] + ((rx_buf[5] & 0x30) << 4);
+      PPM[3]= rx_buf[4] + ((rx_buf[5] & 0xc0) << 2);
+      PPM[4]= rx_buf[6] + ((rx_buf[10] & 0x03) << 8);
+      PPM[5]= rx_buf[7] + ((rx_buf[10] & 0x0c) << 6);
+      PPM[6]= rx_buf[8] + ((rx_buf[10] & 0x30) << 4);
+      PPM[7]= rx_buf[9] + ((rx_buf[10] & 0xc0) << 2);
+      sei();
+    }
+    
+    if (rx_buf[0] == 0xF5) {
+      if (!fs_saved) {
+        save_failsafe_values();
+        fs_saved=1;
+      }
+    } else if (fs_saved) {
+      fs_saved=0;
+    }
+      
     RSSI_sum += spiReadRegister(0x26); // Read the RSSI value
     RSSI_count++;
     rx_reset();
 
     if (RSSI_count > 20) {
       RSSI_sum /= RSSI_count;
-      //Serial.println(Rx_RSSI,DEC);
       analogWrite(RSSI_OUT,map(constrain(RSSI_sum,45,120),40,120,0,255));
       RSSI_sum = 0;
       RSSI_count = 0;
@@ -779,16 +867,31 @@ void loop() {
   }
 
   if (firstpack) {
-    if ((!lostpack) && (millis() - last_pack_time) > 26) {
+    unsigned long time = micros();
+    if ((!lostpack) && (time - last_pack_time) > (PACKET_INTERVAL+1000)) {
+      // we missed one packet, hop to next channel
       lostpack = 1;
+      last_pack_time += PACKET_INTERVAL;
       willhop = 1;
-      Serial.print("L");
-    } else if ((lostpack==1) && (millis() - last_pack_time) > 500) {
+    } else if ((lostpack==1) && (time - last_pack_time) > (PACKET_INTERVAL+1000)) {
+      // we lost second packet in row, hop and signal trouble
       lostpack=2;
+      last_pack_time += PACKET_INTERVAL;
+      willhop = 1;
       Red_LED_ON;
       analogWrite(RSSI_OUT,0);
-      Serial.print("FS");
-    }
+    } else if ((time - last_pack_time) > 200000L) {
+      // hop slowly to allow resync with TX
+      last_pack_time = time;
+      if (lostpack < 10) {
+        lostpack++;
+      } else if (lostpack == 10) {
+        lostpack=11;
+        // Serious trouble, apply failsafe
+        load_failsafe_values();
+      }
+      willhop = 1;
+    } 
   }
 #if (FREQUENCY_HOPPING==1)
   if (willhop==1) {
@@ -830,7 +933,6 @@ void Green_LED_Blink(unsigned short blink_count) {
 void Hopping(void)
 {
   RF_channel++;
-//  Serial.print(RF_channel);
   if ( RF_channel >= (sizeof(hop_list) / sizeof(hop_list[0])) ) RF_channel = 0;
   spiWriteRegister(0x79, hop_list[RF_channel]);
 }
