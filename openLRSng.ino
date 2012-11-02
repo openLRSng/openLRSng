@@ -7,8 +7,9 @@
 //
 // This code
 // - extend resolution to 10bits (1024 positions)
-// - use HW timer for input capture mode for PPM input
-// - use HW timer for PPM generation in waveform generator mode
+// - use HW timer in input capture mode for PPM input
+// - use HW timer for PPM generation (completely jitterless)
+// 
 // - collapse everything on single file
 //
 // Donations for development tools and utilities (beer) here
@@ -52,11 +53,10 @@
 // 3 = OpenLRS Rx v2 Board
 #define RX_BOARD_TYPE 3
 
-
 //####### BOOSTER (limit maximum power, affects only TX) #######
 // 0 = No booster
 // 1 = Booster
-#define BOOSTER 0
+#define BOOSTER 0 // NOT USED !!
 
 //######### Band Select ##########
 // 0 = 433Mhz
@@ -70,15 +70,15 @@
 // put only single channel to the list to disable hopping
 static unsigned char hop_list[] = {22,10,19,34,49,41};
 
-//###### RF DEVICE ID HEADERS #######
+//###### RF DEVICE ID HEADER #######
 // Change this 4 byte values for isolating your transmission,
 // RF module accepts only data with same header
 static unsigned char RF_Header[4] = {'@','K','H','a'};
 
-//###### SERIAL PORT SPEED #######
+//###### SERIAL PORT SPEED - just debugging atm. #######
 #define SERIAL_BAUD_RATE 115200 //115.200 baud serial port speed
 
-// RF Data Rate --- choose between range vs. performance
+// RF Data Rate --- choose wisely between range vs. performance
 
 //#define DATARATE 4800 // best range, 20Hz update rate
 #define DATARATE 9600 // medium range, 40Hz update rate
@@ -762,6 +762,25 @@ void setup() {
 
   Serial.begin(SERIAL_BAUD_RATE); //Serial Transmission
 
+  // Check for jumpper on ch1 - ch2 (PPM enable).
+  PWM_output=1;
+  pinMode(PWM_1,OUTPUT);
+  digitalWrite(PWM_1, 1);
+  digitalWrite(PWM_2, 1); // enable pullup
+  delay(1000);
+  if (digitalRead(PWM_2)) {
+    Serial.println("ok1");
+    digitalWrite(PWM_1, 0);
+    delay(1000);
+    if (!digitalRead(PWM_2)) {
+      PWM_output=0;
+      Serial.println("PPM activated");
+    }
+  }
+  pinMode(PWM_1,INPUT);
+  digitalWrite(PWM_1, 0);
+  digitalWrite(PWM_2, 0);
+  
   if (PWM_output) {
     setupPWMout();
   } else {
@@ -901,27 +920,6 @@ void loop() {
 
 //####### FUNCTIONS #########
 
-void Red_LED_Blink(unsigned short blink_count) {
-  for (unsigned char i=0; i<blink_count; i++)
-  {
-    delay(100);
-    Red_LED_ON;
-    delay(100);
-    Red_LED_OFF;
-  }
-}
-
-//############# GREEN LED BLINK #################
-void Green_LED_Blink(unsigned short blink_count) {
-  for (unsigned char i=0; i<blink_count; i++)
-  {
-    delay(100);
-    Green_LED_ON;
-    delay(100);
-    Green_LED_OFF;
-  }
-}
-
 //############# FREQUENCY HOPPING ################# thUndead FHSS
 void Hopping(void)
 {
@@ -929,8 +927,6 @@ void Hopping(void)
   if ( RF_channel >= (sizeof(hop_list) / sizeof(hop_list[0])) ) RF_channel = 0;
   spiWriteRegister(0x79, hop_list[RF_channel]);
 }
-
-
 
 // **********************************************************
 // **      RFM22B/Si4432 control functions for OpenLRS     **

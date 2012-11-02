@@ -19,4 +19,8 @@ TX (v2 RX as TX):
 
 RX:
   - PPM output at ch6
-  - RSSI at tbs.
+  - parallel 8ch PPM on ch1-ch7,ch9
+  - RSSI at ch8
+  
+  
+  USERS
