@@ -38,7 +38,7 @@ TX:
 
 RX:
   - Selecting betwwen PWM (paralllel) vs. PPM output:
-    - RX defaults to PWM via ch1-ch7,ch9 connectors (ch8 is RSSI). To enable PPM connect a jumpper between ch1 and ch2 signal pins. PPM is outputted on ch5.
+    - RX defaults to PWM via ch1-ch7,ch9 connectors (ch8 is RSSI). To enable PPM connect a jumpper between ch1 and ch2 signal pins. PPM is outputted on ch6.
   - RSSI output:
     - RSSI is outputted on ch8 (PWM) you may need to add external RC filtter. RSSI pulls down to zero when more than 1 consequent packet is lost.
   - Failsafe:
