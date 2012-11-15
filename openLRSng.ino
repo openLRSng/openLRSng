@@ -79,7 +79,7 @@ static unsigned char RF_Header[4] = {'@','K','H','a'};
 #define DATARATE 9600 // medium range, 40Hz update rate
 //#define DATARATE 19200 // medium range, 50Hz update rate + telemetry backlink
 
-// Enable RF beacon when link lost for long time... currently static frequency on EU PMR channel 1
+// Enable RF beacon when link lost for long time...
 #define FAILSAFE_BEACON
 
 // helpper macro for European PMR channels
@@ -909,7 +909,7 @@ void loop() {
       }
 #ifdef FAILSAFE_BEACON
       else if (lostpack == 11) { // failsafes set....
-        if ((time - fs_time) > 30000000L) { // 30s
+        if ((time - fs_time) > 300000000L) { // 300s == 5 minutes
           lostpack = 12;
           last_beacon = time;
         }
@@ -917,7 +917,7 @@ void loop() {
         if ((time - last_beacon) > 30000000L) { // 30s
           last_beacon=time;
           beacon_send();
-          RF22B_init_parameter();
+          RF22B_init_parameter(); // go back to normal RX 
           rx_reset();
         }
       }
