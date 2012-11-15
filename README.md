@@ -22,7 +22,32 @@ RX:
   - PPM output at ch6
   - parallel 8ch PPM on ch1-ch7,ch9
   - RSSI at ch8
-  
+
+COMPILATION/SETTINGS
+====================
+1) select TX and RX BOARDTYPES by 
+  #define TX_BOARD_TYPE xxx
+  #define RX_BOARD_TYPE yyy
+
+2) select wanted band by 
+  #define BAND x
+
+3) select wanted base frequency, hopped channels are _above_ this frequency
+  #define CARRIER_FREQUENCY 435000
+
+4) select hop frequencies (can be more or less than 6)
+  static unsigned char hop_list[] = {22,10,19,34,49,41};
+
+5) select DATARATE (RF rate) e.g. 
+  #define DATARATE 9600 // medium range, 40Hz update rate
+
+6) enable/disable the distress beacon as per your liking
+  #define FAILSAFE_BEACON
+
+7) define COMPILE_TX and upload to TX module
+
+8) comment out COMPILE_TX define and upload to RX
+
 
 USERS GUIDE
 ===========
@@ -46,4 +71,6 @@ RX:
   - LEDs
     - Blue LED lights when packet is received (losing a single packet shows as no pulse on LED)
     - Red LED indicates trouble, it blinks when two consequent packets are lost, and lights up when more than 2 packets are lost
-    
+  - Beacon (if enabled) automatically starts after long enough time with no data from TX, the beecon will send three tone 'FM' modulated signal hearable on PMR channel 1. The signal starts with 500Hz @ 100mW and continues with 250Hz @ 15mW and 166Hz @ 1mW. The degrading signal allows the estimate frequency.
+    - you can use cheap PMR walkie to listen to this signal and using your body as shield determine the direction of it. Alternatively use a directional 433Mhz antenna.
+
