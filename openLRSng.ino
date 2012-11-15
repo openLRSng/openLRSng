@@ -64,7 +64,7 @@
 #define BAND 0
 
 //######### TRANSMISSION VARIABLES ##########
-#define CARRIER_FREQUENCY 435000  //  startup frequency
+#define CARRIER_FREQUENCY 435000000  // Hz  startup frequency
 
 //###### HOPPING CHANNELS #######
 // put only single channel to the list to disable hopping
@@ -87,10 +87,22 @@ static unsigned char RF_Header[4] = {'@','K','H','a'};
 // Enable RF beacon when link lost for long time... currently static frequency on EU PMR channel 1
 #define FAILSAFE_BEACON
 
+#define EU_PMR_CH(x) (445993750L + 12500L * x) // valid for ch1-ch8
+
+#define BEACON_FREQUENCY EU_PMR_CH(1)
+
 
 //####################
 //### CODE SECTION ###
 //####################
+
+// Frequency sanity checks...
+#if ((CARRIER_FREQUENCY < 413000000) || (CARRIER_FREQUENCY>453000000))
+#error CARRIER_FREQUENCY is invalid
+#endif
+#if ((BEACON_FREQUENCY < 413000000) || (BEACON_FREQUENCY>453000000))
+#error BEACON_FREQUENCY is invalid
+#endif
 
 #include <Arduino.h>
 #include <EEPROM.h>
@@ -1125,26 +1137,12 @@ void RF22B_init_parameter(void) {
   spiWriteRegister(0x73, 0x00);
   spiWriteRegister(0x74, 0x00);    // no offset
 
-  #if (BAND== 0)
-    spiWriteRegister(0x75, 0x53);
-  #else
-    spiWriteRegister(0x75, 0x55);  //450 band
-  #endif
+  unsigned short fb = CARRIER_FREQUENCY / 10000000 - 24;
+  unsigned short fc = (CARRIER_FREQUENCY - (fb + 24) * 10000000) * 4 / 625;
 
-  // frequency formulation from Si4432 chip's datasheet
-  // original formulation is working with mHz values and floating numbers, I replaced them with kHz values.
-  long frequency = CARRIER_FREQUENCY;
-  frequency = frequency / 10;
-  frequency = frequency - 24000;
-  #if (BAND== 0)
-  frequency = frequency - 19000; // 19 for 430?439.9 MHz band from datasheet
-  #else
-  frequency = frequency - 21000; // 21 for 450?459.9 MHz band from datasheet
-  #endif
-  frequency = frequency * 64; // this is the Nominal Carrier Frequency (fc) value for register setting
-
-  spiWriteRegister(0x76, (byte) (frequency >> 8));
-  spiWriteRegister(0x77, (byte) frequency);
+  spiWriteRegister(0x75, 0x40 + (fb & 0x1f)); // sbsel=1 lower 5 bits is band
+  spiWriteRegister(0x76, (fc >> 8));
+  spiWriteRegister(0x77, (fc & 0xff));
 
 }
 
@@ -1220,8 +1218,6 @@ void beacon_send(void) {
   
   spiWriteRegister(0x30, 0x00);    //disable packet handling
 
-  spiWriteRegister(0x6d, 0x07); // 7 set power max power
-
   spiWriteRegister(0x79, 0);    // start channel
 
   spiWriteRegister(0x7a, 0x05); // 50khz step size (10khz x value) // no hopping
@@ -1232,20 +1228,27 @@ void beacon_send(void) {
   spiWriteRegister(0x73, 0x00);
   spiWriteRegister(0x74, 0x00);    // no offset
 
-  spiWriteRegister(0x75, 0x54); // 440 band N==20
-  spiWriteRegister(0x76, 0x96); // freq = 446.00625 (PMR1)
-  spiWriteRegister(0x77, 0x28);
+  unsigned short fb = BEACON_FREQUENCY / 10000000 - 24;
+  unsigned short fc = (BEACON_FREQUENCY - (fb + 24) * 10000000) * 4 / 625;
+  spiWriteRegister(0x75, 0x40 + (fb & 0x1f)); // sbsel=1 lower 5 bits is band
+  spiWriteRegister(0x76, (fc >> 8));
+  spiWriteRegister(0x77, (fc & 0xff));
+
+  spiWriteRegister(0x6d, 0x07); // 7 set max power 100mW
+
   delay(10);
   spiWriteRegister(0x07, RF22B_PWRSTATE_TX);    // to tx mode
-  spiWriteRegister(0x6d, 0x07); // 7 set power max power
   delay(10);
   beacon_tone(500,1);
-  spiWriteRegister(0x6d, 0x04); // 7 set power max power
+
+  spiWriteRegister(0x6d, 0x04); // 4 set mid power 15mW
   delay(10);
   beacon_tone(250,1);
-  spiWriteRegister(0x6d, 0x00); // 7 set power max power
+
+  spiWriteRegister(0x6d, 0x00); // 0 set min power 1mW
   delay(10);
   beacon_tone(160,1);
+
   spiWriteRegister(0x07, RF22B_PWRSTATE_READY);
   Green_LED_OFF
 }
