@@ -84,6 +84,10 @@ static unsigned char RF_Header[4] = {'@','K','H','a'};
 #define DATARATE 9600 // medium range, 40Hz update rate
 //#define DATARATE 19200 // medium range, 50Hz update rate + telemetry backlink
 
+// Enable RF beacon when link lost for long time... currently static frequency on EU PMR channel 1
+#define FAILSAFE_BEACON
+
+
 //####################
 //### CODE SECTION ###
 //####################
@@ -583,6 +587,11 @@ volatile unsigned char RF_Mode = 0;
 
 unsigned long time;
 unsigned long last_pack_time ;
+unsigned long fs_time; // time when failsafe activated
+
+#ifdef FAILSAFE_BEACON
+unsigned long last_beacon;
+#endif
 
 unsigned char RSSI_count = 0;
 unsigned short RSSI_sum = 0;
@@ -903,7 +912,23 @@ void loop() {
         lostpack=11;
         // Serious trouble, apply failsafe
         load_failsafe_values();
+        fs_time=time;
       }
+#ifdef FAILSAFE_BEACON
+      else if (lostpack == 11) { // failsafes set....
+        if ((time - fs_time) > 30000000L) { // 30s
+          lostpack = 12;
+          last_beacon = time;
+        }
+      } else if (lostpack == 12) { // beacon mode active
+        if ((time - last_beacon) > 30000000L) { // 30s
+          last_beacon=time;
+          beacon_send();
+          RF22B_init_parameter();
+          rx_reset();
+        }
+      }
+#endif
       willhop = 1;
     } 
   }
@@ -912,7 +937,6 @@ void loop() {
     Hopping();//Hop to the next frequency
     willhop =0;
   }
-
 }
 
 #endif
@@ -1180,3 +1204,64 @@ void to_tx_mode(void) {
   while(nIRQ_1);
 }
 
+#ifdef FAILSAFE_BEACON
+void beacon_tone(int hz, int len) {
+  int d = 500 / hz; // somewhat limited resolution ;)
+  if (d<1) d=1;
+  int cycles = (len*1000/d);
+  for (int i=0; i<cycles; i++) {
+    SDI_on;
+    delay(d);
+    SDI_off;
+    delay(d);
+  }
+}
+
+void beacon_send(void) {
+  Green_LED_ON
+  ItStatus1 = spiReadRegister(0x03); // read status, clear interrupt
+  ItStatus2 = spiReadRegister(0x04);
+  spiWriteRegister(0x06, 0x00);    // no wakeup up, lbd,
+  spiWriteRegister(0x07, RF22B_PWRSTATE_READY);      // disable lbd, wakeup timer, use internal 32768,xton = 1; in ready mode
+  spiWriteRegister(0x09, 0x7f);  // c = 12.5p
+  spiWriteRegister(0x0a, 0x05);
+  spiWriteRegister(0x0b, 0x12);    // gpio0 TX State
+  spiWriteRegister(0x0c, 0x15);    // gpio1 RX State
+
+  spiWriteRegister(0x0d, 0xfd);    // gpio 2 micro-controller clk output
+  spiWriteRegister(0x0e, 0x00);    // gpio    0, 1,2 NO OTHER FUNCTION.
+
+  spiWriteRegister(0x70, 0x2C);    // disable manchest
+  
+  spiWriteRegister(0x30, 0x00);    //disable packet handling
+
+  spiWriteRegister(0x6d, 0x07); // 7 set power max power
+
+  spiWriteRegister(0x79, 0);    // start channel
+
+  spiWriteRegister(0x7a, 0x05); // 50khz step size (10khz x value) // no hopping
+
+  spiWriteRegister(0x71, 0x12); // trclk=[00] no clock, dtmod=[01] direct using SPI, fd8=0 eninv=0 modtyp=[10] FSK
+  spiWriteRegister(0x72, 0x02); // fd (frequency deviation) 2*625Hz == 1.25kHz
+
+  spiWriteRegister(0x73, 0x00);
+  spiWriteRegister(0x74, 0x00);    // no offset
+
+  spiWriteRegister(0x75, 0x54); // 440 band N==20
+  spiWriteRegister(0x76, 0x96); // freq = 446.00625 (PMR1)
+  spiWriteRegister(0x77, 0x28);
+  delay(10);
+  spiWriteRegister(0x07, RF22B_PWRSTATE_TX);    // to tx mode
+  spiWriteRegister(0x6d, 0x07); // 7 set power max power
+  delay(10);
+  beacon_tone(500,1);
+  spiWriteRegister(0x6d, 0x04); // 7 set power max power
+  delay(10);
+  beacon_tone(250,1);
+  spiWriteRegister(0x6d, 0x00); // 7 set power max power
+  delay(10);
+  beacon_tone(160,1);
+  spiWriteRegister(0x07, RF22B_PWRSTATE_READY);
+  Green_LED_OFF
+}
+#endif
