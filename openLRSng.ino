@@ -58,11 +58,6 @@
 // 1 = Booster
 #define BOOSTER 0
 
-//######### Band Select ##########
-// 0 = 433Mhz
-// 1 = 459Mhz
-#define BAND 0
-
 //######### TRANSMISSION VARIABLES ##########
 #define CARRIER_FREQUENCY 435000000  // Hz  startup frequency
 
@@ -87,6 +82,7 @@ static unsigned char RF_Header[4] = {'@','K','H','a'};
 // Enable RF beacon when link lost for long time... currently static frequency on EU PMR channel 1
 #define FAILSAFE_BEACON
 
+// helpper macro for European PMR channels
 #define EU_PMR_CH(x) (445993750L + 12500L * x) // valid for ch1-ch8
 
 #define BEACON_FREQUENCY EU_PMR_CH(1)
@@ -1125,11 +1121,7 @@ void RF22B_init_parameter(void) {
 
     spiWriteRegister(0x79, hop_list[0]);    // start channel
 
-  #if (BAND== 0)
-    spiWriteRegister(0x7a, 0x06);    // 60khz step size (10khz x value) // no hopping
-  #else
-    spiWriteRegister(0x7a, 0x05); // 50khz step size (10khz x value) // no hopping
-  #endif
+  spiWriteRegister(0x7a, 0x06);    // 60khz step size (10khz x value) // no hopping
 
   spiWriteRegister(0x71, 0x23); // Gfsk, fd[8] =0, no invert for Tx/Rx data, fifo mode, txclk -->gpio
   spiWriteRegister(0x72, 0x30); // frequency deviation setting to 19.6khz (for 38.4kbps)
