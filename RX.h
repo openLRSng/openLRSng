@@ -321,12 +321,12 @@ void loop() {
       }
 #ifdef FAILSAFE_BEACON
       else if (lostpack == 11) { // failsafes set....
-        if ((time - fs_time) > 300000000L) { // 300s == 5 minutes
+        if ((time - fs_time) > (BEACON_DEADTIME * 1000000L)) {
           lostpack = 12;
           last_beacon = time;
         }
       } else if (lostpack == 12) { // beacon mode active
-        if ((time - last_beacon) > 30000000L) { // 30s
+        if ((time - last_beacon) > (BEACON_INTERVAL * 1000000L)) {
           last_beacon=time;
           beacon_send();
           RF22B_init_parameter(); // go back to normal RX 

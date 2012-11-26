@@ -52,6 +52,57 @@ void setupPPMinput() {
   TIMSK1 |= (1<<ICIE1); // Enable timer1 input capture interrupt
 }
 
+void Check_Button(void){
+  
+  unsigned long time,loop_time;
+
+  if (digitalRead(BTN)==0) // Check the button
+    {
+    delay(1000); // wait for 1000mS when buzzer ON
+    digitalWrite(BUZZER, LOW); // Buzzer off
+
+    time = millis();  //set the current time
+    loop_time = time;
+
+    while ((digitalRead(BTN)==0) && (loop_time < time + 4000)) {
+      // wait for button reelase if it is already pressed.
+      loop_time = millis();
+    }
+
+    //Check the button again. If it is already pressed start the binding proscedure
+    if (digitalRead(BTN)!=0) {
+      // if button released, reduce the power for range test.
+      spiWriteRegister(0x6d, 0x00);
+    }
+  }
+}
+
+void checkFS(void){
+  
+  switch (FSstate) {
+    case 0:
+      if (digitalRead(BTN) == 0) {
+        FSstate=1;
+        FStime=millis();
+      }
+      break;
+    case 1:
+      if (digitalRead(BTN) == 0) {
+        if ((millis() - FStime) > 1000) {
+          FSstate = 2;
+        }
+      } else {
+        FSstate = 0;
+      }
+      break;
+    case 2:
+      if (digitalRead(BTN)) {
+        FSstate=0;
+      }
+      break;
+  }
+}
+
 void setup() {
 
   //RF module pins
@@ -95,11 +146,7 @@ void setup() {
 
 }
 
-
-//############ MAIN LOOP ##############
 void loop() {
-
-  /* MAIN LOOP */
 
   if (spiReadRegister(0x0C)==0) // detect the locked module and reboot
   {
@@ -163,55 +210,3 @@ void loop() {
   checkFS();
 }
 
-//############# BUTTON CHECK #################
-void Check_Button(void)
-{
-  unsigned long time,loop_time;
-
-  if (digitalRead(BTN)==0) // Check the button
-    {
-    delay(1000); // wait for 1000mS when buzzer ON
-    digitalWrite(BUZZER, LOW); // Buzzer off
-
-    time = millis();  //set the current time
-    loop_time = time;
-
-    while ((digitalRead(BTN)==0) && (loop_time < time + 4000)) {
-      // wait for button reelase if it is already pressed.
-      loop_time = millis();
-    }
-
-    //Check the button again. If it is already pressed start the binding proscedure
-    if (digitalRead(BTN)!=0) {
-      // if button released, reduce the power for range test.
-      spiWriteRegister(0x6d, 0x00);
-    }
-  }
-}
-
-
-void checkFS(void)
-{
-  switch (FSstate) {
-    case 0:
-      if (digitalRead(BTN) == 0) {
-        FSstate=1;
-        FStime=millis();
-      }
-      break;
-    case 1:
-      if (digitalRead(BTN) == 0) {
-        if ((millis() - FStime) > 1000) {
-          FSstate = 2;
-        }
-      } else {
-        FSstate = 0;
-      }
-      break;
-    case 2:
-      if (digitalRead(BTN)) {
-        FSstate=0;
-      }
-      break;
-  }
-}

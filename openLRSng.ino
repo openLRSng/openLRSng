@@ -86,7 +86,8 @@ static unsigned char RF_Header[4] = {'@','K','H','a'};
 #define EU_PMR_CH(x) (445993750L + 12500L * x) // valid for ch1-ch8
 
 #define BEACON_FREQUENCY EU_PMR_CH(1)
-
+#define BEACON_DEADTIME 30 // time to wait until go into beacon mode (s)
+#define BEACON_INTERVAL 10 // interval between beacon transmits (s)
 
 //####################
 //### CODE SECTION ###
