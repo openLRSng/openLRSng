@@ -5,21 +5,22 @@ my fork of openLRS code (based on thUndeadMod of openLRS)
 
 Please note that this version requires modifications to HW as the used pins 
 are different to allow usage of HW timers.
-
-Currently only "RX v2" module is supported as TX and RX.
-
-In theory TX M2 should work too (as TX) but you need to modify it by adding 
-a jumpper between CPU pins 1 (PD3) and 12 (PD8) to allow PPM signal to ICP1.
+ - using RX v2 for transmitter - input PPM into ch5
+ - PPM output is on ch6
+ - there is no combined output mode
 
 Power ampfiller support is not there ! (to be added soon)
 
+TX (TX module M2/M3):
+  - buzzer not used atm.
+  
 TX (v2 RX as TX):
   - PPM to ch5
   - button between ch4 and ground
   - buzzer driven by ch3 (not used atm.)
 
 RX:
-  - PPM output at ch6
+  - PPM output at ch6 (selected by jumpper between ch1-ch2)
   - parallel 8ch PPM on ch1-ch7,ch9
   - RSSI at ch8
 
@@ -29,11 +30,8 @@ COMPILATION/SETTINGS
   #define TX_BOARD_TYPE xxx
   #define RX_BOARD_TYPE yyy
 
-2) select wanted band by 
-  #define BAND x
-
 3) select wanted base frequency, hopped channels are _above_ this frequency
-  #define CARRIER_FREQUENCY 435000
+  #define CARRIER_FREQUENCY 435000000
 
 4) select hop frequencies (can be more or less than 6)
   static unsigned char hop_list[] = {22,10,19,34,49,41};
