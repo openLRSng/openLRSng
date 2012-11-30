@@ -39,12 +39,12 @@
 
 //####### COMPILATION TARGET #######
 // Enable to compile transmitter code, default is RX
-//#define COMPILE_TX
+#define COMPILE_TX
 
 //####### TX BOARD TYPE #######
 // tbd. 0 = Original M1 Tx Board
 // tbd. 1 = OpenLRS Rx Board works as TX
-// 2 = Original M2 Tx Board !! NOT TESTED !! Need to add wire between CPU pins 1 and 12!
+// 2 = Original M2/M3 Tx Board
 // 3 = OpenLRS Rx v2 Board works as TX, servo signal to CH5.
 #define TX_BOARD_TYPE 3
 
