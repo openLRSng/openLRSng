@@ -17,6 +17,7 @@ volatile byte         ppmCounter = PPM_CHANNELS; // ignore data until first sync
 #define TIMER1_PRESCALER    8
 #define TIMER1_PERIOD       (F_CPU/TIMER1_PRESCALER/TIMER1_FREQUENCY_HZ)
 
+#ifdef USE_ICP1 // Use ICP1 in input capture mode
 /****************************************************
  * Interrupt Vector
  ****************************************************/
@@ -51,6 +52,39 @@ void setupPPMinput() {
   OCR1A = TIMER1_PERIOD;
   TIMSK1 |= (1<<ICIE1); // Enable timer1 input capture interrupt
 }
+#else // sample PPM using pinchange interrupt
+ISR(PPM_Signal_Interrupt){
+
+  unsigned int time_temp;
+
+  if (PPM_Signal_Edge_Check) {// Only works with rising edge of the signal
+    time_temp = TCNT1; // read the timer1 value
+    TCNT1 = 0; // reset the timer1 value for next
+	  if (time_temp > 5000) {// new frame detection (>2.5ms) 	
+      ppmCounter = 0;             // -> restart the channel counter
+      ppmAge = 0;                 // brand new PPM data received
+		} else if ((time_temp > 1600) && (ppmCounter<PPM_CHANNELS)) {
+      int out = ((int)time_temp - 1976) / 2; // convert to 0-1023 (1976 - 4024 ; 0.988 - 2.012 ms)
+      if (out<0) out=0;
+      if (out>1023) out=1023;
+
+      PPM[ppmCounter] = out; // Store measured pulse length
+      ppmCounter++;                     // Advance to next channel
+	  } else {
+	    ppmCounter=PPM_CHANNELS; // glitch ignore rest of data
+	  }
+  }
+}
+
+void setupPPMinput() {
+  // Setup timer1 for input capture (PSC=8 -> 0.5ms precision, top at 20ms)
+  TCCR1A = ((1<<WGM10)|(1<<WGM11));
+  TCCR1B = ((1<<WGM12)|(1<<WGM13)|(1<<CS11));
+  OCR1A = TIMER1_PERIOD;
+  TIMSK1 = 0;
+  PPM_Pin_Interrupt_Setup
+}
+#endif
 
 void Check_Button(void){
   

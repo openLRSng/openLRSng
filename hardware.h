@@ -97,7 +97,7 @@
   #error TX module cannot be used as RX
   #endif
 
-  #define PPM_IN 8 // NOTE needs hardware hack to connect D8 and  D3 (CPU pins 1 and 12)
+  #define PPM_IN 3
   #define RF_OUT_INDICATOR A0
   #define BUZZER 10
   #define BTN 11
@@ -109,6 +109,10 @@
 
   #define Green_LED_ON   PORTB |= _BV(4);
   #define Green_LED_OFF  PORTB &= ~_BV(4);
+
+  #define PPM_Pin_Interrupt_Setup  PCMSK2 = 0x08;PCICR|=(1<<PCIE2);
+  #define PPM_Signal_Interrupt PCINT2_vect
+  #define PPM_Signal_Edge_Check (PIND & 0x08)==0x08
 
   //## RFM22B Pinouts for Public Edition (M2)
   #define  nIRQ_1 (PIND & 0x04)==0x04 //D2
@@ -136,9 +140,18 @@
 #endif
 
 #if (BOARD_TYPE == 3)
-
   #ifdef COMPILE_TX
-    #define PPM_IN 8 // ICP1
+
+    #define USE_ICP1 // use ICP1 for PPM input for less jitter
+
+    #ifdef USE_ICP1
+      #define PPM_IN 8 // ICP1
+    #else
+      #define PPM_IN 3
+      #define PPM_Pin_Interrupt_Setup  PCMSK2 = 0x08;PCICR|=(1<<PCIE2);
+      #define PPM_Signal_Interrupt PCINT2_vect
+      #define PPM_Signal_Edge_Check (PIND & 0x08)==0x08
+    #endif
     #define RF_OUT_INDICATOR 5
     #define BUZZER 6
     #define BTN 7
