@@ -177,13 +177,9 @@ void RF22B_init_parameter(void) {
   spiWriteRegister(0x45, 0xff);    // all the bit to be checked
   spiWriteRegister(0x46, 0xff);    // all the bit to be checked
 
-  #if (BOOSTER == 0)
-    spiWriteRegister(0x6d, 0x07); // 7 set power max power
-  #else
-    spiWriteRegister(0x6d, 0x06); // 6 set power 50mw for booster
-  #endif
-
-    spiWriteRegister(0x79, hop_list[0]);    // start channel
+  spiWriteRegister(0x6d, RF_POWER); // 7 set power max power
+ 
+  spiWriteRegister(0x79, hop_list[0]);    // start channel
 
   spiWriteRegister(0x7a, 0x06);    // 60khz step size (10khz x value) // no hopping
 

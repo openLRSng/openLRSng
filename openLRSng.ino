@@ -53,10 +53,16 @@
 // 3 = OpenLRS Rx v2 Board
 #define RX_BOARD_TYPE 3
 
-//####### BOOSTER (limit maximum power to 50mW, affects only TX) #######
-// 0 = No booster
-// 1 = Booster
-#define BOOSTER 0
+//####### RADIOLINK RF POWER (beacon is always 100/13/1.3mW) #######
+// 7 == 100mW (or 1000mW with M3)
+// 6 == 50mW (use this when using booster amp), (800mW with M3)
+// 5 == 25mW
+// 4 == 13mW
+// 3 == 6mW
+// 2 == 3mW
+// 1 == 1.6mW
+// 0 == 1.3mW
+#define RF_POWER 7
 
 //######### TRANSMISSION VARIABLES ##########
 #define CARRIER_FREQUENCY 435000000  // Hz  startup frequency
