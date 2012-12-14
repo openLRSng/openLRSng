@@ -113,51 +113,15 @@ static unsigned char RF_Header[4] = {'@','K','H','a'};
 #include <Arduino.h>
 #include <EEPROM.h>
 
-#if (DATARATE == 4800)
-  #define PACKET_INTERVAL 50000 //ms == 20Hz
-  #define RFM22REG_6E 0x27
-  #define RFM22REG_6F 0x52
-  #define RFM22REG_1C 0x1A
-  #define RFM22REG_20 0xA1
-  #define RFM22REG_21 0x20
-  #define RFM22REG_22 0x4E
-  #define RFM22REG_23 0xA5
-  #define RFM22REG_24 0x00
-  #define RFM22REG_25 0x1B
-  #define RFM22REG_1D 0x40
-  #define RFM22REG_1E 0x0A
-  #define RFM22REG_2A 0x1E
-#elif (DATARATE == 9600)
-  #define PACKET_INTERVAL 25000 //ms == 40Hz
-  #define RFM22REG_6E 0x4E
-  #define RFM22REG_6F 0xA5
-  #define RFM22REG_1C 0x05
-  #define RFM22REG_20 0xA1
-  #define RFM22REG_21 0x20
-  #define RFM22REG_22 0x4E
-  #define RFM22REG_23 0xA5
-  #define RFM22REG_24 0x00
-  #define RFM22REG_25 0x20
-  #define RFM22REG_1D 0x40
-  #define RFM22REG_1E 0x0A
-  #define RFM22REG_2A 0x24
-#elif (DATARATE == 19200)
-  #define PACKET_INTERVAL 20000 //ms == 50Hz
-  #define RFM22REG_6E 0x9D
-  #define RFM22REG_6F 0x49
-  #define RFM22REG_1C 0x06
-  #define RFM22REG_20 0xD0
-  #define RFM22REG_21 0x00
-  #define RFM22REG_22 0x9D
-  #define RFM22REG_23 0x49
-  #define RFM22REG_24 0x00
-  #define RFM22REG_25 0x7B
-  #define RFM22REG_1D 0x40
-  #define RFM22REG_1E 0x0A
-  #define RFM22REG_2A 0x28
-#else
-  #error Invalid DATARATE
-#endif
+struct rfm22_modem_regs {
+  unsigned long bps;
+  unsigned long interval;
+  unsigned char r_1c, r_1d, r_1e, r_20, r_21, r_22, r_23, r_24, r_25, r_2a, r_6e, r_6f;
+} modem_params[3] = {
+  { 4800,  50000, 0x1a, 0x40, 0x0a, 0xa1, 0x20, 0x4e, 0xa5, 0x00, 0x1b, 0x1e, 0x27, 0x52 },
+  { 9600,  25000, 0x05, 0x40, 0x0a, 0xa1, 0x20, 0x4e, 0xa5, 0x00, 0x20, 0x24, 0x4e, 0xa5 },
+  { 19200, 20000, 0x06, 0x40, 0x0a, 0xd0, 0x00, 0x9d, 0x49, 0x00, 0x7b, 0x28, 0x9d, 0x49 }
+};
 
 #include "hardware.h"
 
