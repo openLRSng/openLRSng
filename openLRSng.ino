@@ -46,7 +46,7 @@
 // tbd. 1 = OpenLRS Rx Board works as TX
 // 2 = Original M2/M3 Tx Board
 // 3 = OpenLRS Rx v2 Board works as TX, servo signal to CH5.
-#define TX_BOARD_TYPE 3
+#define TX_BOARD_TYPE 2
 
 //####### RX BOARD TYPE #######
 // tbd. 1 = OpenLRS Rx Board
