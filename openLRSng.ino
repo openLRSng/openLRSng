@@ -46,7 +46,7 @@
 // tbd. 1 = OpenLRS Rx Board works as TX
 // 2 = Original M2/M3 Tx Board
 // 3 = OpenLRS Rx v2 Board works as TX, servo signal to CH5.
-#define TX_BOARD_TYPE 2
+#define TX_BOARD_TYPE 3
 
 //####### RX BOARD TYPE #######
 // tbd. 1 = OpenLRS Rx Board
@@ -79,14 +79,13 @@
 //###### RF DEVICE ID HEADER #######
 // Change this 4 byte values for isolating your transmission,
 // RF module accepts only data with same header
-#define DEFAULT_HEADER '@','K','H','a'
-static unsigned char RF_Header[4] = {'@','K','H','a'};
+static unsigned char default_rf_magic[4] = {'@','K','H','a'};
 
 // RF Data Rate --- choose wisely between range vs. performance
 //  0 -- 4800bps, best range, 20Hz update rate
 //  1 -- 9600bps, medium range, 40Hz update rate
 //  2 -- 19200bps, medium range, 50Hz update rate + telemetry backlink
-#define DEFAULT_DATARATE 0
+#define DEFAULT_DATARATE 1
 
 // Enable RF beacon when link lost for long time...
 #define DEFAULT_FAILSAFE_BEACON_ON
@@ -113,24 +112,14 @@ static unsigned char RF_Header[4] = {'@','K','H','a'};
 #include <Arduino.h>
 #include <EEPROM.h>
 
-struct rfm22_modem_regs {
-  unsigned long bps;
-  unsigned long interval;
-  unsigned char r_1c, r_1d, r_1e, r_20, r_21, r_22, r_23, r_24, r_25, r_2a, r_6e, r_6f;
-} modem_params[3] = {
-  { 4800,  50000, 0x1a, 0x40, 0x0a, 0xa1, 0x20, 0x4e, 0xa5, 0x00, 0x1b, 0x1e, 0x27, 0x52 },
-  { 9600,  25000, 0x05, 0x40, 0x0a, 0xa1, 0x20, 0x4e, 0xa5, 0x00, 0x20, 0x24, 0x4e, 0xa5 },
-  { 19200, 20000, 0x06, 0x40, 0x0a, 0xd0, 0x00, 0x9d, 0x49, 0x00, 0x7b, 0x28, 0x9d, 0x49 }
-};
-
 #include "hardware.h"
+#include "binding.h"
 
 //############ common prototypes ########################
 
 void RF22B_init_parameter(void);
-void to_tx_mode(void);
+void tx_packet(unsigned char*, unsigned char);
 void to_rx_mode(void);
-volatile unsigned char tx_buf[11]; // TX buffer
 volatile unsigned char rx_buf[11]; // RX buffer
 
 unsigned char RF_channel = 0;

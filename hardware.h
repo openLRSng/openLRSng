@@ -9,7 +9,6 @@
 #if (BOARD_TYPE == 0)
   #error NOT SUPPORTED atm.
   #define PPM_IN A5
-  #define RF_OUT_INDICATOR A4
   #define BUZZER 9
   #define BTN 10
   #define Red_LED 12
@@ -52,7 +51,6 @@
 #if (BOARD_TYPE == 1)
   #error NOT SUPPORTED atm.
   #define PPM_IN 5
-  #define RF_OUT_INDICATOR 6
   #define BUZZER 7
   #define BTN 8
 
@@ -98,7 +96,6 @@
   #endif
 
   #define PPM_IN 3
-  #define RF_OUT_INDICATOR A0
   #define BUZZER 10
   #define BTN 11
   #define Red_LED 13
@@ -152,7 +149,6 @@
       #define PPM_Signal_Interrupt PCINT2_vect
       #define PPM_Signal_Edge_Check (PIND & 0x08)==0x08
     #endif
-    #define RF_OUT_INDICATOR 5
     #define BUZZER 6
     #define BTN 7
   #else

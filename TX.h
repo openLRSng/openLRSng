@@ -86,7 +86,17 @@ void setupPPMinput() {
 }
 #endif
 
-void Check_Button(void){
+void send_bind() {
+  init_rfm(1);
+  while(1) {
+    Green_LED_ON;
+    tx_packet((unsigned char*)&bind_data, sizeof(bind_data));
+    Green_LED_OFF;
+    delay(300);
+  }
+}
+
+void Check_Button(){
   
   unsigned long time,loop_time;
 
@@ -103,10 +113,14 @@ void Check_Button(void){
       loop_time = millis();
     }
 
-    //Check the button again. If it is already pressed start the binding proscedure
-    if (digitalRead(BTN)!=0) {
-      // if button released, reduce the power for range test.
-      spiWriteRegister(0x6d, 0x00);
+    // Check the button again, If it is still down reinitialize
+    if (0 == digitalRead(BTN)) {
+      Serial.println("!!RESET!!\n");
+    } else {
+      //released within 5 seconds -> bindmode
+      Serial.println("Entering binding mode\n");
+
+      send_bind();
     }
   }
 }
@@ -153,13 +167,22 @@ void setup() {
   pinMode(BTN, INPUT); //Buton
 
   pinMode(PPM_IN, INPUT); //PPM from TX
-  pinMode(RF_OUT_INDICATOR, OUTPUT);
 
   Serial.begin(SERIAL_BAUD_RATE);
+  
+  if (bind_read_eeprom()) {
+    Serial.print("Loaded settings from EEPROM\n");
+  } else {
+    Serial.print("EEPROM data not valid, reiniting\n");
+    bind_init_defaults();
+    bind_write_eeprom();
+    Serial.print("EEPROM data saved\n");
+  }
+  print_bind_data();
 
   setupPPMinput();
 
-  RF22B_init_parameter();
+  init_rfm(0);
 
   sei();
 
@@ -173,8 +196,6 @@ void setup() {
   Red_LED_OFF;
   digitalWrite(BUZZER, LOW);
 
-  digitalWrite(RF_OUT_INDICATOR,LOW);
-
   ppmAge = 255;
   rx_reset();
 
@@ -186,16 +207,17 @@ void loop() {
   {
     Serial.println("module locked?");
     Red_LED_ON;
-    RF22B_init_parameter();
+    init_rfm(0);
     rx_reset();
     Red_LED_OFF;
   }
 
   unsigned long time = micros();
 
-  if ((time - lastSent) >= PACKET_INTERVAL) {
+  if ((time - lastSent) >= modem_params[bind_data.modem_params].interval) {
     lastSent = time;
     if (ppmAge < 8) {
+      unsigned char tx_buf[11];
       ppmAge++;
 
       // Construct packet to be sent
@@ -225,7 +247,7 @@ void loop() {
       Green_LED_ON ;
 
       // Send the data over RF
-      to_tx_mode();
+      tx_packet(tx_buf,11);
       Hopping();//Hop to the next frequency
 
     } else {
