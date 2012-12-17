@@ -5,24 +5,24 @@ my fork of openLRS code (based on thUndeadMod of openLRS)
 
 TRANSMITTER HW:
 ===============
-  o Flytron openLRS M2/M3 TX unit -- set TX_BOARD_TYPE 2
+  - Flytron openLRS M2/M3 TX unit -- set TX_BOARD_TYPE 2
 
-  o OrangeRX UHF TX unit -- set TX_BOARD_TYPE 2
+  - OrangeRX UHF TX unit -- set TX_BOARD_TYPE 2
   
-  o Flytron openLRS M2 RX as TX -- set TX_BOARD_TYPE 3
+  - Flytron openLRS M2 RX as TX -- set TX_BOARD_TYPE 3
     - connect PPM input to 5th slot (fifth from left )
     - button between ground and ch4 (fourth frem left
     - buzzer at ch3 (active high)
     
-  o OrangeRX UHF RX as TX -- set TX_BOARD_TYPE 3
+  - OrangeRX UHF RX as TX -- set TX_BOARD_TYPE 3
     - connect PPM input to 'ch4' slot
     - button between ground and ch3
     - buzzer at ch2 (active high)
 
 RECEIVER HW:  
 ============
-  o Flytron openLRS RX 
-  o OrangeRX UHF
+  - Flytron openLRS RX 
+  - OrangeRX UHF
   
   RSSI outputted at 'first' connector (marked as RSSI on OrangeRX) 500Hz PWM signal.
   
@@ -32,21 +32,21 @@ RECEIVER HW:
   
 SOFTWARE CONFIGURATION:
 =======================
-  Modify configurations on openLRSng.ino as needed, mostly you are intrested in 
+Modify configurations on openLRSng.ino as needed, mostly you are intrested in:
 
-  o DEFAULT_CARRIER_FREQUENCY 
+  - DEFAULT_CARRIER_FREQUENCY
     - sets base frequency
-  o DEFAULT_RF_POWER
+
+  - DEFAULT_RF_POWER
     - limits maximum power
 
-  o DEFAULT_HOPLIST
-  o default_rf_magic
+  - DEFAULT_HOPLIST/default_rf_magic
     - these two parameters bind the tx/rx, note that you can generate random values by using the
       "randomize channels and magic" feature on TX.
   
 UPLOADING:
 ==========
-  Use a 3v3 FTDI (or other USB to TTL serial adapter) and Arduino >= 1.0. 
+Use a 3v3 FTDI (or other USB to TTL serial adapter) and Arduino >= 1.0. 
 
   o define COMPILE_TX and upload to TX module
 
