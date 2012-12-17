@@ -34,13 +34,13 @@ SOFTWARE CONFIGURATION:
 =======================
   Modify configurations on openLRSng.ino as needed, mostly you are intrested in 
 
-  - DEFAULT_CARRIER_FREQUENCY 
+  o DEFAULT_CARRIER_FREQUENCY 
     - sets base frequency
-  - DEFAULT_RF_POWER
+  o DEFAULT_RF_POWER
     - limits maximum power
 
-  - DEFAULT_HOPLIST
-  - default_rf_magic
+  o DEFAULT_HOPLIST
+  o default_rf_magic
     - these two parameters bind the tx/rx, note that you can generate random values by using the
       "randomize channels and magic" feature on TX.
   
