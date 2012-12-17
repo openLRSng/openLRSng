@@ -3,67 +3,70 @@ openLRSng
 
 my fork of openLRS code (based on thUndeadMod of openLRS)
 
-Please note that this version requires modifications to HW as the used pins 
-are different to allow usage of HW timers.
- - using RX v2 for transmitter - input PPM into ch5
- - PPM output is on ch6
- - there is no combined output mode
+TRANSMITTER HW:
+===============
+  o Flytron openLRS M2/M3 TX unit -- set TX_BOARD_TYPE 2
 
-Power ampfiller support is not there ! (to be added soon)
-
-TX (TX module M2/M3):
-  - buzzer not used atm.
+  o OrangeRX UHF TX unit -- set TX_BOARD_TYPE 2
   
-TX (v2 RX as TX):
-  - PPM to ch5
-  - button between ch4 and ground
-  - buzzer driven by ch3 (not used atm.)
+  o Flytron openLRS M2 RX as TX -- set TX_BOARD_TYPE 3
+    - connect PPM input to 5th slot (fifth from left )
+    - button between ground and ch4 (fourth frem left
+    - buzzer at ch3 (active high)
+    
+  o OrangeRX UHF RX as TX -- set TX_BOARD_TYPE 3
+    - connect PPM input to 'ch4' slot
+    - button between ground and ch3
+    - buzzer at ch2 (active high)
 
-RX:
-  - PPM output at ch6 (selected by jumpper between ch1-ch2)
-  - parallel 8ch PPM on ch1-ch7,ch9
-  - RSSI at ch8
+RECEIVER HW:  
+============
+  o Flytron openLRS RX 
+  o OrangeRX UHF
+  
+  RSSI outputted at 'first' connector (marked as RSSI on OrangeRX) 500Hz PWM signal.
+  
+  Rest are parallel PWM outputs for channel1-8 (50Hz)
+  
+  To enable PPM mode connect a jumpper between ch1 and ch2 (second and third column). PPM is outputted on 6th column (ch5).  
+  
+SOFTWARE CONFIGURATION:
+=======================
+  Modify configurations on openLRSng.ino as needed, mostly you are intrested in 
+  - DEFAULT_CARRIER_FREQUENCY -- sets base frequency
+  - DEFAULT_RF_POWER -- limits maximum power
+  
+UPLOADING:
+==========
+  Use a 3v3 FTDI (or other USB to TTL serial adapter) and Arduino >= 1.0. 
 
-COMPILATION/SETTINGS
-====================
-1) select TX and RX BOARDTYPES by 
-  #define TX_BOARD_TYPE xxx
-  #define RX_BOARD_TYPE yyy
+  o define COMPILE_TX and upload to TX module
 
-3) select wanted base frequency, hopped channels are _above_ this frequency
-  #define CARRIER_FREQUENCY 435000000
-
-4) select hop frequencies (can be more or less than 6)
-  static unsigned char hop_list[] = {22,10,19,34,49,41};
-
-5) select DATARATE (RF rate) e.g. 
-  #define DATARATE 9600 // medium range, 40Hz update rate
-
-6) enable/disable the distress beacon as per your liking
-  #define FAILSAFE_BEACON
-
-7) define COMPILE_TX and upload to TX module
-
-8) comment out COMPILE_TX define and upload to RX
+  o comment out COMPILE_TX and upload to RX
 
 
 USERS GUIDE
 ===========
 
 TX:
+  - Enter binding mode
+    - power up while keeping button down and release button after ~1 second.
+      Buzzer should emit short beep ~5 times/s in sync with led.
+    - To exit bindmode powercycle TX.
+  - Reset settings and randomize channels and 'magic'
+    - power up while keeping button down for ~6 seconds (buzzer starts to emit beeps) and release button
+    - binding mode is entered automatically
   - Setting failsafe
-    - Press and hold button for ~1s until red LED lights
-  - Rangetest mode
-    - power up while keeping button pressed (not implemented) yet).
+    - Press and hold button for ~1s during normal operation until red LED lights and buzzer beeps, release button.
   - LEDs
     - Green(or blue) LED is lit when module is transmitting
     - Red LED indicates setting of failsafe, or problem with radio module.
 
 RX:
-  - Selecting betwwen PWM (paralllel) vs. PPM output:
-    - RX defaults to PWM via ch1-ch7,ch9 connectors (ch8 is RSSI). To enable PPM connect a jumpper between ch1 and ch2 signal pins. PPM is outputted on ch6.
-  - RSSI output:
-    - RSSI is outputted on ch8 (PWM) you may need to add external RC filtter. RSSI pulls down to zero when more than 1 consequent packet is lost.
+  - Binding
+    - RX always binds at boot (and timeouts after 0.5s) so it is enough to put TX to bind mode and power up RX.
+      On successfull bind blue led lights up (both LEDs remain on until TX is put on normal mode)
+    - RX will also enter bind mode forciby (without timeout) if EEPROM data is incorrect or a jumpper is placed between ch7 and ch8
   - Failsafe:
     - Failsafe activates after ~2s of no input data
   - LEDs

@@ -87,7 +87,10 @@ void setupPPMinput() {
 #endif
 
 void handleCLI(char c) {
-  Serial.write(c);
+  switch(c) {
+    case '?': bindPrint();
+              break;
+  }
 }
 
 void bindMode() {
@@ -98,8 +101,10 @@ void bindMode() {
     if (millis() - prevsend > 200) {
       prevsend=millis();
       Green_LED_ON;
+      digitalWrite(BUZZER, HIGH); // Buzzer on
       tx_packet((unsigned char*)&bind_data, sizeof(bind_data));
       Green_LED_OFF;
+      digitalWrite(BUZZER, LOW); // Buzzer off
     }
     while (Serial.available()) handleCLI(Serial.read());
   }
@@ -132,16 +137,19 @@ void checkButton(){
           loop_time=millis();
           bzstate=!bzstate;
           digitalWrite(BUZZER,bzstate);
+          Serial.print("!");
         }
       }
       digitalWrite(BUZZER,LOW);
       randomSeed(micros()); // button release time in us should give us enough seed
-      Serial.println("!!RESET!!\n");
-    } else {
-      //released within 5 seconds -> bindmode
-      Serial.println("Entering binding mode\n");
-      bindMode();
+      bindInitDefaults();
+      bindRandomize();   
+      bindWriteEeprom();
+      bindPrint();
     }
+    // Enter binding mode, automatically after recoding or when pressed for shorter time.      
+    Serial.println("Entering binding mode\n");
+    bindMode();
   }
 }
 
@@ -192,15 +200,14 @@ void setup() {
 
   Serial.begin(SERIAL_BAUD_RATE);
   
-  if (bind_read_eeprom()) {
+  if (bindReadEeprom()) {
     Serial.print("Loaded settings from EEPROM\n");
   } else {
     Serial.print("EEPROM data not valid, reiniting\n");
-    bind_init_defaults();
-    bind_write_eeprom();
+    bindInitDefaults();
+    bindWriteEeprom();
     Serial.print("EEPROM data saved\n");
   }
-  print_bind_data();
 
   setupPPMinput();
 

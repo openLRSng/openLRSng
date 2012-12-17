@@ -160,7 +160,7 @@ void load_failsafe_values(void){
   PPM[7]= ee_buf[8] + ((ee_buf[9] & 0xc0) << 2);
 }
 
-int bind_receive(unsigned long timeout) {
+int bindReceive(unsigned long timeout) {
   unsigned long start = millis();
   init_rfm(1);
   RF_Mode = Receive;
@@ -225,17 +225,17 @@ void setup() {
   sei();
   Red_LED_ON;
 
-  if (checkJumpper(PWM_7,PWM_8) || (!bind_read_eeprom())) {
+  if (checkJumpper(PWM_7,PWM_8) || (!bindReadEeprom())) {
     Serial.print("EEPROM data not valid of jumpper set, forcing bind\n");
-    if (bind_receive(0)) {
-      bind_write_eeprom();
-      Serial.print("Wrote to EEPROM\n");
+    if (bindReceive(0)) {
+      bindWriteEeprom();
+      Green_LED_ON;
     }
   } else {
     #if 1 //ALWAYS_BIND
-      if (bind_receive(500)) {
-        bind_write_eeprom();
-        Serial.print("Wrote to EEPROM\n");
+      if (bindReceive(500)) {
+        bindWriteEeprom();
+        Green_LED_ON;
       }
     #endif
   }
@@ -333,7 +333,7 @@ void loop() {
   time = micros();
 
   // sample RSSI when packet is in the 'air'
-  if ((last_rssi_time!=last_pack_time) &&
+  if ((lostpack < 2) && (last_rssi_time!=last_pack_time) &&
       (time - last_pack_time) > (modem_params[bind_data.modem_params].interval - 1500)) {
     last_rssi_time=last_pack_time;
     RSSI_sum += spiReadRegister(0x26); // Read the RSSI value
@@ -371,7 +371,8 @@ void loop() {
         load_failsafe_values();
         fs_time=time;
       }
-      else if (bind_data.beacon_interval) {
+      else if (bind_data.beacon_interval && bind_data.beacon_deadtime &&
+               bind_data.beacon_frequency) {
         if (lostpack == 11) { // failsafes set....
           if ((time - fs_time) > (bind_data.beacon_deadtime * 1000000L)) {
             lostpack = 12;

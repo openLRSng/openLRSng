@@ -46,7 +46,7 @@
 // tbd. 1 = OpenLRS Rx Board works as TX
 // 2 = Original M2/M3 Tx Board
 // 3 = OpenLRS Rx v2 Board works as TX, servo signal to CH5.
-#define TX_BOARD_TYPE 3
+#define TX_BOARD_TYPE 2
 
 //####### RX BOARD TYPE #######
 // tbd. 1 = OpenLRS Rx Board
@@ -87,13 +87,11 @@ static unsigned char default_rf_magic[4] = {'@','K','H','a'};
 //  2 -- 19200bps, medium range, 50Hz update rate + telemetry backlink
 #define DEFAULT_DATARATE 1
 
-// Enable RF beacon when link lost for long time...
-#define DEFAULT_FAILSAFE_BEACON_ON
-
 // helpper macro for European PMR channels
 #define EU_PMR_CH(x) (445993750L + 12500L * x) // valid for ch1-ch8
 
-#define DEFAULT_BEACON_FREQUENCY EU_PMR_CH(1)
+#define DEFAULT_BEACON_FREQUENCY 0 // disable beacon
+//#define DEFAULT_BEACON_FREQUENCY EU_PMR_CH(1) // beacon at PMR channel 1
 #define DEFAULT_BEACON_DEADTIME 30 // time to wait until go into beacon mode (s)
 #define DEFAULT_BEACON_INTERVAL 10 // interval between beacon transmits (s)
 
@@ -105,8 +103,10 @@ static unsigned char default_rf_magic[4] = {'@','K','H','a'};
 #if ((DEFAULT_CARRIER_FREQUENCY < 413000000) || (DEFAULT_CARRIER_FREQUENCY>453000000))
 #error CARRIER_FREQUENCY is invalid
 #endif
-#if ((DEFAULT_BEACON_FREQUENCY < 413000000) || (DEFAULT_BEACON_FREQUENCY>453000000))
-#error BEACON_FREQUENCY is invalid
+#if (DEFAULT_BEACON_FREQUENCY != 0)
+#  if ((DEFAULT_BEACON_FREQUENCY < 413000000) || (DEFAULT_BEACON_FREQUENCY>453000000))
+#    error BEACON_FREQUENCY is invalid
+#  endif
 #endif
 
 #include <Arduino.h>

@@ -153,27 +153,27 @@
     #define BTN 7
   #else
     #define PPM_OUT 9 // OCP1A
-    #define RSSI_OUT 11 
+    #define RSSI_OUT 3 // PD3
 
-    #define PWM_1 3
-    #define PWM_1_MASK 0x0008 //PD3
-    #define PWM_2 5
-    #define PWM_2_MASK 0x0020 //PD5
-    #define PWM_3 6
-    #define PWM_3_MASK 0x0040 //PD6
-    #define PWM_4 7
-    #define PWM_4_MASK 0x0080 //PD7
-    #define PWM_5 8
-    #define PWM_5_MASK 0x0100 // PB0
-    #define PWM_6 9
-    #define PWM_6_MASK 0x0200 // PB1
-    #define PWM_7 10
-    #define PWM_7_MASK 0x0400 // PB2
-    #define PWM_8 12 // note ch9 slot, RSSI at ch8 !!
+    #define PWM_1 5
+    #define PWM_1_MASK 0x0020 //PD5
+    #define PWM_2 6
+    #define PWM_2_MASK 0x0040 //PD6
+    #define PWM_3 7
+    #define PWM_3_MASK 0x0080 //PD7
+    #define PWM_4 8
+    #define PWM_4_MASK 0x0100 //PB0
+    #define PWM_5 9
+    #define PWM_5_MASK 0x0200 // PB1
+    #define PWM_6 10
+    #define PWM_6_MASK 0x0400 // PB2
+    #define PWM_7 11
+    #define PWM_7_MASK 0x0800 // PB3
+    #define PWM_8 12
     #define PWM_8_MASK 0x1000 // PB4
 
     const unsigned short PWM_MASK[8] = { PWM_1_MASK, PWM_2_MASK, PWM_3_MASK, PWM_4_MASK, PWM_5_MASK, PWM_6_MASK, PWM_7_MASK, PWM_8_MASK };
-    #define PWM_ALL_MASK 0x17E8 // all bits used for PWM (logic OR of above)
+    #define PWM_ALL_MASK 0x1FE0 // all bits used for PWM (logic OR of above)
 
     #define PWM_MASK_PORTB(x) (((x)>>8) & 0xff)
     #define PWM_MASK_PORTD(x) ((x) & 0xff)

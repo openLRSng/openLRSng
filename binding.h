@@ -23,7 +23,7 @@ struct bind_data {
   unsigned char beacon_deadtime;
 } bind_data;
 
-int bind_read_eeprom() {
+int bindReadEeprom() {
   for (unsigned char i=0; i<4; i++) {
     if (EEPROM.read(EEPROM_OFFSET+i) != bind_magic[i]) {
       return 0; // Fail
@@ -38,7 +38,7 @@ int bind_read_eeprom() {
   return 1;
 }
 
-void bind_write_eeprom() {
+void bindWriteEeprom() {
   for (unsigned char i=0; i<4; i++) {
     EEPROM.write(EEPROM_OFFSET+i, bind_magic[i]);
   }
@@ -48,7 +48,7 @@ void bind_write_eeprom() {
   }
 }
 
-void bind_init_defaults() {
+void bindInitDefaults() {
   bind_data.version = BINDING_VERSION;
   bind_data.rf_power = DEFAULT_RF_POWER;
   bind_data.rf_frequency = DEFAULT_CARRIER_FREQUENCY;
@@ -72,36 +72,51 @@ void bind_init_defaults() {
   #endif
 } 
 
-void print_bind_data() {
+void bindRandomize() {
+  for (unsigned char c=0; c<4; c++) {
+    bind_data.rf_magic[c] = random(255);
+  }
+  for (unsigned char c=0; c<bind_data.hopcount; c++) {
+    again:
+    unsigned char ch = random(50);
+    // don't allow same channel twice
+    for (unsigned char i=0;i<c;i++) {
+      if (bind_data.hopchannel[i] == ch) goto again;
+    }
+    bind_data.hopchannel[c] = ch;
+  }
+}
 
-  Serial.print("V:   ");
-  Serial.println(bind_data.version);
-  Serial.print("RFF: ");
+void bindPrint() {
+
+  Serial.print("1) Base frequency: ");
   Serial.println(bind_data.rf_frequency);
-  Serial.print("RFM: ");
+  Serial.print("2) RF magic:       ");
   Serial.print(bind_data.rf_magic[0],16);
   Serial.print(bind_data.rf_magic[1],16);
   Serial.print(bind_data.rf_magic[2],16);
   Serial.println(bind_data.rf_magic[3],16);
-  Serial.print("RFP: ");
+  Serial.print("3) RF power (0-7): ");
   Serial.println(bind_data.rf_power);
-  Serial.print("RFH: ");
+  Serial.print("4) Number of hops: ");
   Serial.println(bind_data.hopcount);
-  Serial.print("CHA: ");
-  for (unsigned char c = 0; c<8; c++) {
+  Serial.print("5) Hop channels:   ");
+  for (unsigned char c = 0; c<bind_data.hopcount; c++) {
     Serial.print(bind_data.hopchannel[c],16); // max 8 channels
-    Serial.print(":");
+    if (c+1 != bind_data.hopcount) {
+      Serial.print(":");
+    }
   }
   Serial.println();
-  Serial.print("NCH: ");
-  Serial.println(bind_data.rc_channels); //normally 8
-  Serial.print("RMP: ");
+//  Serial.print("NCH: ");
+//  Serial.println(bind_data.rc_channels); //normally 8
+  Serial.print("6) Baudrate (0-2): ");
   Serial.println(bind_data.modem_params); 
-  Serial.print("BFR: ");
+  Serial.print("7) Beacon freq.:   ");
   Serial.println(bind_data.beacon_frequency);
-  Serial.print("BIN: ");
+  Serial.print("8) Beacon Interval:");
   Serial.println(bind_data.beacon_interval);
-  Serial.print("BDT: ");
+  Serial.print("9) Beacon Deadtime:");
   Serial.println(bind_data.beacon_deadtime);
 }
   
