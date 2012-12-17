@@ -11,11 +11,10 @@ volatile unsigned char RF_Mode = 0;
 
 unsigned long time;
 unsigned long last_pack_time = 0;
+unsigned long last_rssi_time = 0;
 unsigned long fs_time; // time when failsafe activated
 
-#ifdef FAILSAFE_BEACON
 unsigned long last_beacon;
-#endif
 
 unsigned char  RSSI_count = 0;
 unsigned short RSSI_sum = 0;
@@ -129,25 +128,27 @@ void pulsePWM() {
   sei();
 }
 
+#define FAILSAFE_OFFSET 0x80
+
 void save_failsafe_values(void){
 
-  EEPROM.write(11,(PPM[0] & 0xff));
-  EEPROM.write(12,(PPM[1] & 0xff));
-  EEPROM.write(13,(PPM[2] & 0xff));
-  EEPROM.write(14,(PPM[3] & 0xff));
-  EEPROM.write(15,(((PPM[0] >> 8) & 3) | (((PPM[1] >> 8) & 3)<<2) | (((PPM[2] >> 8) & 3)<<4) | (((PPM[3] >> 8) & 3)<<6)));
-  EEPROM.write(16,(PPM[4] & 0xff));
-  EEPROM.write(17,(PPM[5] & 0xff));
-  EEPROM.write(18,(PPM[6] & 0xff));
-  EEPROM.write(19,(PPM[7] & 0xff));
-  EEPROM.write(20,(((PPM[4] >> 8) & 3) | (((PPM[5] >> 8) & 3)<<2) | (((PPM[6] >> 8) & 3)<<4) | (((PPM[7] >> 8) & 3)<<6)));
+  EEPROM.write(FAILSAFE_OFFSET+0,(PPM[0] & 0xff));
+  EEPROM.write(FAILSAFE_OFFSET+1,(PPM[1] & 0xff));
+  EEPROM.write(FAILSAFE_OFFSET+2,(PPM[2] & 0xff));
+  EEPROM.write(FAILSAFE_OFFSET+3,(PPM[3] & 0xff));
+  EEPROM.write(FAILSAFE_OFFSET+4,(((PPM[0] >> 8) & 3) | (((PPM[1] >> 8) & 3)<<2) | (((PPM[2] >> 8) & 3)<<4) | (((PPM[3] >> 8) & 3)<<6)));
+  EEPROM.write(FAILSAFE_OFFSET+5,(PPM[4] & 0xff));
+  EEPROM.write(FAILSAFE_OFFSET+6,(PPM[5] & 0xff));
+  EEPROM.write(FAILSAFE_OFFSET+7,(PPM[6] & 0xff));
+  EEPROM.write(FAILSAFE_OFFSET+8,(PPM[7] & 0xff));
+  EEPROM.write(FAILSAFE_OFFSET+9,(((PPM[4] >> 8) & 3) | (((PPM[5] >> 8) & 3)<<2) | (((PPM[6] >> 8) & 3)<<4) | (((PPM[7] >> 8) & 3)<<6)));
 }
 
 void load_failsafe_values(void){
 
   unsigned char ee_buf[10];
   for (int i=0; i<10; i++) {
-    ee_buf[i]=EEPROM.read(11+i);
+    ee_buf[i]=EEPROM.read(FAILSAFE_OFFSET+i);
   }
   PPM[0]= ee_buf[0] + ((ee_buf[4] & 0x03) << 8);
   PPM[1]= ee_buf[1] + ((ee_buf[4] & 0x0c) << 6);
@@ -157,6 +158,47 @@ void load_failsafe_values(void){
   PPM[5]= ee_buf[6] + ((ee_buf[9] & 0x0c) << 6);
   PPM[6]= ee_buf[7] + ((ee_buf[9] & 0x30) << 4);
   PPM[7]= ee_buf[8] + ((ee_buf[9] & 0xc0) << 2);
+}
+
+int bindReceive(unsigned long timeout) {
+  unsigned long start = millis();
+  init_rfm(1);
+  RF_Mode = Receive;
+  to_rx_mode();
+  while ((!timeout) || ((millis() - start) < timeout)) {
+    if(RF_Mode == Received) {  // RFM22B INT pin Enabled by received Data
+      RF_Mode=Receive;
+      spiSendAddress(0x7f); // Send the package read command
+      for (unsigned char i=0; i < sizeof(bind_data); i++) {
+        *(((unsigned char*)&bind_data)+i) = spiReadData();
+      }
+      if (bind_data.version == BINDING_VERSION) {
+        return 1;
+      } else {
+        rx_reset();
+      }
+    }
+  }
+  return 0;
+}
+
+int checkJumpper(unsigned char pin1,unsigned char pin2) {
+  int ret=0;
+  pinMode(pin1,OUTPUT);
+  digitalWrite(pin1, 1);
+  digitalWrite(pin2, 1); // enable pullup
+  delay(10);
+  if (digitalRead(pin2)) {
+    digitalWrite(pin1, 0);
+    delay(10);
+    if (!digitalRead(pin2)) {
+      ret=1;
+    }
+  }
+  pinMode(pin1,INPUT);
+  digitalWrite(pin1, 0);
+  digitalWrite(pin2, 0);
+  return ret;
 }
 
 void setup() {
@@ -177,41 +219,42 @@ void setup() {
   pinMode(RSSI_OUT,OUTPUT);
 
   Serial.begin(SERIAL_BAUD_RATE); //Serial Transmission
+  
+  attachInterrupt(IRQ_interrupt,RFM22B_Int,FALLING);
+  
+  sei();
+  Red_LED_ON;
+
+  if (checkJumpper(PWM_7,PWM_8) || (!bindReadEeprom())) {
+    Serial.print("EEPROM data not valid of jumpper set, forcing bind\n");
+    if (bindReceive(0)) {
+      bindWriteEeprom();
+      Green_LED_ON;
+    }
+  } else {
+    #if 1 //ALWAYS_BIND
+      if (bindReceive(500)) {
+        bindWriteEeprom();
+        Green_LED_ON;
+      }
+    #endif
+  }
+
+  init_rfm(0); // Configure the RFM22B's registers for normal operation
 
   // Check for jumpper on ch1 - ch2 (PPM enable).
-  PWM_output=1;
-  pinMode(PWM_1,OUTPUT);
-  digitalWrite(PWM_1, 1);
-  digitalWrite(PWM_2, 1); // enable pullup
-  delay(10);
-  if (digitalRead(PWM_2)) {
-    digitalWrite(PWM_1, 0);
-    delay(10);
-    if (!digitalRead(PWM_2)) {
-      PWM_output=0;
-    }
+  if (checkJumpper(PWM_1,PWM_2)) {
+    PWM_output=0;
+  } else {
+    PWM_output=1;
   }
-  pinMode(PWM_1,INPUT);
-  digitalWrite(PWM_1, 0);
-  digitalWrite(PWM_2, 0);
-  
+    
   if (PWM_output) {
     setupPWMout();
   } else {
     setupPPMout();
   }
-  
-  attachInterrupt(IRQ_interrupt,RFM22B_Int,FALLING);
 
-//  receiver_mode = check_modes(); // Check the possible jumper positions for changing the receiver mode.
-
-//  load_failsafe_values();   // Load failsafe values on startup
-
-  Red_LED_ON;
-
-  RF22B_init_parameter(); // Configure the RFM22B's registers
-
-  sei();
 
   //################### RX SYNC AT STARTUP #################
   RF_Mode = Receive;
@@ -223,20 +266,22 @@ void setup() {
 
 //############ MAIN LOOP ##############
 void loop() {
-
+  unsigned long time;
   if (spiReadRegister(0x0C)==0) { // detect the locked module and reboot
     Serial.println("RX hang");
-    RF22B_init_parameter();
+    init_rfm(0);
     to_rx_mode();
   }
 
   if (PWM_output) {
-    unsigned long time = micros();
+    time = micros();
     if ((time - pwmLastFrame) >= 20000) {
       pwmLastFrame=time;
       pulsePWM();
     }
   }
+
+  time = micros();
   
   if(RF_Mode == Received) {  // RFM22B INT pin Enabled by received Data
 
@@ -278,33 +323,40 @@ void loop() {
       fs_saved=0;
     }
       
-    RSSI_sum += spiReadRegister(0x26); // Read the RSSI value
-    RSSI_count++;
     rx_reset();
-
-    if (RSSI_count > 20) {
-      RSSI_sum /= RSSI_count;
-      analogWrite(RSSI_OUT,map(constrain(RSSI_sum,45,120),40,120,0,255));
-      RSSI_sum = 0;
-      RSSI_count = 0;
-    }
 
     willhop =1;
 
     Green_LED_OFF;
   }
 
+  time = micros();
+
+  // sample RSSI when packet is in the 'air'
+  if ((lostpack < 2) && (last_rssi_time!=last_pack_time) &&
+      (time - last_pack_time) > (modem_params[bind_data.modem_params].interval - 1500)) {
+    last_rssi_time=last_pack_time;
+    RSSI_sum += spiReadRegister(0x26); // Read the RSSI value
+    RSSI_count++;
+    if (RSSI_count > 20) {
+      RSSI_sum /= RSSI_count;
+      analogWrite(RSSI_OUT,map(constrain(RSSI_sum,45,200),40,200,0,255));
+      RSSI_sum = 0;
+      RSSI_count = 0;
+    }
+  }
+
+  time = micros();
   if (firstpack) {
-    unsigned long time = micros();
-    if ((!lostpack) && (time - last_pack_time) > (PACKET_INTERVAL+1000)) {
+    if ((!lostpack) && (time - last_pack_time) > (modem_params[bind_data.modem_params].interval+1000)) {
       // we missed one packet, hop to next channel
       lostpack = 1;
-      last_pack_time += PACKET_INTERVAL;
+      last_pack_time += modem_params[bind_data.modem_params].interval;
       willhop = 1;
-    } else if ((lostpack==1) && (time - last_pack_time) > (PACKET_INTERVAL+1000)) {
+    } else if ((lostpack==1) && (time - last_pack_time) > (modem_params[bind_data.modem_params].interval+1000)) {
       // we lost second packet in row, hop and signal trouble
       lostpack=2;
-      last_pack_time += PACKET_INTERVAL;
+      last_pack_time += modem_params[bind_data.modem_params].interval;
       willhop = 1;
       Red_LED_ON;
       analogWrite(RSSI_OUT,0);
@@ -319,21 +371,22 @@ void loop() {
         load_failsafe_values();
         fs_time=time;
       }
-#ifdef FAILSAFE_BEACON
-      else if (lostpack == 11) { // failsafes set....
-        if ((time - fs_time) > (BEACON_DEADTIME * 1000000L)) {
-          lostpack = 12;
-          last_beacon = time;
-        }
-      } else if (lostpack == 12) { // beacon mode active
-        if ((time - last_beacon) > (BEACON_INTERVAL * 1000000L)) {
-          last_beacon=time;
-          beacon_send();
-          RF22B_init_parameter(); // go back to normal RX 
-          rx_reset();
+      else if (bind_data.beacon_interval && bind_data.beacon_deadtime &&
+               bind_data.beacon_frequency) {
+        if (lostpack == 11) { // failsafes set....
+          if ((time - fs_time) > (bind_data.beacon_deadtime * 1000000L)) {
+            lostpack = 12;
+            last_beacon = time;
+          }
+        } else if (lostpack == 12) { // beacon mode active
+          if ((time - last_beacon) > (bind_data.beacon_interval * 1000000L)) {
+            last_beacon=time;
+            beacon_send();
+            init_rfm(0); // go back to normal RX 
+            rx_reset();
+          }
         }
       }
-#endif
       willhop = 1;
     } 
   }
