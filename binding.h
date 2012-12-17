@@ -76,6 +76,7 @@ void bindRandomize() {
   for (unsigned char c=0; c<4; c++) {
     bind_data.rf_magic[c] = random(255);
   }
+  bind_data.hopcount=6;
   for (unsigned char c=0; c<bind_data.hopcount; c++) {
     again:
     unsigned char ch = random(50);
