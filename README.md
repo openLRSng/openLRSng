@@ -80,6 +80,6 @@ RX:
   - LEDs
     - Blue LED lights when packet is received (losing a single packet shows as no pulse on LED)
     - Red LED indicates trouble, it blinks when two consequent packets are lost, and lights up when more than 2 packets are lost
-  - Beacon (if enabled) automatically starts after long enough time with no data from TX, the beecon will send three tone 'FM' modulated signal hearable on PMR channel 1. The signal starts with 500Hz @ 100mW and continues with 250Hz @ 15mW and 166Hz @ 1mW. The degrading signal allows the estimate frequency.
+  - Beacon (if enabled) automatically starts after 'deadtime' with no data from TX, the beacon will send three tone 'FM' modulated signal hearable on PMR channel 1. The signal starts with 500Hz @ 100mW and continues with 250Hz @ 15mW and 166Hz @ 1mW. The degrading signal allows to estimate distance.
     - you can use cheap PMR walkie to listen to this signal and using your body as shield determine the direction of it. Alternatively use a directional 433Mhz antenna.
 
