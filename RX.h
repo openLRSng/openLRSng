@@ -11,11 +11,10 @@ volatile unsigned char RF_Mode = 0;
 
 unsigned long time;
 unsigned long last_pack_time = 0;
+unsigned long last_rssi_time = 0;
 unsigned long fs_time; // time when failsafe activated
 
-#ifdef FAILSAFE_BEACON
 unsigned long last_beacon;
-#endif
 
 unsigned char  RSSI_count = 0;
 unsigned short RSSI_sum = 0;
@@ -166,16 +165,14 @@ int bind_receive(unsigned long timeout) {
   init_rfm(1);
   RF_Mode = Receive;
   to_rx_mode();
-  while ((!timeout) || ((millis() - start) > timeout)) {
+  while ((!timeout) || ((millis() - start) < timeout)) {
     if(RF_Mode == Received) {  // RFM22B INT pin Enabled by received Data
-      Serial.println("RX");
       RF_Mode=Receive;
       spiSendAddress(0x7f); // Send the package read command
       for (unsigned char i=0; i < sizeof(bind_data); i++) {
         *(((unsigned char*)&bind_data)+i) = spiReadData();
       }
       if (bind_data.version == BINDING_VERSION) {
-        print_bind_data();
         return 1;
       } else {
         rx_reset();
@@ -183,6 +180,25 @@ int bind_receive(unsigned long timeout) {
     }
   }
   return 0;
+}
+
+int checkJumpper(unsigned char pin1,unsigned char pin2) {
+  int ret=0;
+  pinMode(pin1,OUTPUT);
+  digitalWrite(pin1, 1);
+  digitalWrite(pin2, 1); // enable pullup
+  delay(10);
+  if (digitalRead(pin2)) {
+    digitalWrite(pin1, 0);
+    delay(10);
+    if (!digitalRead(pin2)) {
+      ret=1;
+    }
+  }
+  pinMode(pin1,INPUT);
+  digitalWrite(pin1, 0);
+  digitalWrite(pin2, 0);
+  return ret;
 }
 
 void setup() {
@@ -209,32 +225,30 @@ void setup() {
   sei();
   Red_LED_ON;
 
-  if (bind_read_eeprom()) {
-    Serial.print("Loaded settings from EEPROM\n");
+  if (checkJumpper(PWM_7,PWM_8) || (!bind_read_eeprom())) {
+    Serial.print("EEPROM data not valid of jumpper set, forcing bind\n");
+    if (bind_receive(0)) {
+      bind_write_eeprom();
+      Serial.print("Wrote to EEPROM\n");
+    }
   } else {
-    Serial.print("EEPROM data not valid, forcing bind\n");
-    bind_receive(0);
+    #if 1 //ALWAYS_BIND
+      if (bind_receive(500)) {
+        bind_write_eeprom();
+        Serial.print("Wrote to EEPROM\n");
+      }
+    #endif
   }
 
-  init_rfm(0); // Configure the RFM22B's registers
+  init_rfm(0); // Configure the RFM22B's registers for normal operation
 
   // Check for jumpper on ch1 - ch2 (PPM enable).
-  PWM_output=1;
-  pinMode(PWM_1,OUTPUT);
-  digitalWrite(PWM_1, 1);
-  digitalWrite(PWM_2, 1); // enable pullup
-  delay(10);
-  if (digitalRead(PWM_2)) {
-    digitalWrite(PWM_1, 0);
-    delay(10);
-    if (!digitalRead(PWM_2)) {
-      PWM_output=0;
-    }
+  if (checkJumpper(PWM_1,PWM_2)) {
+    PWM_output=0;
+  } else {
+    PWM_output=1;
   }
-  pinMode(PWM_1,INPUT);
-  digitalWrite(PWM_1, 0);
-  digitalWrite(PWM_2, 0);
-  
+    
   if (PWM_output) {
     setupPWMout();
   } else {
@@ -252,7 +266,7 @@ void setup() {
 
 //############ MAIN LOOP ##############
 void loop() {
-
+  unsigned long time;
   if (spiReadRegister(0x0C)==0) { // detect the locked module and reboot
     Serial.println("RX hang");
     init_rfm(0);
@@ -260,12 +274,14 @@ void loop() {
   }
 
   if (PWM_output) {
-    unsigned long time = micros();
+    time = micros();
     if ((time - pwmLastFrame) >= 20000) {
       pwmLastFrame=time;
       pulsePWM();
     }
   }
+
+  time = micros();
   
   if(RF_Mode == Received) {  // RFM22B INT pin Enabled by received Data
 
@@ -307,24 +323,31 @@ void loop() {
       fs_saved=0;
     }
       
-    RSSI_sum += spiReadRegister(0x26); // Read the RSSI value
-    RSSI_count++;
     rx_reset();
-
-    if (RSSI_count > 20) {
-      RSSI_sum /= RSSI_count;
-      analogWrite(RSSI_OUT,map(constrain(RSSI_sum,45,120),40,120,0,255));
-      RSSI_sum = 0;
-      RSSI_count = 0;
-    }
 
     willhop =1;
 
     Green_LED_OFF;
   }
 
+  time = micros();
+
+  // sample RSSI when packet is in the 'air'
+  if ((last_rssi_time!=last_pack_time) &&
+      (time - last_pack_time) > (modem_params[bind_data.modem_params].interval - 1500)) {
+    last_rssi_time=last_pack_time;
+    RSSI_sum += spiReadRegister(0x26); // Read the RSSI value
+    RSSI_count++;
+    if (RSSI_count > 20) {
+      RSSI_sum /= RSSI_count;
+      analogWrite(RSSI_OUT,map(constrain(RSSI_sum,45,200),40,200,0,255));
+      RSSI_sum = 0;
+      RSSI_count = 0;
+    }
+  }
+
+  time = micros();
   if (firstpack) {
-    unsigned long time = micros();
     if ((!lostpack) && (time - last_pack_time) > (modem_params[bind_data.modem_params].interval+1000)) {
       // we missed one packet, hop to next channel
       lostpack = 1;
@@ -348,21 +371,21 @@ void loop() {
         load_failsafe_values();
         fs_time=time;
       }
-#ifdef FAILSAFE_BEACON
-      else if (lostpack == 11) { // failsafes set....
-        if ((time - fs_time) > (BEACON_DEADTIME * 1000000L)) {
-          lostpack = 12;
-          last_beacon = time;
-        }
-      } else if (lostpack == 12) { // beacon mode active
-        if ((time - last_beacon) > (BEACON_INTERVAL * 1000000L)) {
-          last_beacon=time;
-          beacon_send();
-          init_rfm(0); // go back to normal RX 
-          rx_reset();
+      else if (bind_data.beacon_interval) {
+        if (lostpack == 11) { // failsafes set....
+          if ((time - fs_time) > (bind_data.beacon_deadtime * 1000000L)) {
+            lostpack = 12;
+            last_beacon = time;
+          }
+        } else if (lostpack == 12) { // beacon mode active
+          if ((time - last_beacon) > (bind_data.beacon_interval * 1000000L)) {
+            last_beacon=time;
+            beacon_send();
+            init_rfm(0); // go back to normal RX 
+            rx_reset();
+          }
         }
       }
-#endif
       willhop = 1;
     } 
   }

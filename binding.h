@@ -2,7 +2,7 @@
 
 #define BINDING_POWER     0x00 // 1 mW
 #define BINDING_FREQUENCY 435000000 // Hz
-#define BINDING_VERSION   0
+#define BINDING_VERSION   1
 
 #define EEPROM_OFFSET     0x00
 

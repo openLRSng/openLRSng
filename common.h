@@ -285,7 +285,6 @@ void tx_packet(unsigned char* pkt, unsigned char size) {
   while(nIRQ_1);
 }
 
-#ifdef FAILSAFE_BEACON
 void beacon_tone(int hz, int len) {
   int d = 500 / hz; // somewhat limited resolution ;)
   if (d<1) d=1;
@@ -326,8 +325,8 @@ void beacon_send(void) {
   spiWriteRegister(0x73, 0x00);
   spiWriteRegister(0x74, 0x00);    // no offset
 
-  unsigned short fb = BEACON_FREQUENCY / 10000000 - 24;
-  unsigned short fc = (BEACON_FREQUENCY - (fb + 24) * 10000000) * 4 / 625;
+  unsigned short fb = bind_data.beacon_frequency / 10000000 - 24;
+  unsigned short fc = (bind_data.beacon_frequency - (fb + 24) * 10000000) * 4 / 625;
   spiWriteRegister(0x75, 0x40 + (fb & 0x1f)); // sbsel=1 lower 5 bits is band
   spiWriteRegister(0x76, (fc >> 8));
   spiWriteRegister(0x77, (fc & 0xff));
@@ -350,4 +349,3 @@ void beacon_send(void) {
   spiWriteRegister(0x07, RF22B_PWRSTATE_READY);
   Green_LED_OFF
 }
-#endif
