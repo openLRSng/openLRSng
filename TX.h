@@ -86,41 +86,61 @@ void setupPPMinput() {
 }
 #endif
 
-void send_bind() {
+void handleCLI(char c) {
+  Serial.write(c);
+}
+
+void bindMode() {
+  unsigned long prevsend = millis();
   init_rfm(1);
+  while (Serial.available()) Serial.read(); // flush serial
   while(1) {
-    Green_LED_ON;
-    tx_packet((unsigned char*)&bind_data, sizeof(bind_data));
-    Green_LED_OFF;
-    delay(300);
+    if (millis() - prevsend > 200) {
+      prevsend=millis();
+      Green_LED_ON;
+      tx_packet((unsigned char*)&bind_data, sizeof(bind_data));
+      Green_LED_OFF;
+    }
+    while (Serial.available()) handleCLI(Serial.read());
   }
 }
 
-void Check_Button(){
+void checkButton(){
   
   unsigned long time,loop_time;
 
   if (digitalRead(BTN)==0) // Check the button
     {
-    delay(1000); // wait for 1000mS when buzzer ON
+    delay(200); // wait for 200mS when buzzer ON
     digitalWrite(BUZZER, LOW); // Buzzer off
 
     time = millis();  //set the current time
     loop_time = time;
 
-    while ((digitalRead(BTN)==0) && (loop_time < time + 4000)) {
+    while ((digitalRead(BTN)==0) && (loop_time < time + 4800)) {
       // wait for button reelase if it is already pressed.
       loop_time = millis();
     }
 
     // Check the button again, If it is still down reinitialize
     if (0 == digitalRead(BTN)) {
+      int bzstate=HIGH;
+      digitalWrite(BUZZER,bzstate);
+      loop_time = millis();
+      while (0 == digitalRead(BTN)) { // wait for button to release
+        if ((millis()-loop_time) > 200) {
+          loop_time=millis();
+          bzstate=!bzstate;
+          digitalWrite(BUZZER,bzstate);
+        }
+      }
+      digitalWrite(BUZZER,LOW);
+      randomSeed(micros()); // button release time in us should give us enough seed
       Serial.println("!!RESET!!\n");
     } else {
       //released within 5 seconds -> bindmode
       Serial.println("Entering binding mode\n");
-
-      send_bind();
+      bindMode();
     }
   }
 }
@@ -129,15 +149,16 @@ void checkFS(void){
   
   switch (FSstate) {
     case 0:
-      if (digitalRead(BTN) == 0) {
+      if (!digitalRead(BTN)) {
         FSstate=1;
         FStime=millis();
       }
       break;
     case 1:
-      if (digitalRead(BTN) == 0) {
+      if (!digitalRead(BTN)) {
         if ((millis() - FStime) > 1000) {
           FSstate = 2;
+          digitalWrite(BUZZER, HIGH); // Buzzer on
         }
       } else {
         FSstate = 0;
@@ -145,6 +166,7 @@ void checkFS(void){
       break;
     case 2:
       if (digitalRead(BTN)) {
+        digitalWrite(BUZZER, LOW); // Buzzer off
         FSstate=0;
       }
       break;
@@ -191,7 +213,7 @@ void setup() {
   Red_LED_ON ;
   delay(100);
 
-  Check_Button();
+  checkButton();
 
   Red_LED_OFF;
   digitalWrite(BUZZER, LOW);
