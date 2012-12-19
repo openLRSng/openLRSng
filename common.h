@@ -1,23 +1,39 @@
-//####### FUNCTIONS #########
+//####### COMMON FUNCTIONS #########
 
-// **********************************************************
-// **      RFM22B/Si4432 control functions for OpenLRS     **
-// **       This Source code licensed under GPL            **
-// **********************************************************
+// conversion between microseconds 800-2200 and value 0-1023
+// 808-1000 == 0 - 11     (16us per step)
+// 1000-1999 == 12 - 1011 ( 1us per step)
+// 2000-2192 == 1012-1023 (16us per step)
 
+unsigned short servoUs2Bits(unsigned short x) {
+  unsigned short ret;
+  if (x<800) {
+    ret = 0;
+  } else if (x < 1000) {
+    ret = (x - 799) / 16;
+  } else if (x < 2000) {
+    ret = (x - 988);
+  } else if (x < 2200) {
+    ret = (x - 1992) / 16 + 1011;
+  } else {
+    ret=1023;
+  }
+  return ret;
+}
 
-struct rfm22_modem_regs {
-  unsigned long bps;
-  unsigned long interval;
-  unsigned char r_1c, r_1d, r_1e, r_20, r_21, r_22, r_23, r_24, r_25, r_2a, r_6e, r_6f;
-} modem_params[3] = {
-  { 4800,  50000, 0x1a, 0x40, 0x0a, 0xa1, 0x20, 0x4e, 0xa5, 0x00, 0x1b, 0x1e, 0x27, 0x52 },
-  { 9600,  25000, 0x05, 0x40, 0x0a, 0xa1, 0x20, 0x4e, 0xa5, 0x00, 0x20, 0x24, 0x4e, 0xa5 },
-  { 19200, 20000, 0x06, 0x40, 0x0a, 0xd0, 0x00, 0x9d, 0x49, 0x00, 0x7b, 0x28, 0x9d, 0x49 }
-};
-
-struct rfm22_modem_regs bind_params =
-  { 9600,  25000, 0x05, 0x40, 0x0a, 0xa1, 0x20, 0x4e, 0xa5, 0x00, 0x20, 0x24, 0x4e, 0xa5 };
+unsigned short servoBits2Us(unsigned short x) {
+  unsigned short ret;
+  if (x<12) {
+    ret = 808 + x * 16;
+  } else if (x<1012) {
+    ret = x + 988;
+  } else if (x<1024) {
+    ret = 2000 + (x-1011) * 16;
+  } else {
+    ret = 2192;
+  }
+  return ret;
+}
 
 #define NOP() __asm__ __volatile__("nop")
 

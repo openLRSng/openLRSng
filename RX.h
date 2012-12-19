@@ -49,7 +49,7 @@ ISR(TIMER1_OVF_vect) {
     ppmCountter = 0;
     ppmTotal = 0;
   } else {
-    int  ppmOut = 1976 + PPM[ppmCountter++] * 2; // 0-1023 -> 1976 - 4023 (0.988 - 2.012ms)
+    int  ppmOut = servoBits2Us(PPM[ppmCountter++]) * 2;
     ppmTotal += ppmOut;
     ICR1 = ppmOut;
   }
@@ -107,7 +107,7 @@ void pulsePWM() {
     if (smallest != 5000) {
       done = smallest;
       pwmstep[steps].mask = mask;
-      pwmstep[steps].time = 1976 + smallest * 2;
+      pwmstep[steps].time = servoBits2Us(smallest) * 2;
       steps++;
     } else {
       break;

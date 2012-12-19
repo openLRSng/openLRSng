@@ -31,16 +31,11 @@ ISR(TIMER1_CAPT_vect) {
     ppmCounter = 0;             // -> restart the channel counter
     ppmAge = 0;                 // brand new PPM data received
   }
-  else {
-    if (ppmCounter < PPM_CHANNELS) { // extra channels will get ignored here
-
-      int out = ((int)pulseWidth - 1976) / 2; // convert to 0-1023 (1976 - 4024 ; 0.988 - 2.012 ms)
-      if (out<0) out=0;
-      if (out>1023) out=1023;
-
-      PPM[ppmCounter] = out; // Store measured pulse length
-      ppmCounter++;                     // Advance to next channel
-    }
+  else if ((pulseWidth>1400) && (ppmCounter < PPM_CHANNELS)) { // extra channels will get ignored here
+    PPM[ppmCounter] = servoUs2Bits(pulseWidth/2); // Store measured pulse length (converted)
+    ppmCounter++;                     // Advance to next channel
+  } else {
+    ppmCounter = PPM_CHANNELS; // glitch ignore rest of data
   }
   startPulse = stopPulse;         // Save time at pulse start
 }
@@ -60,19 +55,15 @@ ISR(PPM_Signal_Interrupt){
   if (PPM_Signal_Edge_Check) {// Only works with rising edge of the signal
     time_temp = TCNT1; // read the timer1 value
     TCNT1 = 0; // reset the timer1 value for next
-	  if (time_temp > 5000) {// new frame detection (>2.5ms) 	
+    if (time_temp > 5000) {// new frame detection (>2.5ms)  
       ppmCounter = 0;             // -> restart the channel counter
       ppmAge = 0;                 // brand new PPM data received
-		} else if ((time_temp > 1600) && (ppmCounter<PPM_CHANNELS)) {
-      int out = ((int)time_temp - 1976) / 2; // convert to 0-1023 (1976 - 4024 ; 0.988 - 2.012 ms)
-      if (out<0) out=0;
-      if (out>1023) out=1023;
-
-      PPM[ppmCounter] = out; // Store measured pulse length
+    } else if ((time_temp > 1400) && (ppmCounter<PPM_CHANNELS)) {
+      PPM[ppmCounter] = servoUs2Bits(time_temp/2); // Store measured pulse length (converted)
       ppmCounter++;                     // Advance to next channel
-	  } else {
-	    ppmCounter=PPM_CHANNELS; // glitch ignore rest of data
-	  }
+    } else {
+      ppmCounter=PPM_CHANNELS; // glitch ignore rest of data
+    }
   }
 }
 
