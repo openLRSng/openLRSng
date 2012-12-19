@@ -374,12 +374,12 @@ void loop() {
       else if (bind_data.beacon_interval && bind_data.beacon_deadtime &&
                bind_data.beacon_frequency) {
         if (lostpack == 11) { // failsafes set....
-          if ((time - fs_time) > (bind_data.beacon_deadtime * 1000000L)) {
+          if ((time - fs_time) > (bind_data.beacon_deadtime * 1000000UL)) {
             lostpack = 12;
             last_beacon = time;
           }
         } else if (lostpack == 12) { // beacon mode active
-          if ((time - last_beacon) > (bind_data.beacon_interval * 1000000L)) {
+          if ((time - last_beacon) > (bind_data.beacon_interval * 1000000UL)) {
             last_beacon=time;
             beacon_send();
             init_rfm(0); // go back to normal RX 

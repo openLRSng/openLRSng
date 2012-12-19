@@ -1,5 +1,15 @@
 //####### COMMON FUNCTIONS #########
 
+void RF22B_init_parameter(void);
+void tx_packet(unsigned char*, unsigned char);
+void to_rx_mode(void);
+volatile unsigned char rx_buf[11]; // RX buffer
+
+unsigned char RF_channel = 0;
+
+#define PPM_CHANNELS 8
+volatile int PPM[PPM_CHANNELS] = { 512,512,512,512,512,512,512,512 };
+
 // conversion between microseconds 800-2200 and value 0-1023
 // 808-1000 == 0 - 11     (16us per step)
 // 1000-1999 == 12 - 1011 ( 1us per step)

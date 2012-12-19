@@ -10,8 +10,6 @@
 // - use HW timer in input capture mode for PPM input
 // - use HW timer for PPM generation (completely jitterless)
 // 
-// - collapse everything on single file
-//
 // Donations for development tools and utilities (beer) here
 // https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=DSWGKGKPRX5CS
 
@@ -42,21 +40,18 @@
 #define COMPILE_TX
 
 //####### TX BOARD TYPE #######
-// tbd. 0 = Original M1 Tx Board
-// tbd. 1 = OpenLRS Rx Board works as TX
-// 2 = Original M2/M3 Tx Board
-// 3 = OpenLRS Rx v2 Board works as TX, servo signal to CH5.
+// 2 = Original M2/M3 Tx Board or OrangeRx UHF TX
+// 3 = OpenLRS Rx v2 Board works as TX
 #define TX_BOARD_TYPE 2
 
 //####### RX BOARD TYPE #######
-// tbd. 1 = OpenLRS Rx Board
-// 3 = OpenLRS Rx v2 Board
+// 3 = OpenLRS Rx v2 Board or OrangeRx UHF RX
 #define RX_BOARD_TYPE 3
 
 //###### SERIAL PORT SPEED - just debugging atm. #######
 #define SERIAL_BAUD_RATE 115200 //115.200 baud serial port speed
 
-// Following can be changed in 'config' mode via serial connection to TX
+// Following can be changed in 'config' mode via serial connection to TX (not yet)
 
 //####### RADIOLINK RF POWER (beacon is always 100/13/1.3mW) #######
 // 7 == 100mW (or 1000mW with M3)
@@ -114,19 +109,6 @@ static unsigned char default_rf_magic[4] = {'@','K','H','a'};
 
 #include "hardware.h"
 #include "binding.h"
-
-//############ common prototypes ########################
-
-void RF22B_init_parameter(void);
-void tx_packet(unsigned char*, unsigned char);
-void to_rx_mode(void);
-volatile unsigned char rx_buf[11]; // RX buffer
-
-unsigned char RF_channel = 0;
-
-#define PPM_CHANNELS 8
-volatile int PPM[PPM_CHANNELS] = { 512,512,512,512,512,512,512,512 };
-
 #include "common.h"
 
 #ifdef COMPILE_TX
