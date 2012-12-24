@@ -165,14 +165,17 @@ int bindReceive(unsigned long timeout) {
   init_rfm(1);
   RF_Mode = Receive;
   to_rx_mode();
+  Serial.println("Waiting bind\n");
   while ((!timeout) || ((millis() - start) < timeout)) {
     if(RF_Mode == Received) {  // RFM22B INT pin Enabled by received Data
+      Serial.println("Got pkt\n");
       RF_Mode=Receive;
       spiSendAddress(0x7f); // Send the package read command
       for (unsigned char i=0; i < sizeof(bind_data); i++) {
         *(((unsigned char*)&bind_data)+i) = spiReadData();
       }
       if (bind_data.version == BINDING_VERSION) {
+        Serial.println("data good\n");
         return 1;
       } else {
         rx_reset();
@@ -226,19 +229,23 @@ void setup() {
   Red_LED_ON;
 
   if (checkJumpper(PWM_7,PWM_8) || (!bindReadEeprom())) {
-    Serial.print("EEPROM data not valid of jumpper set, forcing bind\n");
+    Serial.print("EEPROM data not valid or bind jumpper set, forcing bind\n");
     if (bindReceive(0)) {
       bindWriteEeprom();
+      Serial.println("Saved bind data to EEPROM\n");
       Green_LED_ON;
     }
   } else {
     #if 1 //ALWAYS_BIND
       if (bindReceive(500)) {
         bindWriteEeprom();
+        Serial.println("Saved bind data to EEPROM\n");
         Green_LED_ON;
       }
     #endif
   }
+
+  Serial.println("Entering normal mode\n");
 
   init_rfm(0); // Configure the RFM22B's registers for normal operation
 
