@@ -5,8 +5,6 @@ void tx_packet(unsigned char*, unsigned char);
 void to_rx_mode(void);
 volatile unsigned char rx_buf[11]; // RX buffer
 
-unsigned char RF_channel = 0;
-
 #define PPM_CHANNELS 8
 volatile int PPM[PPM_CHANNELS] = { 512,512,512,512,512,512,512,512 };
 
@@ -155,12 +153,12 @@ void spiWriteRegister(unsigned char address, unsigned char data) {
 
 // **** RFM22 access functions
 
-//############# FREQUENCY HOPPING ################# thUndead FHSS
-void Hopping(void)
-{
-  RF_channel++;
-  if ( RF_channel >= bind_data.hopcount ) RF_channel = 0;
-  spiWriteRegister(0x79, bind_data.hopchannel[RF_channel]);
+void rfmSetChannel(unsigned char ch) {
+  spiWriteRegister(0x79, ch);
+}
+
+unsigned char rfmGetRSSI() {
+  return spiReadRegister(0x26);
 }
 
 void setModemRegs(struct rfm22_modem_regs *r) {
@@ -176,6 +174,16 @@ void setModemRegs(struct rfm22_modem_regs *r) {
   spiWriteRegister(0x1D, r->r_1d);
   spiWriteRegister(0x1E, r->r_1e);
   spiWriteRegister(0x2a, r->r_2a);
+}
+
+void rfmSetCarrierFrequency(unsigned long f) {
+  unsigned short fb,fc;
+  fb = f / 10000000 - 24;
+  fc = (f - (fb + 24) * 10000000) * 4 / 625;
+
+  spiWriteRegister(0x75, 0x40 + (fb & 0x1f)); // sbsel=1 lower 5 bits is band
+  spiWriteRegister(0x76, (fc >> 8));
+  spiWriteRegister(0x77, (fc & 0xff));
 }
 
 void init_rfm(unsigned char isbind) {
@@ -218,10 +226,6 @@ void init_rfm(unsigned char isbind) {
     spiWriteRegister(0x40, bind_magic[1]);
     spiWriteRegister(0x41, bind_magic[2]);
     spiWriteRegister(0x42, bind_magic[3]);
-    spiWriteRegister(0x43, 0xff);    // all the bit to be checked
-    spiWriteRegister(0x44, 0xff);    // all the bit to be checked
-    spiWriteRegister(0x45, 0xff);    // all the bit to be checked
-    spiWriteRegister(0x46, 0xff);    // all the bit to be checked
   } else {
     spiWriteRegister(0x3a, bind_data.rf_magic[0]); // tx header
     spiWriteRegister(0x3b, bind_data.rf_magic[1]);
@@ -231,24 +235,21 @@ void init_rfm(unsigned char isbind) {
     spiWriteRegister(0x40, bind_data.rf_magic[1]);
     spiWriteRegister(0x41, bind_data.rf_magic[2]);
     spiWriteRegister(0x42, bind_data.rf_magic[3]);
-    spiWriteRegister(0x43, 0xff);    // all the bit to be checked
-    spiWriteRegister(0x44, 0xff);    // all the bit to be checked
-    spiWriteRegister(0x45, 0xff);    // all the bit to be checked
-    spiWriteRegister(0x46, 0xff);    // all the bit to be checked
   }
+  spiWriteRegister(0x43, 0xff);    // all the bit to be checked
+  spiWriteRegister(0x44, 0xff);    // all the bit to be checked
+  spiWriteRegister(0x45, 0xff);    // all the bit to be checked
+  spiWriteRegister(0x46, 0xff);    // all the bit to be checked
 
   if (isbind) {
     spiWriteRegister(0x6d, BINDING_POWER); // set power
   } else {
     spiWriteRegister(0x6d, bind_data.rf_power); // 7 set power max power
   }
-  if (isbind) {
-    spiWriteRegister(0x79, 0);
-  } else {
-    spiWriteRegister(0x79, bind_data.hopchannel[0]);    // start channel
-  }
 
-  spiWriteRegister(0x7a, 0x06);    // 60khz step size (10khz x value)
+  spiWriteRegister(0x79, 0);
+
+  spiWriteRegister(0x7a, 0x06); // 60kHz channel spacing
 
   spiWriteRegister(0x71, 0x23); // Gfsk, fd[8] =0, no invert for Tx/Rx data, fifo mode, txclk -->gpio
   spiWriteRegister(0x72, 0x30); // frequency deviation setting to 19.6khz (for 38.4kbps)
@@ -256,18 +257,7 @@ void init_rfm(unsigned char isbind) {
   spiWriteRegister(0x73, 0x00);
   spiWriteRegister(0x74, 0x00);    // no offset
 
-  unsigned short fb,fc;
-  if (isbind) {
-    fb = BINDING_FREQUENCY / 10000000 - 24;
-    fc = (BINDING_FREQUENCY - (fb + 24) * 10000000) * 4 / 625;
-  } else {
-    fb = bind_data.rf_frequency / 10000000 - 24;
-    fc = (bind_data.rf_frequency - (fb + 24) * 10000000) * 4 / 625;
-  }
-  
-  spiWriteRegister(0x75, 0x40 + (fb & 0x1f)); // sbsel=1 lower 5 bits is band
-  spiWriteRegister(0x76, (fc >> 8));
-  spiWriteRegister(0x77, (fc & 0xff));
+  rfmSetCarrierFrequency(isbind ? BINDING_FREQUENCY : bind_data.rf_frequency);
 
 }
 

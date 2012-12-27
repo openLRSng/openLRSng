@@ -3,11 +3,14 @@
  ****************************************************/
 
 volatile unsigned char RF_Mode = 0;
+
 #define Available 0
 #define Transmit 1
 #define Transmitted 2
 #define Receive 3
 #define Received 4
+
+unsigned char RF_channel = 0;
 
 unsigned long time;
 unsigned long last_pack_time = 0;
@@ -248,6 +251,8 @@ void setup() {
   Serial.println("Entering normal mode\n");
 
   init_rfm(0); // Configure the RFM22B's registers for normal operation
+  RF_channel=0;
+  rfmSetChannel(bind_data.hopchannel[RF_channel]);
 
   // Check for jumpper on ch1 - ch2 (PPM enable).
   if (checkJumpper(PWM_1,PWM_2)) {
@@ -343,7 +348,7 @@ void loop() {
   if ((lostpack < 2) && (last_rssi_time!=last_pack_time) &&
       (time - last_pack_time) > (modem_params[bind_data.modem_params].interval - 1500)) {
     last_rssi_time=last_pack_time;
-    RSSI_sum += spiReadRegister(0x26); // Read the RSSI value
+    RSSI_sum += rfmGetRSSI(); // Read the RSSI value
     RSSI_count++;
     if (RSSI_count > 20) {
       RSSI_sum /= RSSI_count;
@@ -399,7 +404,9 @@ void loop() {
   }
 
   if (willhop==1) {
-    Hopping();//Hop to the next frequency
+    RF_channel++;
+    if ( RF_channel >= bind_data.hopcount ) RF_channel = 0;
+    rfmSetChannel(bind_data.hopchannel[RF_channel]);
     willhop =0;
   }
 }

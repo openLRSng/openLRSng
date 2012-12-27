@@ -1,6 +1,7 @@
 /****************************************************
  * OpenLRSng transmitter code
  ****************************************************/
+unsigned char RF_channel = 0;
 
 unsigned char FSstate = 0; // 1 = waiting timer, 2 = send FS, 3 sent waiting btn release
 unsigned long FStime = 0;  // time when button went down...
@@ -77,9 +78,105 @@ void setupPPMinput() {
 }
 #endif
 
+void scannerMode(){
+  char c;
+  unsigned long nextConfig[4] = {0,0,0,0};
+  unsigned long startFreq=430000000, endFreq=440000000, nrSamples=500, stepSize=50000;
+  unsigned long currentFrequency = startFreq;
+  unsigned long currentSamples = 0;
+  unsigned char nextIndex=0;
+  unsigned char rssiMin=0, rssiMax=0;
+  unsigned long rssiSum=0;
+  Red_LED_OFF;
+  Green_LED_OFF;
+  digitalWrite(BUZZER, LOW);
+  Serial.println("scanner mode");
+  to_rx_mode();
+  while(1) {
+    while(Serial.available()) {
+      c=Serial.read();
+      switch (c) {
+        case '#':
+          nextIndex=0;
+          nextConfig[0]=0;
+          nextConfig[1]=0;
+          nextConfig[2]=0;
+          nextConfig[3]=0;
+          break;
+        case ',':
+          nextIndex++;
+          if (nextIndex==4) {
+            nextIndex=0;
+            startFreq = nextConfig[0] * 1000000UL; // MHz
+            endFreq   = nextConfig[1] * 1000000UL; // MHz 
+            nrSamples = nextConfig[2]; // count
+            stepSize  = nextConfig[3] * 10000UL;   // 10kHz
+            currentFrequency = startFreq;
+            currentSamples = 0;
+            // set IF filtter BW (kha)
+            if (stepSize < 20000) {
+              spiWriteRegister(0x1c,0x32); // 10.6kHz
+            } else if (stepSize < 30000) {
+              spiWriteRegister(0x1c,0x22); // 21.0kHz
+            } else if (stepSize < 40000) {
+              spiWriteRegister(0x1c,0x26); // 32.2kHz
+            } else if (stepSize < 50000) {
+              spiWriteRegister(0x1c,0x12); // 41.7kHz
+            } else if (stepSize < 60000) {
+              spiWriteRegister(0x1c,0x15); // 56.2kHz
+            } else if (stepSize < 70000) {
+              spiWriteRegister(0x1c,0x01); // 75.2kHz
+            } else if (stepSize < 100000) {
+              spiWriteRegister(0x1c,0x03); // 90.0kHz
+            } else {
+              spiWriteRegister(0x1c,0x05); // 112.1kHz
+            }
+          }
+          break;
+        default:
+          if (( c >= '0') && (c <= '9')) {
+            c-='0';
+            nextConfig[nextIndex] = nextConfig[nextIndex] * 10 + c;
+          }
+      }
+    }
+    if (currentSamples == 0) {
+      // retune base
+      rfmSetCarrierFrequency(currentFrequency);
+      rssiMax=0; rssiMin=255; rssiSum=0;
+      delay(1);
+    }
+    if (currentSamples < nrSamples) {
+      unsigned char val = rfmGetRSSI();
+      rssiSum+=val;
+      if (val>rssiMax) rssiMax=val;
+      if (val<rssiMin) rssiMin=val;
+      currentSamples++;
+    } else {
+      Serial.print(currentFrequency/10000UL);
+      Serial.print(',');
+      Serial.print(rssiMax);
+      Serial.print(',');
+      Serial.print(rssiSum/currentSamples);
+      Serial.print(',');
+      Serial.print(rssiMin);
+      Serial.println(',');
+      currentFrequency+=stepSize;
+      if (currentFrequency > endFreq) {
+        currentFrequency=startFreq;
+      }
+      currentSamples=0;
+    }
+  }
+  //never exit!!
+}
+
+
 void handleCLI(char c) {
   switch(c) {
     case '?': bindPrint();
+              break;
+    case '#': scannerMode();
               break;
   }
 }
@@ -203,6 +300,7 @@ void setup() {
   setupPPMinput();
 
   init_rfm(0);
+  rfmSetChannel(bind_data.hopchannel[RF_channel]);
 
   sei();
 
@@ -268,7 +366,12 @@ void loop() {
 
       // Send the data over RF
       tx_packet(tx_buf,11);
-      Hopping();//Hop to the next frequency
+
+      //Hop to the next frequency
+      RF_channel++;
+      if ( RF_channel >= bind_data.hopcount ) RF_channel = 0;
+      rfmSetChannel(bind_data.hopchannel[RF_channel]);
+
 
     } else {
       if (ppmAge==8) {
