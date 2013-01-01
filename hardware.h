@@ -6,8 +6,11 @@
 
 //####### Board Pinouts #########
 
-#if (BOARD_TYPE == 0)
-  #error NOT SUPPORTED atm.
+#if (BOARD_TYPE == 0) // Flytron M1 TX
+  #ifndef COMPILE_TX
+  #error TX module cannot be used as RX
+  #endif
+
   #define PPM_IN A5
   #define BUZZER 9
   #define BTN 10
@@ -46,10 +49,14 @@
   #define IRQ_pin 3
   #define nSel_pin 4
 
+  #define IRQ_interrupt 0
 #endif
 
-#if (BOARD_TYPE == 1)
-  #error NOT SUPPORTED atm.
+#if (BOARD_TYPE == 1) // Flytron M1 RX
+  #ifndef COMPILE_TX
+  #error M1 RX not verified yet
+  #endif
+
   #define PPM_IN 5
   #define BUZZER 7
   #define BTN 8
@@ -88,6 +95,8 @@
   #define SCLK_pin 2
   #define IRQ_pin 3
   #define nSel_pin 4
+
+  #define IRQ_interrupt 0
 #endif
 
 #if (BOARD_TYPE == 2)
