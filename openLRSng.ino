@@ -92,6 +92,9 @@ static unsigned char default_rf_magic[4] = {'@','K','H','a'};
 #define DEFAULT_BEACON_DEADTIME 30 // time to wait until go into beacon mode (s)
 #define DEFAULT_BEACON_INTERVAL 10 // interval between beacon transmits (s)
 
+//### MISC DEBUG stuff
+//#define TX_TIMING // show time used to send packet (in uS) on serial
+
 //####################
 //### CODE SECTION ###
 //####################

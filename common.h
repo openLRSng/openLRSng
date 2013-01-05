@@ -212,7 +212,7 @@ void init_rfm(unsigned char isbind) {
 
   spiWriteRegister(0x32, 0xf3);    // 0x32address enable for headere byte 0, 1,2,3, receive header check for byte 0, 1,2,3
   spiWriteRegister(0x33, 0x42);    // header 3, 2, 1,0 used for head length, fixed packet length, synchronize word length 3, 2,
-  spiWriteRegister(0x34, 0x01);    // 7 default value or   // 64 nibble = 32byte preamble
+  spiWriteRegister(0x34, 0x07);    // 7 default value or   // 64 nibble = 32byte preamble
   spiWriteRegister(0x36, 0x2d);    // synchronize word
   spiWriteRegister(0x37, 0xd4);
   spiWriteRegister(0x38, 0x00);
@@ -285,9 +285,7 @@ void rx_reset(void) {
 
 void tx_packet(unsigned char* pkt, unsigned char size) {
 
-  // ph +fifo mode
-  spiWriteRegister(0x34, 0x06);  // 64 nibble = 32byte preamble
-  spiWriteRegister(0x3e, size);    // total tx 10 byte
+  spiWriteRegister(0x3e, size); // total tx size
 
   for (unsigned char i=0; i < size; i++) {
     spiWriteRegister(0x7f, pkt[i]);
@@ -296,9 +294,16 @@ void tx_packet(unsigned char* pkt, unsigned char size) {
   spiWriteRegister(0x05, RF22B_PACKET_SENT_INTERRUPT);
   ItStatus1 = spiReadRegister(0x03);      //read the Interrupt Status1 register
   ItStatus2 = spiReadRegister(0x04);
+  #ifdef TX_TIMING
+  unsigned long tx_start=micros();
+  #endif
   spiWriteRegister(0x07, RF22B_PWRSTATE_TX);    // to tx mode
 
   while(nIRQ_1);
+  #ifdef TX_TIMING
+  Serial.print("TX took:");
+  Serial.println(micros()-tx_start);
+  #endif
 }
 
 void beacon_tone(int hz, int len) {
