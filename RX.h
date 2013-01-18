@@ -25,8 +25,6 @@ unsigned short RSSI_sum = 0;
 int ppmCountter = 0;
 int ppmTotal = 0;
 
-unsigned long pwmLastFrame = 0;
-
 boolean PWM_output = 1; // set if parallel PWM output is desired
 
 short firstpack = 0;
@@ -51,84 +49,48 @@ ISR(TIMER1_OVF_vect) {
     ICR1 = 40000 - ppmTotal; // 20ms total frame
     ppmCountter = 0;
     ppmTotal = 0;
+    if (PWM_output) { // clear all bits
+      PORTB &= ~PWM_MASK_PORTB(PWM_ALL_MASK);
+      PORTD &= ~PWM_MASK_PORTD(PWM_ALL_MASK);
+    }
   } else {
-    int  ppmOut = servoBits2Us(PPM[ppmCountter++]) * 2;
+    int  ppmOut = servoBits2Us(PPM[ppmCountter]) * 2;
     ppmTotal += ppmOut;
     ICR1 = ppmOut;
+    if (PWM_output) {
+      PORTB &= ~PWM_MASK_PORTB(PWM_ALL_MASK);
+      PORTD &= ~PWM_MASK_PORTD(PWM_ALL_MASK);
+      PORTB |= PWM_MASK_PORTB(PWM_MASK[ppmCountter]);
+      PORTD |= PWM_MASK_PORTD(PWM_MASK[ppmCountter]);
+    }
+    ppmCountter++;
   }
 }
 
 void setupPPMout() {
 
-  TCCR1A = (1<<WGM11)|(1<<COM1A1)|(1<<COM1A0);
+  if (PWM_output) {
+    TCCR1A = (1<<WGM11);
+  } else {
+    TCCR1A = (1<<WGM11)|(1<<COM1A1)|(1<<COM1A0);
+  }
   TCCR1B = (1<<WGM13)|(1<<WGM12)|(1<<CS11);
   ICR1 = 40000; // just initial value, will be constantly updated
   OCR1A = 600;  // 0.3ms pulse
   TIMSK1 |= (1<<TOIE1);
 
-  pinMode(PPM_OUT, OUTPUT);
-}
-
-void setupPWMout() {
-
-  // Timer mode 0 , counts 0-65535, no output on pins, don't enable interrupts
-  TCCR1A = 0;
-  TCCR1B = (1<<CS11);
-
-  pinMode(PWM_1, OUTPUT);
-  pinMode(PWM_2, OUTPUT);
-  pinMode(PWM_3, OUTPUT);
-  pinMode(PWM_4, OUTPUT);
-  pinMode(PWM_5, OUTPUT);
-  pinMode(PWM_6, OUTPUT);
-  pinMode(PWM_7, OUTPUT);
-  pinMode(PWM_8, OUTPUT);
-
-}
-
-struct pwmstep {
-  unsigned short time;
-  unsigned short mask;
-};
-
-void pulsePWM() {
-
-  struct pwmstep pwmstep[8];
-  int steps = 0;
-  int done = -1;
-  for (int i=0; i<8; i++) {
-    int smallest = 5000;
-    unsigned short mask = 0;
-    for (int j=0; j<8; j++) {
-      if ((PPM[j] > done) && (PPM[j] < smallest)) {
-        smallest = PPM[j];
-        mask = PWM_MASK[j];
-      } else if (PPM[j] == smallest) {
-        mask |= PWM_MASK[j];
-      }
-    }
-    if (smallest != 5000) {
-      done = smallest;
-      pwmstep[steps].mask = mask;
-      pwmstep[steps].time = servoBits2Us(smallest) * 2;
-      steps++;
-    } else {
-      break;
-    }
+  if (PWM_output) {
+    pinMode(PWM_1, OUTPUT);
+    pinMode(PWM_2, OUTPUT);
+    pinMode(PWM_3, OUTPUT);
+    pinMode(PWM_4, OUTPUT);
+    pinMode(PWM_5, OUTPUT);
+    pinMode(PWM_6, OUTPUT);
+    pinMode(PWM_7, OUTPUT);
+    pinMode(PWM_8, OUTPUT);
+  } else {
+    pinMode(PPM_OUT, OUTPUT);
   }
-
-  cli();
-  int step = 0;
-  TCNT1 = 0;
-  PORTB |= PWM_MASK_PORTB(PWM_ALL_MASK);
-  PORTD |= PWM_MASK_PORTD(PWM_ALL_MASK);
-  while (step < steps) {
-    while (TCNT1 < pwmstep[step].time);
-    PORTB &= ~PWM_MASK_PORTB(pwmstep[step].mask);
-    PORTD &= ~PWM_MASK_PORTD(pwmstep[step].mask);
-    step++;
-  }
-  sei();
 }
 
 #define FAILSAFE_OFFSET 0x80
@@ -261,12 +223,7 @@ void setup() {
     PWM_output=1;
   }
     
-  if (PWM_output) {
-    setupPWMout();
-  } else {
-    setupPPMout();
-  }
-
+  setupPPMout();
 
   //################### RX SYNC AT STARTUP #################
   RF_Mode = Receive;
@@ -283,14 +240,6 @@ void loop() {
     Serial.println("RX hang");
     init_rfm(0);
     to_rx_mode();
-  }
-
-  if (PWM_output) {
-    time = micros();
-    if ((time - pwmLastFrame) >= 20000) {
-      pwmLastFrame=time;
-      pulsePWM();
-    }
   }
 
   time = micros();
