@@ -54,7 +54,7 @@ ISR(TIMER1_OVF_vect) {
       PORTD &= ~PWM_MASK_PORTD(PWM_ALL_MASK);
     }
   } else {
-    int  ppmOut = servoBits2Us(PPM[ppmCountter]) * 2;
+    unsigned short ppmOut = servoBits2Us(PPM[ppmCountter]) * 2;
     ppmTotal += ppmOut;
     ICR1 = ppmOut;
     if (PWM_output) {
