@@ -2,7 +2,7 @@
  * OpenLRSng receiver code
  ****************************************************/
 
-volatile unsigned char RF_Mode = 0;
+volatile uint8_t RF_Mode = 0;
 
 #define Available 0
 #define Transmit 1
@@ -10,25 +10,25 @@ volatile unsigned char RF_Mode = 0;
 #define Receive 3
 #define Received 4
 
-unsigned char RF_channel = 0;
+uint8_t RF_channel = 0;
 
-unsigned long time;
-unsigned long last_pack_time = 0;
-unsigned long last_rssi_time = 0;
-unsigned long fs_time; // time when failsafe activated
+uint32_t time;
+uint32_t last_pack_time = 0;
+uint32_t last_rssi_time = 0;
+uint32_t fs_time; // time when failsafe activated
 
-unsigned long last_beacon;
+uint32_t last_beacon;
 
-unsigned char  RSSI_count = 0;
-unsigned short RSSI_sum = 0;
+uint8_t  RSSI_count = 0;
+uint16_t RSSI_sum = 0;
 
-int ppmCountter = 0;
-int ppmTotal = 0;
+int16_t ppmCountter = 0;
+int16_t ppmTotal = 0;
 
 boolean PWM_output = 1; // set if parallel PWM output is desired
 
-short firstpack = 0;
-short lostpack = 0;
+int16_t firstpack = 0;
+int16_t lostpack = 0;
 
 boolean willhop = 0,fs_saved = 0;
 
@@ -54,7 +54,7 @@ ISR(TIMER1_OVF_vect) {
       PORTD &= ~PWM_MASK_PORTD(PWM_ALL_MASK);
     }
   } else {
-    unsigned short ppmOut = servoBits2Us(PPM[ppmCountter]) * 2;
+    int16_t  ppmOut = servoBits2Us(PPM[ppmCountter]) * 2;
     ppmTotal += ppmOut;
     ICR1 = ppmOut;
     if (PWM_output) {
@@ -111,8 +111,8 @@ void save_failsafe_values(void){
 
 void load_failsafe_values(void){
 
-  unsigned char ee_buf[10];
-  for (int i=0; i<10; i++) {
+  uint8_t ee_buf[10];
+  for (int16_t i=0; i<10; i++) {
     ee_buf[i]=EEPROM.read(FAILSAFE_OFFSET+i);
   }
   PPM[0]= ee_buf[0] + ((ee_buf[4] & 0x03) << 8);
@@ -125,19 +125,19 @@ void load_failsafe_values(void){
   PPM[7]= ee_buf[8] + ((ee_buf[9] & 0xc0) << 2);
 }
 
-int bindReceive(unsigned long timeout) {
-  unsigned long start = millis();
+int16_t bindReceive(uint32_t timeout) {
+  uint32_t start = millis();
   init_rfm(1);
   RF_Mode = Receive;
   to_rx_mode();
   Serial.println("Waiting bind\n");
   while ((!timeout) || ((millis() - start) < timeout)) {
-    if(RF_Mode == Received) {  // RFM22B INT pin Enabled by received Data
+    if(RF_Mode == Received) {  // RFM22B int16_t pin Enabled by received Data
       Serial.println("Got pkt\n");
       RF_Mode=Receive;
       spiSendAddress(0x7f); // Send the package read command
-      for (unsigned char i=0; i < sizeof(bind_data); i++) {
-        *(((unsigned char*)&bind_data)+i) = spiReadData();
+      for (uint8_t i=0; i < sizeof(bind_data); i++) {
+        *(((uint8_t*)&bind_data)+i) = spiReadData();
       }
       if (bind_data.version == BINDING_VERSION) {
         Serial.println("data good\n");
@@ -150,8 +150,8 @@ int bindReceive(unsigned long timeout) {
   return 0;
 }
 
-int checkJumpper(unsigned char pin1,unsigned char pin2) {
-  int ret=0;
+int16_t checkJumpper(uint8_t pin1,uint8_t pin2) {
+  int16_t ret=0;
   pinMode(pin1,OUTPUT);
   digitalWrite(pin1, 1);
   digitalWrite(pin2, 1); // enable pullup
@@ -235,7 +235,7 @@ void setup() {
 
 //############ MAIN LOOP ##############
 void loop() {
-  unsigned long time;
+  uint32_t time;
   if (spiReadRegister(0x0C)==0) { // detect the locked module and reboot
     Serial.println("RX hang");
     init_rfm(0);
@@ -244,7 +244,7 @@ void loop() {
 
   time = micros();
   
-  if(RF_Mode == Received) {  // RFM22B INT pin Enabled by received Data
+  if(RF_Mode == Received) {  // RFM22B int16_t pin Enabled by received Data
 
     RF_Mode = Receive;
 
@@ -258,7 +258,7 @@ void loop() {
 
     spiSendAddress(0x7f); // Send the package read command
 
-    for (int i=0; i<11; i++) {
+    for (int16_t i=0; i<11; i++) {
       rx_buf[i] = spiReadData();
     }
 

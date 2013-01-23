@@ -1,18 +1,18 @@
 /****************************************************
  * OpenLRSng transmitter code
  ****************************************************/
-unsigned char RF_channel = 0;
+uint8_t RF_channel = 0;
 
-unsigned char FSstate = 0; // 1 = waiting timer, 2 = send FS, 3 sent waiting btn release
-unsigned long FStime = 0;  // time when button went down...
+uint8_t FSstate = 0; // 1 = waiting timer, 2 = send FS, 3 sent waiting btn release
+uint32_t FStime = 0;  // time when button went down...
 
-unsigned long lastSent = 0;
+uint32_t lastSent = 0;
 
-volatile unsigned char ppmAge = 0; // age of PPM data
+volatile uint8_t ppmAge = 0; // age of PPM data
 
 
-volatile unsigned int startPulse = 0;
-volatile byte         ppmCounter = PPM_CHANNELS; // ignore data until first sync pulse
+volatile uint16_t startPulse = 0;
+volatile uint8_t  ppmCounter = PPM_CHANNELS; // ignore data until first sync pulse
 
 #define TIMER1_FREQUENCY_HZ 50
 #define TIMER1_PRESCALER    8
@@ -23,10 +23,10 @@ volatile byte         ppmCounter = PPM_CHANNELS; // ignore data until first sync
  * Interrupt Vector
  ****************************************************/
 ISR(TIMER1_CAPT_vect) {
-  unsigned int stopPulse = ICR1;
+  uint16_t stopPulse = ICR1;
 
   // Compensate for timer overflow if needed
-  unsigned int pulseWidth = ((startPulse > stopPulse) ? TIMER1_PERIOD : 0) + stopPulse - startPulse;
+  uint16_t pulseWidth = ((startPulse > stopPulse) ? TIMER1_PERIOD : 0) + stopPulse - startPulse;
 
   if (pulseWidth > 5000) {      // Verify if this is the sync pulse (2.5ms)
     ppmCounter = 0;             // -> restart the channel counter
@@ -51,7 +51,7 @@ void setupPPMinput() {
 #else // sample PPM using pinchange interrupt
 ISR(PPM_Signal_Interrupt){
 
-  unsigned int time_temp;
+  uint16_t time_temp;
 
   if (PPM_Signal_Edge_Check) {// Only works with rising edge of the signal
     time_temp = TCNT1; // read the timer1 value
@@ -80,13 +80,13 @@ void setupPPMinput() {
 
 void scannerMode(){
   char c;
-  unsigned long nextConfig[4] = {0,0,0,0};
-  unsigned long startFreq=430000000, endFreq=440000000, nrSamples=500, stepSize=50000;
-  unsigned long currentFrequency = startFreq;
-  unsigned long currentSamples = 0;
-  unsigned char nextIndex=0;
-  unsigned char rssiMin=0, rssiMax=0;
-  unsigned long rssiSum=0;
+  uint32_t nextConfig[4] = {0,0,0,0};
+  uint32_t startFreq=430000000, endFreq=440000000, nrSamples=500, stepSize=50000;
+  uint32_t currentFrequency = startFreq;
+  uint32_t currentSamples = 0;
+  uint8_t nextIndex=0;
+  uint8_t rssiMin=0, rssiMax=0;
+  uint32_t rssiSum=0;
   Red_LED_OFF;
   Green_LED_OFF;
   digitalWrite(BUZZER, LOW);
@@ -147,7 +147,7 @@ void scannerMode(){
       delay(1);
     }
     if (currentSamples < nrSamples) {
-      unsigned char val = rfmGetRSSI();
+      uint8_t val = rfmGetRSSI();
       rssiSum+=val;
       if (val>rssiMax) rssiMax=val;
       if (val<rssiMin) rssiMin=val;
@@ -182,7 +182,7 @@ void handleCLI(char c) {
 }
 
 void bindMode() {
-  unsigned long prevsend = millis();
+  uint32_t prevsend = millis();
   init_rfm(1);
   while (Serial.available()) Serial.read(); // flush serial
   while(1) {
@@ -190,7 +190,7 @@ void bindMode() {
       prevsend=millis();
       Green_LED_ON;
       digitalWrite(BUZZER, HIGH); // Buzzer on
-      tx_packet((unsigned char*)&bind_data, sizeof(bind_data));
+      tx_packet((uint8_t*)&bind_data, sizeof(bind_data));
       Green_LED_OFF;
       digitalWrite(BUZZER, LOW); // Buzzer off
     }
@@ -200,7 +200,7 @@ void bindMode() {
 
 void checkButton(){
   
-  unsigned long time,loop_time;
+  uint32_t time,loop_time;
 
   if (digitalRead(BTN)==0) // Check the button
     {
@@ -217,7 +217,7 @@ void checkButton(){
 
     // Check the button again, If it is still down reinitialize
     if (0 == digitalRead(BTN)) {
-      int bzstate=HIGH;
+      int16_t bzstate=HIGH;
       digitalWrite(BUZZER,bzstate);
       loop_time = millis();
       while (0 == digitalRead(BTN)) { // wait for button to release
@@ -330,12 +330,12 @@ void loop() {
     Red_LED_OFF;
   }
 
-  unsigned long time = micros();
+  uint32_t time = micros();
 
   if ((time - lastSent) >= modem_params[bind_data.modem_params].interval) {
     lastSent = time;
     if (ppmAge < 8) {
-      unsigned char tx_buf[11];
+      uint8_t tx_buf[11];
       ppmAge++;
 
       // Construct packet to be sent

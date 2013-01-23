@@ -1,20 +1,20 @@
 //####### COMMON FUNCTIONS #########
 
 void RF22B_init_parameter(void);
-void tx_packet(unsigned char*, unsigned char);
+void tx_packet(uint8_t*, uint8_t);
 void to_rx_mode(void);
-volatile unsigned char rx_buf[11]; // RX buffer
+volatile uint8_t rx_buf[11]; // RX buffer
 
 #define PPM_CHANNELS 8
-volatile int PPM[PPM_CHANNELS] = { 512,512,512,512,512,512,512,512 };
+volatile int16_t PPM[PPM_CHANNELS] = { 512,512,512,512,512,512,512,512 };
 
 // conversion between microseconds 800-2200 and value 0-1023
 // 808-1000 == 0 - 11     (16us per step)
 // 1000-1999 == 12 - 1011 ( 1us per step)
 // 2000-2192 == 1012-1023 (16us per step)
 
-unsigned short servoUs2Bits(unsigned short x) {
-  unsigned short ret;
+uint16_t servoUs2Bits(uint16_t x) {
+  uint16_t ret;
   if (x<800) {
     ret = 0;
   } else if (x < 1000) {
@@ -29,8 +29,8 @@ unsigned short servoUs2Bits(unsigned short x) {
   return ret;
 }
 
-unsigned short servoBits2Us(unsigned short x) {
-  unsigned short ret;
+uint16_t servoBits2Us(uint16_t x) {
+  uint16_t ret;
   if (x<12) {
     ret = 808 + x * 16;
   } else if (x<1012) {
@@ -53,24 +53,24 @@ unsigned short servoBits2Us(unsigned short x) {
 
 #define RF22B_Rx_packet_received_interrupt   0x02
 
-unsigned char ItStatus1, ItStatus2;
+uint8_t ItStatus1, ItStatus2;
 
-void spiWriteBit ( unsigned char b );
+void spiWriteBit ( uint8_t b );
 
-void spiSendCommand(unsigned char command);
-void spiSendAddress(unsigned char i);
-unsigned char spiReadData(void);
-void spiWriteData(unsigned char i);
+void spiSendCommand(uint8_t command);
+void spiSendAddress(uint8_t i);
+uint8_t spiReadData(void);
+void spiWriteData(uint8_t i);
 
-unsigned char spiReadRegister(unsigned char address);
-void spiWriteRegister(unsigned char address, unsigned char data);
+uint8_t spiReadRegister(uint8_t address);
+void spiWriteRegister(uint8_t address, uint8_t data);
 
 void to_sleep_mode(void);
 void rx_reset(void);
 
 // **** SPI bit banging functions
 
-void spiWriteBit( unsigned char b ) {
+void spiWriteBit( uint8_t b ) {
   if (b) {  
     SCK_off;
     NOP();
@@ -88,8 +88,8 @@ void spiWriteBit( unsigned char b ) {
   }
 }
 
-unsigned char spiReadBit() {
-  unsigned char r = 0;
+uint8_t spiReadBit() {
+  uint8_t r = 0;
   SCK_on;
   NOP();
   if (SDO_1) {
@@ -100,51 +100,51 @@ unsigned char spiReadBit() {
   return r;
 }
 
-void spiSendCommand(unsigned char command) {
+void spiSendCommand(uint8_t command) {
 
   nSEL_on;
   SCK_off;
   nSEL_off;
-  for (unsigned char n=0; n<8 ; n++) {
+  for (uint8_t n=0; n<8 ; n++) {
     spiWriteBit(command&0x80);
     command = command << 1;
   }
   SCK_off;
 }
 
-void spiSendAddress(unsigned char i) {
+void spiSendAddress(uint8_t i) {
 
   spiSendCommand(i & 0x7f);
 }
 
-void spiWriteData(unsigned char i) {
+void spiWriteData(uint8_t i) {
 
-  for (unsigned char n=0; n<8; n++) {
+  for (uint8_t n=0; n<8; n++) {
     spiWriteBit(i&0x80);
     i = i << 1;
   }
   SCK_off;
 }
 
-unsigned char spiReadData(void) {
+uint8_t spiReadData(void) {
 
-  unsigned char Result = 0;
+  uint8_t Result = 0;
   SCK_off;
-  for(unsigned char i=0; i<8; i++) { //read fifo data byte
+  for(uint8_t i=0; i<8; i++) { //read fifo data byte
     Result=(Result<<1) + spiReadBit();
   }
   return(Result);
 }
 
-unsigned char spiReadRegister(unsigned char address) {
-  unsigned char result;
+uint8_t spiReadRegister(uint8_t address) {
+  uint8_t result;
   spiSendAddress(address);
   result = spiReadData();
   nSEL_on;
   return(result);
 }
 
-void spiWriteRegister(unsigned char address, unsigned char data) {
+void spiWriteRegister(uint8_t address, uint8_t data) {
   address |= 0x80; // 
   spiSendCommand(address);
   spiWriteData(data);
@@ -153,11 +153,11 @@ void spiWriteRegister(unsigned char address, unsigned char data) {
 
 // **** RFM22 access functions
 
-void rfmSetChannel(unsigned char ch) {
+void rfmSetChannel(uint8_t ch) {
   spiWriteRegister(0x79, ch);
 }
 
-unsigned char rfmGetRSSI() {
+uint8_t rfmGetRSSI() {
   return spiReadRegister(0x26);
 }
 
@@ -176,8 +176,9 @@ void setModemRegs(struct rfm22_modem_regs *r) {
   spiWriteRegister(0x2a, r->r_2a);
 }
 
-void rfmSetCarrierFrequency(unsigned long f) {
-  unsigned short fb,fc;
+void rfmSetCarrierFrequency(uint32_t f) {
+  unsigned short fb;
+  uint16_t fc;
   fb = f / 10000000 - 24;
   fc = (f - (fb + 24) * 10000000) * 4 / 625;
 
@@ -186,7 +187,7 @@ void rfmSetCarrierFrequency(unsigned long f) {
   spiWriteRegister(0x77, (fc & 0xff));
 }
 
-void init_rfm(unsigned char isbind) {
+void init_rfm(uint8_t isbind) {
   
   ItStatus1 = spiReadRegister(0x03); // read status, clear interrupt
   ItStatus2 = spiReadRegister(0x04);
@@ -283,11 +284,11 @@ void rx_reset(void) {
   ItStatus2 = spiReadRegister(0x04);
 }
 
-void tx_packet(unsigned char* pkt, unsigned char size) {
+void tx_packet(uint8_t* pkt, uint8_t size) {
 
   spiWriteRegister(0x3e, size); // total tx size
 
-  for (unsigned char i=0; i < size; i++) {
+  for (uint8_t i=0; i < size; i++) {
     spiWriteRegister(0x7f, pkt[i]);
   }
 
@@ -295,7 +296,7 @@ void tx_packet(unsigned char* pkt, unsigned char size) {
   ItStatus1 = spiReadRegister(0x03);      //read the Interrupt Status1 register
   ItStatus2 = spiReadRegister(0x04);
   #ifdef TX_TIMING
-  unsigned long tx_start=micros();
+  uint32_t tx_start=micros();
   #endif
   spiWriteRegister(0x07, RF22B_PWRSTATE_TX);    // to tx mode
 
@@ -306,11 +307,11 @@ void tx_packet(unsigned char* pkt, unsigned char size) {
   #endif
 }
 
-void beacon_tone(int hz, int len) {
-  int d = 500 / hz; // somewhat limited resolution ;)
+void beacon_tone(int16_t hz, int16_t len) {
+  int16_t d = 500 / hz; // somewhat limited resolution ;)
   if (d<1) d=1;
-  int cycles = (len*1000/d);
-  for (int i=0; i<cycles; i++) {
+  int16_t cycles = (len*1000/d);
+  for (int16_t i=0; i<cycles; i++) {
     SDI_on;
     delay(d);
     SDI_off;
@@ -347,7 +348,7 @@ void beacon_send(void) {
   spiWriteRegister(0x74, 0x00);    // no offset
 
   unsigned short fb = bind_data.beacon_frequency / 10000000 - 24;
-  unsigned short fc = (bind_data.beacon_frequency - (fb + 24) * 10000000) * 4 / 625;
+  uint16_t fc = (bind_data.beacon_frequency - (fb + 24) * 10000000) * 4 / 625;
   spiWriteRegister(0x75, 0x40 + (fb & 0x1f)); // sbsel=1 lower 5 bits is band
   spiWriteRegister(0x76, (fc >> 8));
   spiWriteRegister(0x77, (fc & 0xff));
