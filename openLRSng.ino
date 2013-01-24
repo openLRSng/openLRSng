@@ -76,7 +76,7 @@
 //###### RF DEVICE ID HEADER #######
 // Change this 4 byte values for isolating your transmission,
 // RF module accepts only data with same header
-static unsigned char default_rf_magic[4] = {'@','K','H','a'};
+static uint8_t default_rf_magic[4] = {'@','K','H','a'};
 
 // RF Data Rate --- choose wisely between range vs. performance
 //  0 -- 4800bps, best range, 20Hz update rate
