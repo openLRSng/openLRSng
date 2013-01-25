@@ -182,24 +182,27 @@ uint8_t rfmGetRSSI(void)
 
 void setModemRegs(struct rfm22_modem_regs* r)
 {
-  spiWriteRegister(0x6e, r->r_6e);
-  spiWriteRegister(0x6f, r->r_6f);
+
   spiWriteRegister(0x1c, r->r_1c);
+  spiWriteRegister(0x1d, r->r_1d);
+  spiWriteRegister(0x1e, r->r_1e);
   spiWriteRegister(0x20, r->r_20);
   spiWriteRegister(0x21, r->r_21);
   spiWriteRegister(0x22, r->r_22);
   spiWriteRegister(0x23, r->r_23);
   spiWriteRegister(0x24, r->r_24);
   spiWriteRegister(0x25, r->r_25);
-  spiWriteRegister(0x1D, r->r_1d);
-  spiWriteRegister(0x1E, r->r_1e);
   spiWriteRegister(0x2a, r->r_2a);
+  spiWriteRegister(0x6e, r->r_6e);
+  spiWriteRegister(0x6f, r->r_6f);
+  spiWriteRegister(0x70, r->r_70);
+  spiWriteRegister(0x71, r->r_71);
+  spiWriteRegister(0x72, r->r_72);
 }
 
 void rfmSetCarrierFrequency(uint32_t f)
 {
-  unsigned short fb;
-  uint16_t fc;
+  uint16_t fb,fc;
   fb = f / 10000000 - 24;
   fc = (f - (fb + 24) * 10000000) * 4 / 625;
 
@@ -212,17 +215,14 @@ void init_rfm(uint8_t isbind)
 {
   ItStatus1 = spiReadRegister(0x03);   // read status, clear interrupt
   ItStatus2 = spiReadRegister(0x04);
-  spiWriteRegister(0x06, 0x00);    // no wakeup up, lbd,
-  spiWriteRegister(0x07, RF22B_PWRSTATE_READY);      // disable lbd, wakeup timer, use internal 32768,xton = 1; in ready mode
+  spiWriteRegister(0x06, 0x00);    // disable interrupts
+  spiWriteRegister(0x07, RF22B_PWRSTATE_READY); // disable lbd, wakeup timer, use internal 32768,xton = 1; in ready mode
   spiWriteRegister(0x09, 0x7f);   // c = 12.5p
   spiWriteRegister(0x0a, 0x05);
   spiWriteRegister(0x0b, 0x12);    // gpio0 TX State
   spiWriteRegister(0x0c, 0x15);    // gpio1 RX State
-
   spiWriteRegister(0x0d, 0xfd);    // gpio 2 micro-controller clk output
   spiWriteRegister(0x0e, 0x00);    // gpio    0, 1,2 NO OTHER FUNCTION.
-
-  spiWriteRegister(0x70, 0x2C);    // disable manchest
 
   if (isbind) {
     setModemRegs(&bind_params);
@@ -230,15 +230,16 @@ void init_rfm(uint8_t isbind)
     setModemRegs(&modem_params[bind_data.modem_params]);
   }
 
+  // Packet settings
   spiWriteRegister(0x30, 0x8c);    // enable packet handler, msb first, enable crc,
-
-  spiWriteRegister(0x32, 0xf3);    // 0x32address enable for headere byte 0, 1,2,3, receive header check for byte 0, 1,2,3
-  spiWriteRegister(0x33, 0x42);    // header 3, 2, 1,0 used for head length, fixed packet length, synchronize word length 3, 2,
-  spiWriteRegister(0x34, 0x07);    // 7 default value or   // 64 nibble = 32byte preamble
-  spiWriteRegister(0x36, 0x2d);    // synchronize word
-  spiWriteRegister(0x37, 0xd4);
-  spiWriteRegister(0x38, 0x00);
-  spiWriteRegister(0x39, 0x00);
+  spiWriteRegister(0x32, 0x0f);    // no broadcast, check header bytes 3,2,1,0
+  spiWriteRegister(0x33, 0x42);    // 4 byte header, 2 byte synch, variable pkt size
+  spiWriteRegister(0x34, 0x0a);    // 10 nibbles (40 bit preamble)
+  spiWriteRegister(0x35, 0x2a);    // preath = 5 (20bits), rssioff = 2
+  spiWriteRegister(0x36, 0x2d);    // synchronize word 3
+  spiWriteRegister(0x37, 0xd4);    // synchronize word 2
+  spiWriteRegister(0x38, 0x00);    // synch word 1 (not used)
+  spiWriteRegister(0x39, 0x00);    // synch word 0 (not used)
 
   if (isbind) {
     spiWriteRegister(0x3a, bind_magic[0]);   // tx header
@@ -274,9 +275,6 @@ void init_rfm(uint8_t isbind)
   spiWriteRegister(0x79, 0);
 
   spiWriteRegister(0x7a, 0x06);   // 60kHz channel spacing
-
-  spiWriteRegister(0x71, 0x23);   // Gfsk, fd[8] =0, no invert for Tx/Rx data, fifo mode, txclk -->gpio
-  spiWriteRegister(0x72, 0x30);   // frequency deviation setting to 19.6khz (for 38.4kbps)
 
   spiWriteRegister(0x73, 0x00);
   spiWriteRegister(0x74, 0x00);    // no offset
@@ -357,11 +355,10 @@ void beacon_send(void)
   ItStatus2 = spiReadRegister(0x04);
   spiWriteRegister(0x06, 0x00);    // no wakeup up, lbd,
   spiWriteRegister(0x07, RF22B_PWRSTATE_READY);      // disable lbd, wakeup timer, use internal 32768,xton = 1; in ready mode
-  spiWriteRegister(0x09, 0x7f);   // c = 12.5p
+  spiWriteRegister(0x09, 0x7f);  // (default) c = 12.5p
   spiWriteRegister(0x0a, 0x05);
   spiWriteRegister(0x0b, 0x12);    // gpio0 TX State
   spiWriteRegister(0x0c, 0x15);    // gpio1 RX State
-
   spiWriteRegister(0x0d, 0xfd);    // gpio 2 micro-controller clk output
   spiWriteRegister(0x0e, 0x00);    // gpio    0, 1,2 NO OTHER FUNCTION.
 
@@ -379,11 +376,7 @@ void beacon_send(void)
   spiWriteRegister(0x73, 0x00);
   spiWriteRegister(0x74, 0x00);    // no offset
 
-  unsigned short fb = bind_data.beacon_frequency / 10000000 - 24;
-  uint16_t fc = (bind_data.beacon_frequency - (fb + 24) * 10000000) * 4 / 625;
-  spiWriteRegister(0x75, 0x40 + (fb & 0x1f));     // sbsel=1 lower 5 bits is band
-  spiWriteRegister(0x76, (fc >> 8));
-  spiWriteRegister(0x77, (fc & 0xff));
+  rfmSetCarrierFrequency(bind_data.beacon_frequency);
 
   spiWriteRegister(0x6d, 0x07);   // 7 set max power 100mW
 

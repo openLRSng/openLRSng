@@ -21,6 +21,7 @@ uint32_t last_beacon;
 
 uint8_t  RSSI_count = 0;
 uint16_t RSSI_sum = 0;
+uint8_t  last_rssi_value = 0;
 
 int16_t ppmCountter = 0;
 int16_t ppmTotal = 0;
@@ -306,6 +307,13 @@ void loop()
       fs_saved = 0;
     }
 
+    if (modem_params[bind_data.modem_params].flags & 0x01) {
+      // reply with telemetry
+      uint8_t telemetry_packet[10];
+      telemetry_packet[0] = last_rssi_value;
+      tx_packet(telemetry_packet, 10);
+    }
+
     rx_reset();
 
     willhop = 1;
@@ -317,9 +325,10 @@ void loop()
 
   // sample RSSI when packet is in the 'air'
   if ((lostpack < 2) && (last_rssi_time != last_pack_time) &&
-      (time - last_pack_time) > (modem_params[bind_data.modem_params].interval - 1500)) {
+      (time - last_pack_time) > (uint32_t)(modem_params[bind_data.modem_params].interval - 1500)) {
     last_rssi_time = last_pack_time;
-    RSSI_sum += rfmGetRSSI(); // Read the RSSI value
+    last_rssi_value = rfmGetRSSI(); // Read the RSSI value
+    RSSI_sum += last_rssi_value;    // tally up for average
     RSSI_count++;
 
     if (RSSI_count > 20) {
@@ -333,12 +342,12 @@ void loop()
   time = micros();
 
   if (firstpack) {
-    if ((!lostpack) && (time - last_pack_time) > (modem_params[bind_data.modem_params].interval + 1000)) {
+    if ((!lostpack) && (time - last_pack_time) > (uint32_t)(modem_params[bind_data.modem_params].interval + 1000)) {
       // we missed one packet, hop to next channel
       lostpack = 1;
       last_pack_time += modem_params[bind_data.modem_params].interval;
       willhop = 1;
-    } else if ((lostpack == 1) && (time - last_pack_time) > (modem_params[bind_data.modem_params].interval + 1000)) {
+    } else if ((lostpack == 1) && (time - last_pack_time) > (uint32_t)(modem_params[bind_data.modem_params].interval + 1000)) {
       // we lost second packet in row, hop and signal trouble
       lostpack = 2;
       last_pack_time += modem_params[bind_data.modem_params].interval;

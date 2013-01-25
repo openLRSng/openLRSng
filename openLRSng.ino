@@ -37,7 +37,7 @@
 
 //####### COMPILATION TARGET #######
 // Enable to compile transmitter code, default is RX
-#define COMPILE_TX
+//#define COMPILE_TX
 
 //####### TX BOARD TYPE #######
 // 0 = Original Flytron M1 Tx Board (not verified)
@@ -93,7 +93,7 @@ static uint8_t default_rf_magic[4] = {'@', 'K', 'H', 'a'};
 #define DEFAULT_BEACON_INTERVAL 10 // interval between beacon transmits (s)
 
 //### MISC DEBUG stuff
-//#define TX_TIMING // show time used to send packet (in uS) on serial
+#define TX_TIMING // show time used to send packet (in uS) on serial
 
 //####################
 //### CODE SECTION ###
