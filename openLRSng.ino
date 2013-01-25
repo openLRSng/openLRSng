@@ -9,7 +9,7 @@
 // - extend resolution to 10bits (1024 positions)
 // - use HW timer in input capture mode for PPM input
 // - use HW timer for PPM generation (completely jitterless)
-// 
+//
 // Donations for development tools and utilities (beer) here
 // https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=DSWGKGKPRX5CS
 
@@ -76,7 +76,7 @@
 //###### RF DEVICE ID HEADER #######
 // Change this 4 byte values for isolating your transmission,
 // RF module accepts only data with same header
-static uint8_t default_rf_magic[4] = {'@','K','H','a'};
+static uint8_t default_rf_magic[4] = {'@', 'K', 'H', 'a'};
 
 // RF Data Rate --- choose wisely between range vs. performance
 //  0 -- 4800bps, best range, 20Hz update rate
@@ -117,7 +117,7 @@ static uint8_t default_rf_magic[4] = {'@','K','H','a'};
 #include "common.h"
 
 #ifdef COMPILE_TX
-  #include "TX.h"
+#include "TX.h"
 #else // COMPILE_RX
-  #include "RX.h"
+#include "RX.h"
 #endif
