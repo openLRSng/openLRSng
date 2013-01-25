@@ -25,7 +25,7 @@ struct bind_data {
 
 struct rfm22_modem_regs {
   uint32_t bps;
-  uint32_t long interval;
+  uint32_t interval;
   uint8_t  flags; // 0x01 = telemetry enabled
   uint8_t  r_1c, r_1d, r_1e, r_20, r_21, r_22, r_23, r_24, r_25, r_2a, r_6e, r_6f, r_70, r_71, r_72;
 } modem_params[3] = {
