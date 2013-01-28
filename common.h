@@ -1,4 +1,11 @@
 //####### COMMON FUNCTIONS #########
+volatile uint8_t RF_Mode = 0;
+
+#define Available 0
+#define Transmit 1
+#define Transmitted 2
+#define Receive 3
+#define Received 4
 
 void RF22B_init_parameter(void);
 void tx_packet(uint8_t* pkt, uint8_t size);
@@ -47,6 +54,17 @@ uint16_t servoBits2Us(uint16_t x)
   }
 
   return ret;
+}
+
+void RFM22B_Int()
+{
+  if (RF_Mode == Transmit) {
+    RF_Mode = Transmitted;
+  }
+
+  if (RF_Mode == Receive) {
+    RF_Mode = Received;
+  }
 }
 
 #define NOP() __asm__ __volatile__("nop")

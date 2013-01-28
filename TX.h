@@ -8,6 +8,8 @@ uint32_t FStime = 0;  // time when button went down...
 
 uint32_t lastSent = 0;
 
+uint32_t lastTelemetry = 0;
+
 volatile uint8_t ppmAge = 0; // age of PPM data
 
 
@@ -347,6 +349,8 @@ void setup(void)
 
   setupPPMinput();
 
+  attachInterrupt(IRQ_interrupt, RFM22B_Int, FALLING);
+
   init_rfm(0);
   rfmSetChannel(bind_data.hopchannel[RF_channel]);
 
@@ -378,6 +382,19 @@ void loop(void)
     Red_LED_OFF;
   }
 
+  if (RF_Mode == Received) {
+    uint8_t rx_buf[4];
+    // got telemetry packet
+
+    lastTelemetry = micros(); 
+    RF_Mode = Receive;
+    spiSendAddress(0x7f);   // Send the package read command                                                                                     
+    for (int16_t i = 0; i < 4; i++) {
+      rx_buf[i] = spiReadData();
+    }
+    // Serial.println(rx_buf[0]); // print rssi value
+  }
+
   uint32_t time = micros();
 
   if ((time - lastSent) >= modem_params[bind_data.modem_params].interval) {
@@ -387,6 +404,17 @@ void loop(void)
       uint8_t tx_buf[11];
       ppmAge++;
 
+      if (lastTelemetry) {
+        if ((time - lastTelemetry) > modem_params[bind_data.modem_params].interval) {
+          // telemetry lost
+          digitalWrite(BUZZER, HIGH);   // Buzzer on
+          lastTelemetry=0;
+        } else {
+          // telemetry link re-established
+           digitalWrite(BUZZER, LOW);   // Buzzer off
+        }
+      }
+      
       // Construct packet to be sent
       if (FSstate == 2) {
         tx_buf[0] = 0xF5; // save failsafe
@@ -414,6 +442,7 @@ void loop(void)
       Green_LED_ON ;
 
       // Send the data over RF
+      rfmSetChannel(bind_data.hopchannel[RF_channel]); 
       tx_packet(tx_buf, 11);
 
       //Hop to the next frequency
@@ -423,9 +452,12 @@ void loop(void)
         RF_channel = 0;
       }
 
-      rfmSetChannel(bind_data.hopchannel[RF_channel]);
-
-
+      // do not switch channel as we may receive telemetry on the old channel
+      if (modem_params[bind_data.modem_params].flags & 0x01) {
+    	  RF_Mode = Receive;
+	      rx_reset();
+      }
+      
     } else {
       if (ppmAge == 8) {
         Red_LED_ON

@@ -2,14 +2,6 @@
  * OpenLRSng receiver code
  ****************************************************/
 
-volatile uint8_t RF_Mode = 0;
-
-#define Available 0
-#define Transmit 1
-#define Transmitted 2
-#define Receive 3
-#define Received 4
-
 uint8_t RF_channel = 0;
 
 uint32_t time;
@@ -32,17 +24,6 @@ int16_t firstpack = 0;
 int16_t lostpack = 0;
 
 boolean willhop = 0, fs_saved = 0;
-
-void RFM22B_Int()
-{
-  if (RF_Mode == Transmit) {
-    RF_Mode = Transmitted;
-  }
-
-  if (RF_Mode == Receive) {
-    RF_Mode = Received;
-  }
-}
 
 ISR(TIMER1_OVF_vect)
 {
@@ -267,8 +248,6 @@ void loop()
 
   if (RF_Mode == Received) {   // RFM22B int16_t pin Enabled by received Data
 
-    RF_Mode = Receive;
-
     last_pack_time = micros(); // record last package time
     lostpack = 0;
 
@@ -309,11 +288,12 @@ void loop()
 
     if (modem_params[bind_data.modem_params].flags & 0x01) {
       // reply with telemetry
-      uint8_t telemetry_packet[10];
+      uint8_t telemetry_packet[4];
       telemetry_packet[0] = last_rssi_value;
-      tx_packet(telemetry_packet, 10);
+      tx_packet(telemetry_packet, 4);
     }
 
+    RF_Mode = Receive;
     rx_reset();
 
     willhop = 1;
