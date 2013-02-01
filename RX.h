@@ -15,13 +15,13 @@ uint8_t  RSSI_count = 0;
 uint16_t RSSI_sum = 0;
 uint8_t  last_rssi_value = 0;
 
-int16_t ppmCountter = 0;
-int16_t ppmTotal = 0;
+uint16_t ppmCountter = 0;
+uint16_t ppmTotal = 0;
 
 boolean PWM_output = 1; // set if parallel PWM output is desired
 
-int16_t firstpack = 0;
-int16_t lostpack = 0;
+uint8_t firstpack = 0;
+uint8_t lostpack = 0;
 
 boolean willhop = 0, fs_saved = 0;
 
@@ -37,7 +37,7 @@ ISR(TIMER1_OVF_vect)
       PORTD &= ~PWM_MASK_PORTD(PWM_ALL_MASK);
     }
   } else {
-    int16_t  ppmOut = servoBits2Us(PPM[ppmCountter]) * 2;
+    uint16_t ppmOut = servoBits2Us(PPM[ppmCountter]) * 2;
     ppmTotal += ppmOut;
     ICR1 = ppmOut;
 
@@ -113,7 +113,7 @@ void load_failsafe_values(void)
   PPM[7] = ee_buf[8] + ((ee_buf[9] & 0xc0) << 2);
 }
 
-int16_t bindReceive(uint32_t timeout)
+uint8_t bindReceive(uint32_t timeout)
 {
   uint32_t start = millis();
   init_rfm(1);
@@ -142,7 +142,7 @@ int16_t bindReceive(uint32_t timeout)
   return 0;
 }
 
-int16_t checkJumpper(uint8_t pin1, uint8_t pin2)
+uint8_t checkJumpper(uint8_t pin1, uint8_t pin2)
 {
   int16_t ret = 0;
   pinMode(pin1, OUTPUT);

@@ -13,7 +13,7 @@ void to_rx_mode(void);
 volatile uint8_t rx_buf[11]; // RX buffer
 
 #define PPM_CHANNELS 8
-volatile int16_t PPM[PPM_CHANNELS] = { 512, 512, 512, 512, 512, 512, 512, 512 };
+volatile uint16_t PPM[PPM_CHANNELS] = { 512, 512, 512, 512, 512, 512, 512, 512 };
 
 // conversion between microseconds 800-2200 and value 0-1023
 // 808-1000 == 0 - 11     (16us per step)
