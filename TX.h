@@ -335,6 +335,12 @@ void setup(void)
   pinMode(BTN, INPUT);   //Buton
 
   pinMode(PPM_IN, INPUT);   //PPM from TX
+  digitalWrite(PPM_IN, HIGH); // enable pullup for TX:s with open collector output
+
+#if defined (RF_OUT_INDICATOR)
+  pinMode(RF_OUT_INDICATOR, OUTPUT);
+  digitalWrite(RF_OUT_INDICATOR, LOW);
+#endif
 
   Serial.begin(SERIAL_BAUD_RATE);
 

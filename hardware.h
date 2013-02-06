@@ -105,6 +105,7 @@
 #endif
 
 #define PPM_IN 3
+#define RF_OUT_INDICATOR A0
 #define BUZZER 10
 #define BTN 11
 #define Red_LED 13
