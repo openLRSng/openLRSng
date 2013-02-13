@@ -85,15 +85,9 @@ void bindInitDefaults(void)
 
   bind_data.rc_channels = 8;
   bind_data.modem_params = DEFAULT_DATARATE;
-#ifdef DEFAULT_FAILSAFE_BEACON_ON
   bind_data.beacon_frequency = DEFAULT_BEACON_FREQUENCY;
   bind_data.beacon_interval = DEFAULT_BEACON_INTERVAL;
   bind_data.beacon_deadtime = DEFAULT_BEACON_DEADTIME;
-#else
-  bind_data.beacon_frequency = 0;
-  bind_data.beacon_interval = 0;
-  bind_data.beacon_deadtime = 0;
-#endif
 }
 
 void bindRandomize(void)

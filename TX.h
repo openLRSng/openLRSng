@@ -257,23 +257,29 @@ void checkButton(void)
 
     // Check the button again, If it is still down reinitialize
     if (0 == digitalRead(BTN)) {
-      int16_t bzstate = HIGH;
+      int8_t bzstate = HIGH;
+      uint8_t doRandomize = 1;
+      
       digitalWrite(BUZZER, bzstate);
       loop_time = millis();
 
       while (0 == digitalRead(BTN)) {     // wait for button to release
-        if ((millis() - loop_time) > 200) {
-          loop_time = millis();
-          bzstate = !bzstate;
-          digitalWrite(BUZZER, bzstate);
-          Serial.print("!");
+        if (loop_time > time + 9800) {
+          digitalWrite(BUZZER, HIGH);
+          doRandomize = 0;
+        } else {
+          if ((millis() - loop_time) > 200) {
+            loop_time = millis();
+            bzstate = !bzstate;
+            digitalWrite(BUZZER, bzstate);
+          }
         }
       }
 
       digitalWrite(BUZZER, LOW);
       randomSeed(micros());   // button release time in us should give us enough seed
       bindInitDefaults();
-      bindRandomize();
+      if (doRandomize) bindRandomize();
       bindWriteEeprom();
       bindPrint();
     }
