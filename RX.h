@@ -170,6 +170,8 @@ uint8_t checkBindPlug(uint8_t pin) // see if pin is pulled low
 
 void setup()
 {
+  wdt_enable(WDTO_2S); // 2 second watchdog timer
+  
   //LEDs
   pinMode(Green_LED, OUTPUT);
   pinMode(Red_LED, OUTPUT);
@@ -239,6 +241,8 @@ void setup()
 //############ MAIN LOOP ##############
 void loop()
 {
+  wdt_reset(); // pat the dog as fast as we can
+  
   uint32_t time;
 
   if (spiReadRegister(0x0C) == 0) {     // detect the locked module and reboot
