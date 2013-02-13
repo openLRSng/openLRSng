@@ -48,10 +48,10 @@ ISR(TIMER1_OVF_vect)
       PORTB &= ~PWM_MASK_PORTB(PWM_WITHPPM_MASK);
       PORTD &= ~PWM_MASK_PORTD(PWM_WITHPPM_MASK);
       if (ppmCountter < 6) { // only 6 channels available in PPM mode
-	// shift channels over the PPM pin
-	uint8_t pin = (ppmCountter >= PPM_CH) ? (ppmCountter + 1) : ppmCountter;
-	PORTB |= PWM_MASK_PORTB(PWM_MASK[pin]);
-	PORTD |= PWM_MASK_PORTD(PWM_MASK[pin]);
+        // shift channels over the PPM pin
+        uint8_t pin = (ppmCountter >= PPM_CH) ? (ppmCountter + 1) : ppmCountter;
+        PORTB |= PWM_MASK_PORTB(PWM_MASK[pin]);
+        PORTD |= PWM_MASK_PORTD(PWM_MASK[pin]);
       }
     } else {
       PORTB &= ~PWM_MASK_PORTB(PWM_ALL_MASK);
@@ -85,7 +85,7 @@ void setupPPMout()
   pinMode(PWM_6, OUTPUT);
   pinMode(PWM_7, OUTPUT);
   pinMode(PWM_8, OUTPUT);
-  pinMode(PPM_OUT, OUTPUT);  
+  pinMode(PPM_OUT, OUTPUT);
 }
 
 #define FAILSAFE_OFFSET 0x80
