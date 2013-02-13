@@ -259,7 +259,7 @@ void checkButton(void)
     if (0 == digitalRead(BTN)) {
       int8_t bzstate = HIGH;
       uint8_t doRandomize = 1;
-      
+
       digitalWrite(BUZZER, bzstate);
       loop_time = millis();
 
@@ -279,7 +279,9 @@ void checkButton(void)
       digitalWrite(BUZZER, LOW);
       randomSeed(micros());   // button release time in us should give us enough seed
       bindInitDefaults();
-      if (doRandomize) bindRandomize();
+      if (doRandomize) {
+        bindRandomize();
+      }
       bindWriteEeprom();
       bindPrint();
     }
@@ -398,9 +400,9 @@ void loop(void)
     uint8_t rx_buf[4];
     // got telemetry packet
 
-    lastTelemetry = micros(); 
+    lastTelemetry = micros();
     RF_Mode = Receive;
-    spiSendAddress(0x7f);   // Send the package read command                                                                                     
+    spiSendAddress(0x7f);   // Send the package read command
     for (int16_t i = 0; i < 4; i++) {
       rx_buf[i] = spiReadData();
     }
@@ -423,10 +425,10 @@ void loop(void)
           lastTelemetry=0;
         } else {
           // telemetry link re-established
-           digitalWrite(BUZZER, LOW);   // Buzzer off
+          digitalWrite(BUZZER, LOW);   // Buzzer off
         }
       }
-      
+
       // Construct packet to be sent
       if (FSstate == 2) {
         tx_buf[0] = 0xF5; // save failsafe
@@ -454,7 +456,7 @@ void loop(void)
       Green_LED_ON ;
 
       // Send the data over RF
-      rfmSetChannel(bind_data.hopchannel[RF_channel]); 
+      rfmSetChannel(bind_data.hopchannel[RF_channel]);
       tx_packet(tx_buf, 11);
 
       //Hop to the next frequency
@@ -466,10 +468,10 @@ void loop(void)
 
       // do not switch channel as we may receive telemetry on the old channel
       if (modem_params[bind_data.modem_params].flags & 0x01) {
-    	  RF_Mode = Receive;
-	      rx_reset();
+        RF_Mode = Receive;
+        rx_reset();
       }
-      
+
     } else {
       if (ppmAge == 8) {
         Red_LED_ON
