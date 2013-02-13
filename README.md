@@ -22,13 +22,13 @@ TRANSMITTER HW:
 RECEIVER HW:  
 ============
   - Flytron openLRS RX 
-  - OrangeRX UHF
+  - OrangeRX UHF RX
   
-  RSSI outputted at 'first' connector (marked as RSSI on OrangeRX) 500Hz PWM signal.
+  RSSI outputted at 'first' connector (marked as RSSI on OrangeRX) 500Hz PWM signal. To make this analog you can use a simple RC filtter (R=10kOhm C=100nF).
   
-  Rest are parallel PWM outputs for channel1-8 (50Hz)
+  CH1-CH8 are parallel PWM outputs for channel1-8 (50Hz)
   
-  To enable PPM mode connect a jumpper between ch1 and ch2 (second and third column). PPM is outputted on 6th column (ch5).  
+  To enable PPM mode connect a 'bind jumpper' between CH8 and GND. PPM is outputted on 6th column (CH5). In PPM mode channles 1-6 are available at CH1-CH4,CH6,CH7.
   
 SOFTWARE CONFIGURATION:
 =======================
@@ -43,6 +43,9 @@ Modify configurations on openLRSng.ino as needed, mostly you are intrested in:
   - DEFAULT_HOPLIST/default_rf_magic
     - these two parameters bind the tx/rx, note that you can generate random values by using the
       "randomize channels and magic" feature on TX.
+
+Note: for settings to take effect the TX must be "reinitted" by either randomizing or by 'factory settings' and RX needs to be re paired.
+
   
 UPLOADING:
 ==========
@@ -62,7 +65,10 @@ TX:
       Buzzer should emit short beep ~5 times/s in sync with led.
     - To exit bindmode powercycle TX.
   - Reset settings and randomize channels and 'magic'
-    - power up while keeping button down for ~6 seconds (buzzer starts to emit beeps) and release button
+    - power up while keeping button down for ~3 seconds (buzzer starts to emit beeps) and release button
+    - binding mode is entered automatically
+  - Reset settings to .ino values
+    - power up the TX and keep button down for >~7 seconds (buzzer beeps continously).
     - binding mode is entered automatically
   - Setting failsafe
     - Press and hold button for ~1s during normal operation until red LED lights and buzzer beeps, release button.
