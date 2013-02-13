@@ -182,8 +182,11 @@
 #define PWM_8 12
 #define PWM_8_MASK 0x1000 // PB4
 
+#define PPM_CH 4 // CH5 slot
+
 const uint16_t PWM_MASK[8] = { PWM_1_MASK, PWM_2_MASK, PWM_3_MASK, PWM_4_MASK, PWM_5_MASK, PWM_6_MASK, PWM_7_MASK, PWM_8_MASK };
 #define PWM_ALL_MASK 0x1FE0 // all bits used for PWM (logic OR of above)
+#define PWM_WITHPPM_MASK 0x0DE0 // all but the PPM and no. 8 channels
 
 #define PWM_MASK_PORTB(x) (((x)>>8) & 0xff)
 #define PWM_MASK_PORTD(x) ((x) & 0xff)
