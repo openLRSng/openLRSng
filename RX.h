@@ -15,10 +15,10 @@ uint8_t  RSSI_count = 0;
 uint16_t RSSI_sum = 0;
 uint8_t  last_rssi_value = 0;
 
-uint16_t ppmCountter = 0;
+uint8_t  ppmCountter = 0;
 uint16_t ppmTotal = 0;
 
-boolean PWM_output = 1; // set if parallel PWM output is desired
+boolean PPM_output = 0; // set if PPM output is desired
 
 uint8_t firstpack = 0;
 uint8_t lostpack = 0;
@@ -32,7 +32,10 @@ ISR(TIMER1_OVF_vect)
     ppmCountter = 0;
     ppmTotal = 0;
 
-    if (PWM_output) {   // clear all bits
+    if (PPM_output) {   // clear all bits
+      PORTB &= ~PWM_MASK_PORTB(PWM_WITHPPM_MASK);
+      PORTD &= ~PWM_MASK_PORTD(PWM_WITHPPM_MASK);
+    } else {
       PORTB &= ~PWM_MASK_PORTB(PWM_ALL_MASK);
       PORTD &= ~PWM_MASK_PORTD(PWM_ALL_MASK);
     }
@@ -41,7 +44,16 @@ ISR(TIMER1_OVF_vect)
     ppmTotal += ppmOut;
     ICR1 = ppmOut;
 
-    if (PWM_output) {
+    if (PPM_output) {
+      PORTB &= ~PWM_MASK_PORTB(PWM_WITHPPM_MASK);
+      PORTD &= ~PWM_MASK_PORTD(PWM_WITHPPM_MASK);
+      if (ppmCountter < 6) { // only 6 channels available in PPM mode
+	// shift channels over the PPM pin
+	uint8_t pin = (ppmCountter >= PPM_CH) ? (ppmCountter + 1) : ppmCountter;
+	PORTB |= PWM_MASK_PORTB(PWM_MASK[pin]);
+	PORTD |= PWM_MASK_PORTD(PWM_MASK[pin]);
+      }
+    } else {
       PORTB &= ~PWM_MASK_PORTB(PWM_ALL_MASK);
       PORTD &= ~PWM_MASK_PORTD(PWM_ALL_MASK);
       PORTB |= PWM_MASK_PORTB(PWM_MASK[ppmCountter]);
@@ -54,10 +66,10 @@ ISR(TIMER1_OVF_vect)
 
 void setupPPMout()
 {
-  if (PWM_output) {
-    TCCR1A = (1 << WGM11);
-  } else {
+  if (PPM_output) {
     TCCR1A = (1 << WGM11) | (1 << COM1A1) | (1 << COM1A0);
+  } else {
+    TCCR1A = (1 << WGM11);
   }
 
   TCCR1B = (1 << WGM13) | (1 << WGM12) | (1 << CS11);
@@ -65,18 +77,15 @@ void setupPPMout()
   OCR1A = 600;  // 0.3ms pulse
   TIMSK1 |= (1 << TOIE1);
 
-  if (PWM_output) {
-    pinMode(PWM_1, OUTPUT);
-    pinMode(PWM_2, OUTPUT);
-    pinMode(PWM_3, OUTPUT);
-    pinMode(PWM_4, OUTPUT);
-    pinMode(PWM_5, OUTPUT);
-    pinMode(PWM_6, OUTPUT);
-    pinMode(PWM_7, OUTPUT);
-    pinMode(PWM_8, OUTPUT);
-  } else {
-    pinMode(PPM_OUT, OUTPUT);
-  }
+  pinMode(PWM_1, OUTPUT);
+  pinMode(PWM_2, OUTPUT);
+  pinMode(PWM_3, OUTPUT);
+  pinMode(PWM_4, OUTPUT);
+  pinMode(PWM_5, OUTPUT);
+  pinMode(PWM_6, OUTPUT);
+  pinMode(PWM_7, OUTPUT);
+  pinMode(PWM_8, OUTPUT);
+  pinMode(PPM_OUT, OUTPUT);  
 }
 
 #define FAILSAFE_OFFSET 0x80
@@ -142,26 +151,20 @@ uint8_t bindReceive(uint32_t timeout)
   return 0;
 }
 
-uint8_t checkJumpper(uint8_t pin1, uint8_t pin2)
+uint8_t checkBindPlug(uint8_t pin) // see if pin is pulled low
 {
   int16_t ret = 0;
-  pinMode(pin1, OUTPUT);
-  digitalWrite(pin1, 1);
-  digitalWrite(pin2, 1);   // enable pullup
+
+  pinMode(pin, INPUT);
+  digitalWrite(pin, 1); // enable pullup
   delay(10);
 
-  if (digitalRead(pin2)) {
-    digitalWrite(pin1, 0);
-    delay(10);
-
-    if (!digitalRead(pin2)) {
-      ret = 1;
-    }
+  if (!digitalRead(pin)) {
+    ret = 1;
   }
 
-  pinMode(pin1, INPUT);
-  digitalWrite(pin1, 0);
-  digitalWrite(pin2, 0);
+  digitalWrite(pin, 0);
+
   return ret;
 }
 
@@ -190,7 +193,7 @@ void setup()
   sei();
   Red_LED_ON;
 
-  if (checkJumpper(PWM_7, PWM_8) || (!bindReadEeprom())) {
+  if (checkBindPlug(PWM_7) || (!bindReadEeprom())) {
     Serial.print("EEPROM data not valid or bind jumpper set, forcing bind\n");
 
     if (bindReceive(0)) {
@@ -216,11 +219,11 @@ void setup()
   RF_channel = 0;
   rfmSetChannel(bind_data.hopchannel[RF_channel]);
 
-  // Check for jumpper on ch1 - ch2 (PPM enable).
-  if (checkJumpper(PWM_1, PWM_2)) {
-    PWM_output = 0;
+  // Check for bind plug on ch8 (PPM enable).
+  if (checkBindPlug(PWM_8)) {
+    PPM_output = 1;
   } else {
-    PWM_output = 1;
+    PPM_output = 0;
   }
 
   setupPPMout();
