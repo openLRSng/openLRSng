@@ -51,7 +51,7 @@ UPLOADING:
 ==========
 Use a 3v3 FTDI (or other USB to TTL serial adapter) and Arduino >= 1.0. 
 
-  o set board to "Arduino Pro or Pro Mini (5V, 16MHz) w/ atmega328 (yes it runs really on 3v3 but arduino does not need to know that)
+  o set board to "Arduino Pro or Pro Mini (5V, 16MHz) w/ atmega328" (yes it runs really on 3v3 but arduino does not need to know that)
 
   o define COMPILE_TX and upload to TX module
 
