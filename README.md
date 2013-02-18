@@ -91,3 +91,11 @@ RX:
   - Beacon (if enabled) automatically starts after 'deadtime' with no data from TX, the beacon will send three tone 'FM' modulated signal hearable on PMR channel 1. The signal starts with 500Hz @ 100mW and continues with 250Hz @ 15mW and 166Hz @ 1mW. The degrading signal allows to estimate distance.
     - you can use cheap PMR walkie to listen to this signal and using your body as shield determine the direction of it. Alternatively use a directional 433Mhz antenna.
 
+SPECIAL FUNCTIONS
+======= =========
+
+Both TX and RX can be used as spectrum analysers with the "openLRS spectrum analyser GUI).
+
+TX: Put TX into binding mode and connect with GUI (may need to press update once). 
+
+RX: Connect 'bind block' on ch6 (ground the ch6 pin). This will force the RX to act as spectrym scanner.
