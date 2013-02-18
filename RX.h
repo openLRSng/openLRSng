@@ -193,6 +193,10 @@ void setup()
   sei();
   Red_LED_ON;
 
+  if (checkBindPlug(PWM_6)) { // ch6 - gnd --> force scannerMode
+    scannerMode();
+  }
+
   if (checkBindPlug(PWM_7) || (!bindReadEeprom())) {
     Serial.print("EEPROM data not valid or bind jumpper set, forcing bind\n");
 

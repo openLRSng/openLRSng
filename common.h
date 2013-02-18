@@ -7,7 +7,11 @@ volatile uint8_t RF_Mode = 0;
 #define Receive 3
 #define Received 4
 
+void rfmSetCarrierFrequency(uint32_t f);
+uint8_t rfmGetRSSI(void);
 void RF22B_init_parameter(void);
+uint8_t spiReadRegister(uint8_t address);
+void spiWriteRegister(uint8_t address, uint8_t data);
 void tx_packet(uint8_t* pkt, uint8_t size);
 void to_rx_mode(void);
 volatile uint8_t rx_buf[11]; // RX buffer
@@ -56,6 +60,122 @@ uint16_t servoBits2Us(uint16_t x)
   return ret;
 }
 
+// Spectrum analyser 'submode'
+void scannerMode(void)
+{
+  char c;
+  uint32_t nextConfig[4] = {0, 0, 0, 0};
+  uint32_t startFreq = 430000000, endFreq = 440000000, nrSamples = 500, stepSize = 50000;
+  uint32_t currentFrequency = startFreq;
+  uint32_t currentSamples = 0;
+  uint8_t nextIndex = 0;
+  uint8_t rssiMin = 0, rssiMax = 0;
+  uint32_t rssiSum = 0;
+  Red_LED_OFF;
+  Green_LED_OFF;
+  Serial.println("scanner mode");
+  to_rx_mode();
+
+  while (1) {
+    while (Serial.available()) {
+      c = Serial.read();
+
+      switch (c) {
+      case '#':
+        nextIndex = 0;
+        nextConfig[0] = 0;
+        nextConfig[1] = 0;
+        nextConfig[2] = 0;
+        nextConfig[3] = 0;
+        break;
+
+      case ',':
+        nextIndex++;
+
+        if (nextIndex == 4) {
+          nextIndex = 0;
+          startFreq = nextConfig[0] * 1000000UL; // MHz
+          endFreq   = nextConfig[1] * 1000000UL; // MHz
+          nrSamples = nextConfig[2]; // count
+          stepSize  = nextConfig[3] * 10000UL;   // 10kHz
+          currentFrequency = startFreq;
+          currentSamples = 0;
+
+          // set IF filtter BW (kha)
+          if (stepSize < 20000) {
+            spiWriteRegister(0x1c, 0x32);   // 10.6kHz
+          } else if (stepSize < 30000) {
+            spiWriteRegister(0x1c, 0x22);   // 21.0kHz
+          } else if (stepSize < 40000) {
+            spiWriteRegister(0x1c, 0x26);   // 32.2kHz
+          } else if (stepSize < 50000) {
+            spiWriteRegister(0x1c, 0x12);   // 41.7kHz
+          } else if (stepSize < 60000) {
+            spiWriteRegister(0x1c, 0x15);   // 56.2kHz
+          } else if (stepSize < 70000) {
+            spiWriteRegister(0x1c, 0x01);   // 75.2kHz
+          } else if (stepSize < 100000) {
+            spiWriteRegister(0x1c, 0x03);   // 90.0kHz
+          } else {
+            spiWriteRegister(0x1c, 0x05);   // 112.1kHz
+          }
+        }
+
+        break;
+
+      default:
+        if ((c >= '0') && (c <= '9')) {
+          c -= '0';
+          nextConfig[nextIndex] = nextConfig[nextIndex] * 10 + c;
+        }
+      }
+    }
+
+    if (currentSamples == 0) {
+      // retune base
+      rfmSetCarrierFrequency(currentFrequency);
+      rssiMax = 0;
+      rssiMin = 255;
+      rssiSum = 0;
+      delay(1);
+    }
+
+    if (currentSamples < nrSamples) {
+      uint8_t val = rfmGetRSSI();
+      rssiSum += val;
+
+      if (val > rssiMax) {
+        rssiMax = val;
+      }
+
+      if (val < rssiMin) {
+        rssiMin = val;
+      }
+
+      currentSamples++;
+    } else {
+      Serial.print(currentFrequency / 10000UL);
+      Serial.print(',');
+      Serial.print(rssiMax);
+      Serial.print(',');
+      Serial.print(rssiSum / currentSamples);
+      Serial.print(',');
+      Serial.print(rssiMin);
+      Serial.println(',');
+      currentFrequency += stepSize;
+
+      if (currentFrequency > endFreq) {
+        currentFrequency = startFreq;
+      }
+
+      currentSamples = 0;
+    }
+  }
+
+  //never exit!!
+}
+
+
 void RFM22B_Int()
 {
   if (RF_Mode == Transmit) {
@@ -86,8 +206,6 @@ void spiSendAddress(uint8_t i);
 uint8_t spiReadData(void);
 void spiWriteData(uint8_t i);
 
-uint8_t spiReadRegister(uint8_t address);
-void spiWriteRegister(uint8_t address, uint8_t data);
 
 void to_sleep_mode(void);
 void rx_reset(void);
