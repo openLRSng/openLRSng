@@ -53,6 +53,10 @@
 //###### SERIAL PORT SPEED - just debugging atm. #######
 #define SERIAL_BAUD_RATE 115200 //115.200 baud serial port speed
 
+//###### Should receiver always bind on bootup for 0.5s ######
+//###### If disabled a jumpper must be placed on RX ch1-ch2 to force it to bind
+#define RX_ALWAYS_BIND
+
 // Following can be changed in 'config' mode via serial connection to TX (not yet)
 
 //####### RADIOLINK RF POWER (beacon is always 100/13/1.3mW) #######
