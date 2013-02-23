@@ -28,7 +28,9 @@ RECEIVER HW:
   
   CH1-CH8 are parallel PWM outputs for channel1-8 (50Hz)
   
-  To enable PPM mode connect a 'bind jumpper' between CH8 and GND. PPM is outputted on 6th column (CH5). In PPM mode channles 1-6 are available at CH1-CH4,CH6,CH7.
+  To enable PPM (combined) mode connect a jumpper between CH7-CH8. PWM channels 1-5 are available at CH1-CH4,CH6
+
+  Alternatively MOSI can be connected to GND on AVRISP connector to enable PPM. In this case PWM channels 1-7 are available at CH1-CH4,CH6-CH8.
   
 SOFTWARE CONFIGURATION:
 =======================
@@ -94,8 +96,8 @@ RX:
 SPECIAL FUNCTIONS
 ======= =========
 
-Both TX and RX can be used as spectrum analysers with the "openLRS spectrum analyser GUI).
+Both TX and RX can be used as spectrum analysers with the "openLRS spectrum analyser GUI). See http://www.rcgroups.com/forums/showthread.php?t=1617297
 
 TX: Put TX into binding mode and connect with GUI (may need to press update once). 
 
-RX: Connect 'bind block' on ch6 (ground the ch6 pin). This will force the RX to act as spectrym scanner.
+RX: put jumpper on CH3-CH4. This will force the RX to act as spectrum scanner.
