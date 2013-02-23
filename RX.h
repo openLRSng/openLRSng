@@ -84,7 +84,7 @@ void setupPPMout()
   pinMode(PWM_5, OUTPUT);
   pinMode(PWM_6, OUTPUT);
   if (PPM_output != 1) {
-    pinMode(PWM_7, OUTPUT); // Leave these as inputs if the PPM  
+    pinMode(PWM_7, OUTPUT); // Leave these as inputs if the PPM
     pinMode(PWM_8, OUTPUT); // select jumpper is on them.
   }
   pinMode(PPM_OUT, OUTPUT);
