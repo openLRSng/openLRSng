@@ -83,7 +83,7 @@ RX:
   - Binding
     - RX always binds at boot (and timeouts after 0.5s) so it is enough to put TX to bind mode and power up RX.
       On successfull bind blue led lights up (both LEDs remain on until TX is put on normal mode)
-    - RX will also enter bind mode forciby (without timeout) if EEPROM data is incorrect or a jumpper is placed between ch7 and ch8
+    - RX will also enter bind mode forciby (without timeout) if EEPROM data is incorrect or a jumpper is placed between CH1 and CH2
   - Failsafe:
     - Failsafe activates after ~2s of no input data
   - LEDs
