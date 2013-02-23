@@ -47,7 +47,7 @@ ISR(TIMER1_OVF_vect)
     if (PPM_output) {
       PORTB &= ~PWM_MASK_PORTB(PWM_WITHPPM_MASK);
       PORTD &= ~PWM_MASK_PORTD(PWM_WITHPPM_MASK);
-      if (ppmCountter < 7) { // only 5 or 7 channels available in PPM mode
+      if (ppmCountter < 6) { // only 6 channels available in PPM mode
         // shift channels over the PPM pin
         uint8_t pin = (ppmCountter >= PPM_CH) ? (ppmCountter + 1) : ppmCountter;
         PORTB |= PWM_MASK_PORTB(PWM_MASK[pin]);
@@ -83,9 +83,9 @@ void setupPPMout()
   pinMode(PWM_4, OUTPUT);
   pinMode(PWM_5, OUTPUT);
   pinMode(PWM_6, OUTPUT);
-  if (PPM_output != 1) {
-    pinMode(PWM_7, OUTPUT); // Leave these as inputs if the PPM
-    pinMode(PWM_8, OUTPUT); // select jumpper is on them.
+  pinMode(PWM_7, OUTPUT);
+  if (!PPM_output) {
+    pinMode(PWM_8, OUTPUT); // leave ch8 as input as it is connected to 7 (which can be used as servo too)
   }
   pinMode(PPM_OUT, OUTPUT);
 }
@@ -241,9 +241,7 @@ void setup()
   }
 
   // Check for bind plug on ch8 (PPM enable).
-  if (checkIfGrounded(11)) { // MOSI pulled down
-    PPM_output = 2;
-  } else if (checkIfConnected(PWM_7,PWM_8)) {
+  if (checkIfConnected(PWM_7,PWM_8)) {
     PPM_output = 1;
   } else {
     PPM_output = 0;

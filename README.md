@@ -28,9 +28,8 @@ RECEIVER HW:
   
   CH1-CH8 are parallel PWM outputs for channel1-8 (50Hz)
   
-  To enable PPM (combined) mode connect a jumpper between CH7-CH8. PWM channels 1-5 are available at CH1-CH4,CH6
-
-  Alternatively MOSI can be connected to GND on AVRISP connector to enable PPM. In this case PWM channels 1-7 are available at CH1-CH4,CH6-CH8.
+  To enable PPM (combined) mode connect a jumpper between CH7-CH8. PWM channels 1-6 are available at CH1-CH4,CH6,CH7(which is jumppered to CH8)
+  NOTE: you can make the connection in the AVRISP header (MISO-MOSI) to have servo at CH7 (=channel6)
   
 SOFTWARE CONFIGURATION:
 =======================
