@@ -47,7 +47,7 @@ ISR(TIMER1_OVF_vect)
     if (PPM_output) {
       PORTB &= ~PWM_MASK_PORTB(PWM_WITHPPM_MASK);
       PORTD &= ~PWM_MASK_PORTD(PWM_WITHPPM_MASK);
-      if (ppmCountter < 6) { // only 6 channels available in PPM mode
+      if (ppmCountter < 7) { // only 6 (7 if defined by FORCED_PPM_OUTPUT) channels available in PPM mode
         // shift channels over the PPM pin
         uint8_t pin = (ppmCountter >= PPM_CH) ? (ppmCountter + 1) : ppmCountter;
         PORTB |= PWM_MASK_PORTB(PWM_MASK[pin]);
@@ -84,9 +84,13 @@ void setupPPMout()
   pinMode(PWM_5, OUTPUT);
   pinMode(PWM_6, OUTPUT);
   pinMode(PWM_7, OUTPUT);
+#ifdef FORCED_PPM_OUTPUT
+    pinMode(PWM_8, OUTPUT); // if PPM defined at compile time CH8 outputs channel 7 data
+#else
   if (!PPM_output) {
     pinMode(PWM_8, OUTPUT); // leave ch8 as input as it is connected to 7 (which can be used as servo too)
   }
+#endif
   pinMode(PPM_OUT, OUTPUT);
 }
 
@@ -246,6 +250,10 @@ void setup()
   } else {
     PPM_output = 0;
   }
+
+#ifdef FORCED_PPM_OUTPUT
+  PPM_output = 1;
+#endif
 
   Serial.print("Entering normal mode with PPM=");
   Serial.println(PPM_output);

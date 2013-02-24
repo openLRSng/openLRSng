@@ -99,6 +99,10 @@ static uint8_t default_rf_magic[4] = {'@', 'K', 'H', 'a'};
 //### MISC DEBUG stuff
 //#define TX_TIMING // show time used to send packet (in uS) on serial
 
+//### Forced PPM enablingthis will put RX into combined PPM/PWM mode
+//### having channels 1-7 available in PWM on slots CH1-CH4,CH6-CH8
+//#define FORCED_PPM_OUTPUT
+
 //####################
 //### CODE SECTION ###
 //####################
