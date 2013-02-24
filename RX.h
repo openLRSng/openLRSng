@@ -85,7 +85,7 @@ void setupPPMout()
   pinMode(PWM_6, OUTPUT);
   pinMode(PWM_7, OUTPUT);
 #ifdef FORCED_PPM_OUTPUT
-    pinMode(PWM_8, OUTPUT); // if PPM defined at compile time CH8 outputs channel 7 data
+  pinMode(PWM_8, OUTPUT); // if PPM defined at compile time CH8 outputs channel 7 data
 #else
   if (!PPM_output) {
     pinMode(PWM_8, OUTPUT); // leave ch8 as input as it is connected to 7 (which can be used as servo too)
