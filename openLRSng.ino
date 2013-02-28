@@ -89,7 +89,10 @@ static uint8_t default_rf_magic[4] = {'@', 'K', 'H', 'a'};
 #define DEFAULT_DATARATE 1
 
 // helpper macro for European PMR channels
-#define EU_PMR_CH(x) (445993750L + 12500L * x) // valid for ch1-ch8
+#define EU_PMR_CH(x) (445993750L + 12500L * (x)) // valid for ch1-ch8
+
+// helpper macro for US FRS channels 1-7
+#define US_FRS_CH(x) (462537500L + 25000L * (x)) // valid for ch1-ch7
 
 #define DEFAULT_BEACON_FREQUENCY 0 // disable beacon
 //#define DEFAULT_BEACON_FREQUENCY EU_PMR_CH(1) // beacon at PMR channel 1
