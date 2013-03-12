@@ -24,16 +24,16 @@ RECEIVER HW:
   - Flytron openLRS RX 
   - OrangeRX UHF RX
   
-  RSSI outputted at 'first' connector (marked as RSSI on OrangeRX) 500Hz PWM signal. To make this analog you can use a simple RC filtter (R=10kOhm C=100nF).
+  RSSI output at 'first' connector (marked as RSSI on OrangeRX) 500Hz PWM signal. To make this analog you can use a simple RC filter (R=10kOhm C=100nF).
   
   CH1-CH8 are parallel PWM outputs for channel1-8 (50Hz)
   
-  To enable PPM (combined) mode connect a jumpper between CH7-CH8. PWM channels 1-6 are available at CH1-CH4,CH6,CH7(which is jumppered to CH8)
+  To enable PPM (combined) mode connect a jumper between CH7-CH8. PWM channels 1-6 are available at CH1-CH4,CH6,CH7(which is jumppered to CH8)
   NOTE: you can make the connection in the AVRISP header (MISO-MOSI) to have servo at CH7 (=channel6)
   
 SOFTWARE CONFIGURATION:
 =======================
-Modify configurations on openLRSng.ino as needed, mostly you are intrested in:
+Modify configurations in openLRSng.ino as needed, mostly you are intrested in:
 
   - DEFAULT_CARRIER_FREQUENCY
     - sets base frequency
@@ -45,7 +45,7 @@ Modify configurations on openLRSng.ino as needed, mostly you are intrested in:
     - these two parameters bind the tx/rx, note that you can generate random values by using the
       "randomize channels and magic" feature on TX.
 
-Note: for settings to take effect the TX must be "reinitted" by either randomizing or by 'factory settings' and RX needs to be re paired.
+Note: for settings to take effect the TX must be reinitialised by either randomizing or by resetting to 'factory settings'. The RX will need to be paired again.
 
   
 UPLOADING:
@@ -81,9 +81,9 @@ TX:
 
 RX:
   - Binding
-    - RX always binds at boot (and timeouts after 0.5s) so it is enough to put TX to bind mode and power up RX.
-      On successfull bind blue led lights up (both LEDs remain on until TX is put on normal mode)
-    - RX will also enter bind mode forciby (without timeout) if EEPROM data is incorrect or a jumpper is placed between CH1 and CH2
+    - RX always binds at boot (and times out after 0.5s) so it is enough to put TX to bind mode and power up RX.
+      On successful bind blue led lights up (both LEDs remain on until TX is put on normal mode)
+    - RX will also enter bind mode forcibly (without timeout) if EEPROM data is incorrect or a jumpper is placed between CH1 and CH2
   - Failsafe:
     - Failsafe activates after ~2s of no input data
   - LEDs
@@ -99,4 +99,4 @@ Both TX and RX can be used as spectrum analysers with the "openLRS spectrum anal
 
 TX: Put TX into binding mode and connect with GUI (may need to press update once). 
 
-RX: put jumpper on CH3-CH4. This will force the RX to act as spectrum scanner.
+RX: put jumper on CH3-CH4. This will force the RX to act as spectrum scanner.
