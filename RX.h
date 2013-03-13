@@ -263,6 +263,9 @@ void setup()
 
   setupPPMout();
 
+  TCCR2B |= (1 << CS20);  // Change RSSI PWM frequency to 32kHz
+  TCCR2B &= ~(1 << CS22);
+
   //################### RX SYNC AT STARTUP #################
   RF_Mode = Receive;
   to_rx_mode();
