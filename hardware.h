@@ -165,7 +165,8 @@
 #define PPM_OUT 9 // OCP1A
 #define RSSI_OUT 3 // PD3 OC2B
 
-void setup_RSSI_output() {
+void setup_RSSI_output()
+{
   pinMode(RSSI_OUT, OUTPUT);
   TCCR2B = (1<<CS20);
   TCCR2A = ((1<<WGM20) | (1<<COM2B1));
