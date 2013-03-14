@@ -163,7 +163,18 @@
 #define BTN 7
 #else
 #define PPM_OUT 9 // OCP1A
-#define RSSI_OUT 3 // PD3
+#define RSSI_OUT 3 // PD3 OC2B
+
+void setup_RSSI_output() {
+  pinMode(RSSI_OUT, OUTPUT);
+  TCCR2B = (1<<CS20);
+  TCCR2A = ((1<<WGM20) | (1<<COM2B1));
+}
+
+void set_RSSI_output( uint8_t val )
+{
+  OCR2B = val;
+}
 
 #define PWM_1 5
 #define PWM_1_MASK 0x0020 //PD5

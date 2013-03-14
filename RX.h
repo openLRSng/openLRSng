@@ -213,7 +213,7 @@ void setup()
   pinMode(0, INPUT);   // Serial Rx
   pinMode(1, OUTPUT);   // Serial Tx
 
-  pinMode(RSSI_OUT, OUTPUT);
+  setup_RSSI_output();
 
   Serial.begin(SERIAL_BAUD_RATE);   //Serial Transmission
 
@@ -262,9 +262,6 @@ void setup()
   rfmSetChannel(bind_data.hopchannel[RF_channel]);
 
   setupPPMout();
-
-  TCCR2B |= (1 << CS20);  // Change RSSI PWM frequency to 32kHz
-  TCCR2B &= ~(1 << CS22);
 
   //################### RX SYNC AT STARTUP #################
   RF_Mode = Receive;
@@ -354,7 +351,7 @@ void loop()
 
     if (RSSI_count > 20) {
       RSSI_sum /= RSSI_count;
-      analogWrite(RSSI_OUT, map(constrain(RSSI_sum, 45, 200), 40, 200, 0, 255));
+      set_RSSI_output(map(constrain(RSSI_sum, 45, 200), 40, 200, 0, 255));
       RSSI_sum = 0;
       RSSI_count = 0;
     }
@@ -374,7 +371,7 @@ void loop()
       last_pack_time += modem_params[bind_data.modem_params].interval;
       willhop = 1;
       Red_LED_ON;
-      analogWrite(RSSI_OUT, 0);
+      set_RSSI_output(0);
     } else if ((time - last_pack_time) > 200000L) {
       // hop slowly to allow resync with TX
       last_pack_time = time;
