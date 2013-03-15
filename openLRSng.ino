@@ -44,6 +44,7 @@
 // 1 = Original Flytron M1 Rx Board as TX (not verified)
 // 2 = Original M2/M3 Tx Board or OrangeRx UHF TX
 // 3 = OpenLRS Rx v2 Board works as TX
+// 4 = OpenLRSngTX (tbd.)
 #define TX_BOARD_TYPE 2
 
 //####### RX BOARD TYPE #######
