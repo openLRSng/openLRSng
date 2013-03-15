@@ -24,11 +24,11 @@ RECEIVER HW:
   - Flytron openLRS RX 
   - OrangeRX UHF RX
   
-  RSSI output at 'first' connector (marked as RSSI on OrangeRX) 500Hz PWM signal. To make this analog you can use a simple RC filter (R=10kOhm C=100nF).
+  RSSI output at 'first' connector (marked as RSSI on OrangeRX) 32kHz PWM signal. To make this analog you can use a simple RC filter (R=10kOhm C=100nF).
   
   CH1-CH8 are parallel PWM outputs for channel1-8 (50Hz)
   
-  To enable PPM (combined) mode connect a jumper between CH7-CH8. PWM channels 1-6 are available at CH1-CH4,CH6,CH7(which is jumppered to CH8)
+  To enable PPM (combined) mode connect a jumper between CH7-CH8. PPM will be available at CH5. PWM channels 1-6 are available at CH1-CH4,CH6,CH7(which is jumppered to CH8)
   NOTE: you can make the connection in the AVRISP header (MISO-MOSI) to have servo at CH7 (=channel6)
   
 SOFTWARE CONFIGURATION:
