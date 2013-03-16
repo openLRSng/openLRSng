@@ -30,6 +30,7 @@ RECEIVER HW:
   
   To enable PPM (combined) mode connect a jumper between CH7-CH8. PPM will be available at CH5. PWM channels 1-6 are available at CH1-CH4,CH6,CH7(which is jumppered to CH8)
   NOTE: you can make the connection in the AVRISP header (MISO-MOSI) to have servo at CH7 (=channel6)
+  NOTE: it is also possible to force the PPM mode in the .ino and thus get PWM output for channels 1-7 (CH1-CH4,Ch6-CH8).
   
 SOFTWARE CONFIGURATION:
 =======================
