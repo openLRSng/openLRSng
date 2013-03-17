@@ -215,8 +215,7 @@ void checkFS(void)
 
 void setup(void)
 {
-  wdt_enable(WDTO_2S); // 2 second watchdog timer
-  
+
   //RF module pins
   pinMode(SDO_pin, INPUT);   //SDO
   pinMode(SDI_pin, OUTPUT);   //SDI
@@ -276,8 +275,7 @@ void setup(void)
 
 void loop(void)
 {
-  wdt_reset(); // pat the dog as fast as we can
-  
+
   if (spiReadRegister(0x0C) == 0) {     // detect the locked module and reboot
     Serial.println("module locked?");
     Red_LED_ON;

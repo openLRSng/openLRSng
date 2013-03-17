@@ -123,7 +123,6 @@ static uint8_t default_rf_magic[4] = {'@', 'K', 'H', 'a'};
 
 #include <Arduino.h>
 #include <EEPROM.h>
-#include <avr/wdt.h>
 
 #include "hardware.h"
 #include "binding.h"
