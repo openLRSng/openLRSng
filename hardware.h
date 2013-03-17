@@ -27,6 +27,21 @@
 #define PPM_Signal_Interrupt PCINT1_vect
 #define PPM_Signal_Edge_Check (PINC & 0x20)==0x20
 
+void buzzerInit() {
+  pinMode(BUZZER, OUTPUT);
+  digitalWrite(BUZZER, LOW);
+}
+
+void buzzerOn(uint16_t freq) {
+  if (freq) {
+    digitalWrite(BUZZER,HIGH);
+  } else {
+    digitalWrite(BUZZER,LOW);
+  }
+}
+
+#define buzzerOff(foo) buzzerOn(0)
+
 //## RFM22B Pinouts for Public Edition (M1 or Rx v1)
 #define  nIRQ_1 (PIND & 0x08)==0x08 //D3
 #define  nIRQ_0 (PIND & 0x08)==0x00 //D3
@@ -74,6 +89,21 @@
 #define PPM_Signal_Interrupt PCINT2_vect
 #define PPM_Signal_Edge_Check (PIND & 0x20)==0x20
 
+void buzzerInit() {
+  pinMode(BUZZER, OUTPUT);
+  digitalWrite(BUZZER, LOW);
+}
+
+void buzzerOn(uint16_t freq) {
+  if (freq) {
+    digitalWrite(BUZZER,HIGH);
+  } else {
+    digitalWrite(BUZZER,LOW);
+  }
+}
+
+#define buzzerOff(foo) buzzerOn(0)
+
 //## RFM22B Pinouts for Public Edition (M1 or Rx v1)
 #define  nIRQ_1 (PIND & 0x08)==0x08 //D3
 #define  nIRQ_0 (PIND & 0x08)==0x00 //D3
@@ -120,6 +150,21 @@
 #define PPM_Pin_Interrupt_Setup  PCMSK2 = 0x08;PCICR|=(1<<PCIE2);
 #define PPM_Signal_Interrupt PCINT2_vect
 #define PPM_Signal_Edge_Check (PIND & 0x08)==0x08
+
+void buzzerInit() {
+  pinMode(BUZZER, OUTPUT);
+  digitalWrite(BUZZER, LOW);
+}
+
+void buzzerOn(uint16_t freq) {
+  if (freq) {
+    digitalWrite(BUZZER,HIGH);
+  } else {
+    digitalWrite(BUZZER,LOW);
+  }
+}
+
+#define buzzerOff(foo) buzzerOn(0)
 
 //## RFM22B Pinouts for Public Edition (M2)
 #define  nIRQ_1 (PIND & 0x04)==0x04 //D2
@@ -248,10 +293,31 @@ const uint16_t PWM_MASK[8] = { PWM_1_MASK, PWM_2_MASK, PWM_3_MASK, PWM_4_MASK, P
 #define USE_ICP1 // use ICP1 for PPM input for less jitter
 #define PPM_IN 8 // ICP1
 
-#define BUZZER 3
+#define BUZZER 3 // OCR2B
 #define BTN A0
 #define Red_LED 6
 #define Green_LED 5
+
+void buzzerInit() {
+  TCCR2A = (1<<WGM21); // mode=CTC
+  TCCR2B = (1<<CS22) | (1<<CS20); // prescaler = 128
+  pinMode(BUZZER, OUTPUT);
+  digitalWrite(BUZZER, LOW);
+}
+
+void buzzerOn(uint16_t freq) {
+  if (freq) {
+    uint32_t ocr = 125000L / freq;
+    if (ocr>255) ocr=255;
+    if (!ocr) ocr=1;
+    OCR2A = ocr;
+    TCCR2A |= (1<<COM2B0); // enable output
+  } else {
+    TCCR2A &= ~(1<<COM2B0); // disable output
+  }
+}
+
+#define buzzerOff(foo) buzzerOn(0)
 
 #define Red_LED_ON  PORTD |= _BV(6);
 #define Red_LED_OFF  PORTD &= ~_BV(6);
