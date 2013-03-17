@@ -20,6 +20,8 @@ volatile uint8_t  ppmCounter = PPM_CHANNELS; // ignore data until first sync pul
 #define TIMER1_PRESCALER    8
 #define TIMER1_PERIOD       (F_CPU/TIMER1_PRESCALER/TIMER1_FREQUENCY_HZ)
 
+#define BZ_FREQ 2000
+
 #ifdef USE_ICP1 // Use ICP1 in input capture mode
 /****************************************************
  * Interrupt Vector
@@ -84,122 +86,6 @@ void setupPPMinput(void)
 }
 #endif
 
-void scannerMode(void)
-{
-  char c;
-  uint32_t nextConfig[4] = {0, 0, 0, 0};
-  uint32_t startFreq = 430000000, endFreq = 440000000, nrSamples = 500, stepSize = 50000;
-  uint32_t currentFrequency = startFreq;
-  uint32_t currentSamples = 0;
-  uint8_t nextIndex = 0;
-  uint8_t rssiMin = 0, rssiMax = 0;
-  uint32_t rssiSum = 0;
-  Red_LED_OFF;
-  Green_LED_OFF;
-  digitalWrite(BUZZER, LOW);
-  Serial.println("scanner mode");
-  to_rx_mode();
-
-  while (1) {
-    while (Serial.available()) {
-      c = Serial.read();
-
-      switch (c) {
-      case '#':
-        nextIndex = 0;
-        nextConfig[0] = 0;
-        nextConfig[1] = 0;
-        nextConfig[2] = 0;
-        nextConfig[3] = 0;
-        break;
-
-      case ',':
-        nextIndex++;
-
-        if (nextIndex == 4) {
-          nextIndex = 0;
-          startFreq = nextConfig[0] * 1000000UL; // MHz
-          endFreq   = nextConfig[1] * 1000000UL; // MHz
-          nrSamples = nextConfig[2]; // count
-          stepSize  = nextConfig[3] * 10000UL;   // 10kHz
-          currentFrequency = startFreq;
-          currentSamples = 0;
-
-          // set IF filtter BW (kha)
-          if (stepSize < 20000) {
-            spiWriteRegister(0x1c, 0x32);   // 10.6kHz
-          } else if (stepSize < 30000) {
-            spiWriteRegister(0x1c, 0x22);   // 21.0kHz
-          } else if (stepSize < 40000) {
-            spiWriteRegister(0x1c, 0x26);   // 32.2kHz
-          } else if (stepSize < 50000) {
-            spiWriteRegister(0x1c, 0x12);   // 41.7kHz
-          } else if (stepSize < 60000) {
-            spiWriteRegister(0x1c, 0x15);   // 56.2kHz
-          } else if (stepSize < 70000) {
-            spiWriteRegister(0x1c, 0x01);   // 75.2kHz
-          } else if (stepSize < 100000) {
-            spiWriteRegister(0x1c, 0x03);   // 90.0kHz
-          } else {
-            spiWriteRegister(0x1c, 0x05);   // 112.1kHz
-          }
-        }
-
-        break;
-
-      default:
-        if ((c >= '0') && (c <= '9')) {
-          c -= '0';
-          nextConfig[nextIndex] = nextConfig[nextIndex] * 10 + c;
-        }
-      }
-    }
-
-    if (currentSamples == 0) {
-      // retune base
-      rfmSetCarrierFrequency(currentFrequency);
-      rssiMax = 0;
-      rssiMin = 255;
-      rssiSum = 0;
-      delay(1);
-    }
-
-    if (currentSamples < nrSamples) {
-      uint8_t val = rfmGetRSSI();
-      rssiSum += val;
-
-      if (val > rssiMax) {
-        rssiMax = val;
-      }
-
-      if (val < rssiMin) {
-        rssiMin = val;
-      }
-
-      currentSamples++;
-    } else {
-      Serial.print(currentFrequency / 10000UL);
-      Serial.print(',');
-      Serial.print(rssiMax);
-      Serial.print(',');
-      Serial.print(rssiSum / currentSamples);
-      Serial.print(',');
-      Serial.print(rssiMin);
-      Serial.println(',');
-      currentFrequency += stepSize;
-
-      if (currentFrequency > endFreq) {
-        currentFrequency = startFreq;
-      }
-
-      currentSamples = 0;
-    }
-  }
-
-  //never exit!!
-}
-
-
 void handleCLI(char c)
 {
   switch (c) {
@@ -208,6 +94,7 @@ void handleCLI(char c)
     break;
 
   case '#':
+    buzzerOff();
     scannerMode();
     break;
   }
@@ -226,10 +113,10 @@ void bindMode(void)
     if (millis() - prevsend > 200) {
       prevsend = millis();
       Green_LED_ON;
-      digitalWrite(BUZZER, HIGH);   // Buzzer on
+      buzzerOn(BZ_FREQ);
       tx_packet((uint8_t*)&bind_data, sizeof(bind_data));
       Green_LED_OFF;
-      digitalWrite(BUZZER, LOW);   // Buzzer off
+      buzzerOff();
     }
 
     while (Serial.available()) {
@@ -245,7 +132,7 @@ void checkButton(void)
 
   if (digitalRead(BTN) == 0) {     // Check the button
     delay(200);   // wait for 200mS when buzzer ON
-    digitalWrite(BUZZER, LOW);   // Buzzer off
+    buzzerOff();
 
     time = millis();  //set the current time
     loop_time = time;
@@ -260,23 +147,23 @@ void checkButton(void)
       int8_t bzstate = HIGH;
       uint8_t doRandomize = 1;
 
-      digitalWrite(BUZZER, bzstate);
+      buzzerOn(bzstate?BZ_FREQ:0);
       loop_time = millis();
 
       while (0 == digitalRead(BTN)) {     // wait for button to release
         if (loop_time > time + 9800) {
-          digitalWrite(BUZZER, HIGH);
+          buzzerOn(BZ_FREQ);
           doRandomize = 0;
         } else {
           if ((millis() - loop_time) > 200) {
             loop_time = millis();
             bzstate = !bzstate;
-            digitalWrite(BUZZER, bzstate);
+            buzzerOn(bzstate?BZ_FREQ:0);
           }
         }
       }
 
-      digitalWrite(BUZZER, LOW);
+      buzzerOff();
       randomSeed(micros());   // button release time in us should give us enough seed
       bindInitDefaults();
       if (doRandomize) {
@@ -308,7 +195,7 @@ void checkFS(void)
     if (!digitalRead(BTN)) {
       if ((millis() - FStime) > 1000) {
         FSstate = 2;
-        digitalWrite(BUZZER, HIGH);   // Buzzer on
+        buzzerOn(BZ_FREQ);
       }
     } else {
       FSstate = 0;
@@ -318,7 +205,7 @@ void checkFS(void)
 
   case 2:
     if (digitalRead(BTN)) {
-      digitalWrite(BUZZER, LOW);   // Buzzer off
+      buzzerOff();
       FSstate = 0;
     }
 
@@ -340,7 +227,6 @@ void setup(void)
   //LED and other interfaces
   pinMode(Red_LED, OUTPUT);   //RED LED
   pinMode(Green_LED, OUTPUT);   //GREEN LED
-  pinMode(BUZZER, OUTPUT);   //Buzzer
   pinMode(BTN, INPUT);   //Buton
 
   pinMode(PPM_IN, INPUT);   //PPM from TX
@@ -350,6 +236,8 @@ void setup(void)
   pinMode(RF_OUT_INDICATOR, OUTPUT);
   digitalWrite(RF_OUT_INDICATOR, LOW);
 #endif
+
+  buzzerInit();
 
   Serial.begin(SERIAL_BAUD_RATE);
 
@@ -371,7 +259,7 @@ void setup(void)
 
   sei();
 
-  digitalWrite(BUZZER, HIGH);
+  buzzerOn(BZ_FREQ);
   digitalWrite(BTN, HIGH);
   Red_LED_ON ;
   delay(100);
@@ -379,7 +267,7 @@ void setup(void)
   checkButton();
 
   Red_LED_OFF;
-  digitalWrite(BUZZER, LOW);
+  buzzerOff();
 
   ppmAge = 255;
   rx_reset();
@@ -423,11 +311,11 @@ void loop(void)
       if (lastTelemetry) {
         if ((time - lastTelemetry) > modem_params[bind_data.modem_params].interval) {
           // telemetry lost
-          digitalWrite(BUZZER, HIGH);   // Buzzer on
+          buzzerOn(BZ_FREQ);
           lastTelemetry=0;
         } else {
           // telemetry link re-established
-          digitalWrite(BUZZER, LOW);   // Buzzer off
+          buzzerOff();
         }
       }
 

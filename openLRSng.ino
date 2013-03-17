@@ -44,6 +44,7 @@
 // 1 = Original Flytron M1 Rx Board as TX (not verified)
 // 2 = Original M2/M3 Tx Board or OrangeRx UHF TX
 // 3 = OpenLRS Rx v2 Board works as TX
+// 4 = OpenLRSngTX (tbd.)
 #define TX_BOARD_TYPE 2
 
 //####### RX BOARD TYPE #######
@@ -52,6 +53,10 @@
 
 //###### SERIAL PORT SPEED - just debugging atm. #######
 #define SERIAL_BAUD_RATE 115200 //115.200 baud serial port speed
+
+//###### Should receiver always bind on bootup for 0.5s ######
+//###### If disabled a jumpper must be placed on RX ch1-ch2 to force it to bind
+#define RX_ALWAYS_BIND
 
 // Following can be changed in 'config' mode via serial connection to TX (not yet)
 
@@ -85,7 +90,10 @@ static uint8_t default_rf_magic[4] = {'@', 'K', 'H', 'a'};
 #define DEFAULT_DATARATE 1
 
 // helpper macro for European PMR channels
-#define EU_PMR_CH(x) (445993750L + 12500L * x) // valid for ch1-ch8
+#define EU_PMR_CH(x) (445993750L + 12500L * (x)) // valid for ch1-ch8
+
+// helpper macro for US FRS channels 1-7
+#define US_FRS_CH(x) (462537500L + 25000L * (x)) // valid for ch1-ch7
 
 #define DEFAULT_BEACON_FREQUENCY 0 // disable beacon
 //#define DEFAULT_BEACON_FREQUENCY EU_PMR_CH(1) // beacon at PMR channel 1
@@ -94,6 +102,10 @@ static uint8_t default_rf_magic[4] = {'@', 'K', 'H', 'a'};
 
 //### MISC DEBUG stuff
 //#define TX_TIMING // show time used to send packet (in uS) on serial
+
+//### Forced PPM enablingthis will put RX into combined PPM/PWM mode
+//### having channels 1-7 available in PWM on slots CH1-CH4,CH6-CH8
+//#define FORCED_PPM_OUTPUT
 
 //####################
 //### CODE SECTION ###

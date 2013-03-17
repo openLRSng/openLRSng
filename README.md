@@ -24,15 +24,16 @@ RECEIVER HW:
   - Flytron openLRS RX 
   - OrangeRX UHF RX
   
-  RSSI outputted at 'first' connector (marked as RSSI on OrangeRX) 500Hz PWM signal. To make this analog you can use a simple RC filtter (R=10kOhm C=100nF).
+  RSSI output at 'first' connector (marked as RSSI on OrangeRX) 32kHz PWM signal. To make this analog you can use a simple RC filter (R=10kOhm C=100nF).
   
   CH1-CH8 are parallel PWM outputs for channel1-8 (50Hz)
   
-  To enable PPM mode connect a 'bind jumpper' between CH8 and GND. PPM is outputted on 6th column (CH5). In PPM mode channles 1-6 are available at CH1-CH4,CH6,CH7.
+  To enable PPM (combined) mode connect a jumper between CH7-CH8. PPM will be available at CH5. PWM channels 1-6 are available at CH1-CH4,CH6,CH7(which is jumppered to CH8)
+  NOTE: you can make the connection in the AVRISP header (MISO-MOSI) to have servo at CH7 (=channel6)
   
 SOFTWARE CONFIGURATION:
 =======================
-Modify configurations on openLRSng.ino as needed, mostly you are intrested in:
+Modify configurations in openLRSng.ino as needed, mostly you are intrested in:
 
   - DEFAULT_CARRIER_FREQUENCY
     - sets base frequency
@@ -44,12 +45,14 @@ Modify configurations on openLRSng.ino as needed, mostly you are intrested in:
     - these two parameters bind the tx/rx, note that you can generate random values by using the
       "randomize channels and magic" feature on TX.
 
-Note: for settings to take effect the TX must be "reinitted" by either randomizing or by 'factory settings' and RX needs to be re paired.
+Note: for settings to take effect the TX must be reinitialised by either randomizing or by resetting to 'factory settings'. The RX will need to be paired again.
 
   
 UPLOADING:
 ==========
 Use a 3v3 FTDI (or other USB to TTL serial adapter) and Arduino >= 1.0. 
+
+  o set board to "Arduino Pro or Pro Mini (5V, 16MHz) w/ atmega328" (yes it runs really on 3v3 but arduino does not need to know that)
 
   o define COMPILE_TX and upload to TX module
 
@@ -78,9 +81,9 @@ TX:
 
 RX:
   - Binding
-    - RX always binds at boot (and timeouts after 0.5s) so it is enough to put TX to bind mode and power up RX.
-      On successfull bind blue led lights up (both LEDs remain on until TX is put on normal mode)
-    - RX will also enter bind mode forciby (without timeout) if EEPROM data is incorrect or a jumpper is placed between ch7 and ch8
+    - RX always binds at boot (and times out after 0.5s) so it is enough to put TX to bind mode and power up RX.
+      On successful bind blue led lights up (both LEDs remain on until TX is put on normal mode)
+    - RX will also enter bind mode forcibly (without timeout) if EEPROM data is incorrect or a jumpper is placed between CH1 and CH2
   - Failsafe:
     - Failsafe activates after ~2s of no input data
   - LEDs
@@ -89,3 +92,11 @@ RX:
   - Beacon (if enabled) automatically starts after 'deadtime' with no data from TX, the beacon will send three tone 'FM' modulated signal hearable on PMR channel 1. The signal starts with 500Hz @ 100mW and continues with 250Hz @ 15mW and 166Hz @ 1mW. The degrading signal allows to estimate distance.
     - you can use cheap PMR walkie to listen to this signal and using your body as shield determine the direction of it. Alternatively use a directional 433Mhz antenna.
 
+SPECIAL FUNCTIONS
+======= =========
+
+Both TX and RX can be used as spectrum analysers with the "openLRS spectrum analyser GUI). See http://www.rcgroups.com/forums/showthread.php?t=1617297
+
+TX: Put TX into binding mode and connect with GUI (may need to press update once). 
+
+RX: put jumper on CH3-CH4. This will force the RX to act as spectrum scanner.

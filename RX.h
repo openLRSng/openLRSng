@@ -47,7 +47,7 @@ ISR(TIMER1_OVF_vect)
     if (PPM_output) {
       PORTB &= ~PWM_MASK_PORTB(PWM_WITHPPM_MASK);
       PORTD &= ~PWM_MASK_PORTD(PWM_WITHPPM_MASK);
-      if (ppmCountter < 6) { // only 6 channels available in PPM mode
+      if (ppmCountter < 7) { // only 6 (7 if defined by FORCED_PPM_OUTPUT) channels available in PPM mode
         // shift channels over the PPM pin
         uint8_t pin = (ppmCountter >= PPM_CH) ? (ppmCountter + 1) : ppmCountter;
         PORTB |= PWM_MASK_PORTB(PWM_MASK[pin]);
@@ -84,7 +84,13 @@ void setupPPMout()
   pinMode(PWM_5, OUTPUT);
   pinMode(PWM_6, OUTPUT);
   pinMode(PWM_7, OUTPUT);
-  pinMode(PWM_8, OUTPUT);
+#ifdef FORCED_PPM_OUTPUT
+  pinMode(PWM_8, OUTPUT); // if PPM defined at compile time CH8 outputs channel 7 data
+#else
+  if (!PPM_output) {
+    pinMode(PWM_8, OUTPUT); // leave ch8 as input as it is connected to 7 (which can be used as servo too)
+  }
+#endif
   pinMode(PPM_OUT, OUTPUT);
 }
 
@@ -151,12 +157,12 @@ uint8_t bindReceive(uint32_t timeout)
   return 0;
 }
 
-uint8_t checkBindPlug(uint8_t pin) // see if pin is pulled low
+uint8_t checkIfGrounded(uint8_t pin)
 {
-  int16_t ret = 0;
+  int8_t ret = 0;
 
   pinMode(pin, INPUT);
-  digitalWrite(pin, 1); // enable pullup
+  digitalWrite(pin, 1);
   delay(10);
 
   if (!digitalRead(pin)) {
@@ -165,6 +171,29 @@ uint8_t checkBindPlug(uint8_t pin) // see if pin is pulled low
 
   digitalWrite(pin, 0);
 
+  return ret;
+}
+
+int8_t checkIfConnected(uint8_t pin1, uint8_t pin2)
+{
+  int8_t ret = 0;
+  pinMode(pin1, OUTPUT);
+  digitalWrite(pin1, 1);
+  digitalWrite(pin2, 1);
+  delay(10);
+
+  if (digitalRead(pin2)) {
+    digitalWrite(pin1, 0);
+    delay(10);
+
+    if (!digitalRead(pin2)) {
+      ret = 1;
+    }
+  }
+
+  pinMode(pin1, INPUT);
+  digitalWrite(pin1, 0);
+  digitalWrite(pin2, 0);
   return ret;
 }
 
@@ -186,7 +215,7 @@ void setup()
   pinMode(0, INPUT);   // Serial Rx
   pinMode(1, OUTPUT);   // Serial Tx
 
-  pinMode(RSSI_OUT, OUTPUT);
+  setup_RSSI_output();
 
   Serial.begin(SERIAL_BAUD_RATE);   //Serial Transmission
 
@@ -195,7 +224,11 @@ void setup()
   sei();
   Red_LED_ON;
 
-  if (checkBindPlug(PWM_7) || (!bindReadEeprom())) {
+  if (checkIfConnected(PWM_3,PWM_4)) { // ch1 - ch2 --> force scannerMode
+    scannerMode();
+  }
+
+  if (checkIfConnected(PWM_1,PWM_2) || (!bindReadEeprom())) {
     Serial.print("EEPROM data not valid or bind jumpper set, forcing bind\n");
 
     if (bindReceive(0)) {
@@ -204,29 +237,31 @@ void setup()
       Green_LED_ON;
     }
   } else {
-#if 1 //ALWAYS_BIND
-
+#ifdef RX_ALWAYS_BIND
     if (bindReceive(500)) {
       bindWriteEeprom();
       Serial.println("Saved bind data to EEPROM\n");
       Green_LED_ON;
     }
-
 #endif
   }
 
-  Serial.println("Entering normal mode\n");
-
-  init_rfm(0);   // Configure the RFM22B's registers for normal operation
-  RF_channel = 0;
-  rfmSetChannel(bind_data.hopchannel[RF_channel]);
-
   // Check for bind plug on ch8 (PPM enable).
-  if (checkBindPlug(PWM_8)) {
+  if (checkIfConnected(PWM_7,PWM_8)) {
     PPM_output = 1;
   } else {
     PPM_output = 0;
   }
+
+#ifdef FORCED_PPM_OUTPUT
+  PPM_output = 1;
+#endif
+
+  Serial.print("Entering normal mode with PPM=");
+  Serial.println(PPM_output);
+  init_rfm(0);   // Configure the RFM22B's registers for normal operation
+  RF_channel = 0;
+  rfmSetChannel(bind_data.hopchannel[RF_channel]);
 
   setupPPMout();
 
@@ -320,7 +355,7 @@ void loop()
 
     if (RSSI_count > 20) {
       RSSI_sum /= RSSI_count;
-      analogWrite(RSSI_OUT, map(constrain(RSSI_sum, 45, 200), 40, 200, 0, 255));
+      set_RSSI_output(map(constrain(RSSI_sum, 45, 200), 40, 200, 0, 255));
       RSSI_sum = 0;
       RSSI_count = 0;
     }
@@ -340,7 +375,7 @@ void loop()
       last_pack_time += modem_params[bind_data.modem_params].interval;
       willhop = 1;
       Red_LED_ON;
-      analogWrite(RSSI_OUT, 0);
+      set_RSSI_output(0);
     } else if ((time - last_pack_time) > 200000L) {
       // hop slowly to allow resync with TX
       last_pack_time = time;
