@@ -338,11 +338,17 @@ void setModemRegs(struct rfm22_modem_regs* r)
 
 void rfmSetCarrierFrequency(uint32_t f)
 {
-  uint16_t fb,fc;
-  fb = f / 10000000 - 24;
-  fc = (f - (fb + 24) * 10000000) * 4 / 625;
-
-  spiWriteRegister(0x75, 0x40 + (fb & 0x1f));     // sbsel=1 lower 5 bits is band
+  uint16_t fb, fc, hbsel;
+  if (f < 480000000) {
+    hbsel = 0;
+    fb = f / 10000000 - 24;
+    fc = (f - (fb + 24) * 10000000) * 4 / 625;
+  } else {
+    hbsel = 1;
+    fb = f / 20000000 - 24;
+    fc = (f - (fb + 24) * 20000000) * 2 / 625;
+  }
+  spiWriteRegister(0x75, 0x40 + (hbsel?0x20:0) + (fb & 0x1f));
   spiWriteRegister(0x76, (fc >> 8));
   spiWriteRegister(0x77, (fc & 0xff));
 }

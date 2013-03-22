@@ -107,17 +107,32 @@ static uint8_t default_rf_magic[4] = {'@', 'K', 'H', 'a'};
 //### having channels 1-7 available in PWM on slots CH1-CH4,CH6-CH8
 //#define FORCED_PPM_OUTPUT
 
+//### Module type selection (only for modified HW)
+//#define RFMXX_868
+
 //####################
 //### CODE SECTION ###
 //####################
 
 // Frequency sanity checks... (these are a little extended from RFM22B spec)
-#if ((DEFAULT_CARRIER_FREQUENCY < 413000000) || (DEFAULT_CARRIER_FREQUENCY>460000000))
-#  error CARRIER_FREQUENCY is invalid
+
+#ifndef RFMXX_868
+#  if ((DEFAULT_CARRIER_FREQUENCY < 413000000) || (DEFAULT_CARRIER_FREQUENCY>460000000))
+#    error CARRIER_FREQUENCY is invalid
 #endif
-#if (DEFAULT_BEACON_FREQUENCY != 0)
-#  if ((DEFAULT_BEACON_FREQUENCY < 413000000) || (DEFAULT_BEACON_FREQUENCY>463000000))
-#    error BEACON_FREQUENCY is invalid
+#  if (DEFAULT_BEACON_FREQUENCY != 0)
+#    if ((DEFAULT_BEACON_FREQUENCY < 413000000) || (DEFAULT_BEACON_FREQUENCY>463000000))
+#      error BEACON_FREQUENCY is invalid
+#    endif
+#  endif
+#else
+#  if ((DEFAULT_CARRIER_FREQUENCY < 848000000) || (DEFAULT_CARRIER_FREQUENCY>888000000))
+#    error CARRIER_FREQUENCY is invalid
+#  endif
+#  if (DEFAULT_BEACON_FREQUENCY != 0)
+#    if ((DEFAULT_BEACON_FREQUENCY < 848000000) || (DEFAULT_BEACON_FREQUENCY>888000000))
+#      error BEACON_FREQUENCY is invalid
+#    endif
 #  endif
 #endif
 
