@@ -17,8 +17,6 @@ void CLI_head(void) {
   
   if (CLI_level == 0) {
     Serial.println(F(" - use numbers [0-9] to navigate through the menu"));  
-  } else if (CLI_level == 100) {
-    Serial.println(F(" - press [B] to go back to the main menu"));
   } else {
     Serial.println(F(" - press [B] to go back one level"));
   }
