@@ -93,14 +93,17 @@ void CLI_inline_edit(char c) {
       // Remove last char from the buffer
       CLI_buffer_needle--;
       CLI_buffer[CLI_buffer_needle] = 0;
+     
+      // Redraw the output
+      CLI_menu_headers();
+      
+      // Print data stored in the buffer
+      for (uint8_t i = 0; i < CLI_buffer_needle; i++) {
+        Serial.write(CLI_buffer[i]);
+      }     
     }
   } else if(c == 0x0D) { // Enter
-    CLI_menu_headers();
-    
-    // Print data stored in the buffer
-    for (uint8_t i = 0; i < CLI_buffer_needle; i++) {
-      Serial.write(CLI_buffer[i]);
-    }
+    // do nothing
   } else {
     Serial.write(c);
     CLI_buffer[CLI_buffer_needle++] = c; // Store char in the buffer
@@ -176,20 +179,124 @@ void handleCLI(void)
         }
         break;
       case 2:
+        CLI_inline_edit(c);
+
+        if (c == 0x0D) { // Enter
+          // crunch data
+          
+          // Empty buffer and reset needle
+          CLI_buffer_needle = 0;
+          memset(CLI_buffer, 0, sizeof CLI_buffer);
+          
+          // Leave the editing submenu
+          CLI_menu = 0;
+          CLI_menu_headers();
+        }
         break;
       case 3:
+        CLI_inline_edit(c);
+
+        if (c == 0x0D) { // Enter
+          // crunch data
+          
+          // Empty buffer and reset needle
+          CLI_buffer_needle = 0;
+          memset(CLI_buffer, 0, sizeof CLI_buffer);
+          
+          // Leave the editing submenu
+          CLI_menu = 0;
+          CLI_menu_headers();
+        }
         break;
       case 4:
+        CLI_inline_edit(c);
+
+        if (c == 0x0D) { // Enter
+          // crunch data
+          
+          // Empty buffer and reset needle
+          CLI_buffer_needle = 0;
+          memset(CLI_buffer, 0, sizeof CLI_buffer);
+          
+          // Leave the editing submenu
+          CLI_menu = 0;
+          CLI_menu_headers();
+        }
         break;
       case 5:
+        CLI_inline_edit(c);
+
+        if (c == 0x0D) { // Enter
+          // crunch data
+          
+          // Empty buffer and reset needle
+          CLI_buffer_needle = 0;
+          memset(CLI_buffer, 0, sizeof CLI_buffer);
+          
+          // Leave the editing submenu
+          CLI_menu = 0;
+          CLI_menu_headers();
+        }
         break;
       case 6:
+        CLI_inline_edit(c);
+
+        if (c == 0x0D) { // Enter
+          // crunch data
+          
+          // Empty buffer and reset needle
+          CLI_buffer_needle = 0;
+          memset(CLI_buffer, 0, sizeof CLI_buffer);
+          
+          // Leave the editing submenu
+          CLI_menu = 0;
+          CLI_menu_headers();
+        }
         break;
       case 7:
+        CLI_inline_edit(c);
+
+        if (c == 0x0D) { // Enter
+          // crunch data
+          
+          // Empty buffer and reset needle
+          CLI_buffer_needle = 0;
+          memset(CLI_buffer, 0, sizeof CLI_buffer);
+          
+          // Leave the editing submenu
+          CLI_menu = 0;
+          CLI_menu_headers();
+        }
         break;
       case 8:
+        CLI_inline_edit(c);
+
+        if (c == 0x0D) { // Enter
+          // crunch data
+          
+          // Empty buffer and reset needle
+          CLI_buffer_needle = 0;
+          memset(CLI_buffer, 0, sizeof CLI_buffer);
+          
+          // Leave the editing submenu
+          CLI_menu = 0;
+          CLI_menu_headers();
+        }
         break;
       case 9:
+        CLI_inline_edit(c);
+
+        if (c == 0x0D) { // Enter
+          // crunch data
+          
+          // Empty buffer and reset needle
+          CLI_buffer_needle = 0;
+          memset(CLI_buffer, 0, sizeof CLI_buffer);
+          
+          // Leave the editing submenu
+          CLI_menu = 0;
+          CLI_menu_headers();
+        }
         break;        
     }
   }
