@@ -113,41 +113,4 @@ again:
   }
 }
 
-void bindPrint(void)
-{
-
-  Serial.print("1) Base frequency: ");
-  Serial.println(bind_data.rf_frequency);
-  Serial.print("2) RF magic:       ");
-  Serial.print(bind_data.rf_magic[0], 16);
-  Serial.print(bind_data.rf_magic[1], 16);
-  Serial.print(bind_data.rf_magic[2], 16);
-  Serial.println(bind_data.rf_magic[3], 16);
-  Serial.print("3) RF power (0-7): ");
-  Serial.println(bind_data.rf_power);
-  Serial.print("4) Number of hops: ");
-  Serial.println(bind_data.hopcount);
-  Serial.print("5) Hop channels:   ");
-
-  for (uint8_t c = 0; c < bind_data.hopcount; c++) {
-    Serial.print(bind_data.hopchannel[c], 16);   // max 8 channels
-
-    if (c + 1 != bind_data.hopcount) {
-      Serial.print(":");
-    }
-  }
-
-  Serial.println();
-//  Serial.print("NCH: ");
-//  Serial.println(bind_data.rc_channels); //normally 8
-  Serial.print("6) Baudrate (0-2): ");
-  Serial.println(bind_data.modem_params);
-  Serial.print("7) Beacon freq.:   ");
-  Serial.println(bind_data.beacon_frequency);
-  Serial.print("8) Beacon Interval:");
-  Serial.println(bind_data.beacon_interval);
-  Serial.print("9) Beacon Deadtime:");
-  Serial.println(bind_data.beacon_deadtime);
-}
-
 
