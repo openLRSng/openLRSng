@@ -104,11 +104,11 @@ void bindMode(void)
       Green_LED_OFF;
       buzzerOff();
     }
-  }
-  
-  while (Serial.available()) {
-    handleCLI();
-  }  
+    
+    while (Serial.available()) {
+      handleCLI();
+    } 
+  } 
 }
 
 void checkButton(void)

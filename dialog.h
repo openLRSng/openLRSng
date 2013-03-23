@@ -3,6 +3,7 @@
 */
 
 uint8_t CLI_menu = 0;
+bool CLI_active = 0;
 char CLI_buffer[20];
 uint8_t CLI_buffer_needle = 0;
 
@@ -53,6 +54,7 @@ void CLI_menu_headers(void) {
       Serial.println();
       Serial.println(F("Use numbers [0-9] to edit value"));
       Serial.println(F("Press [S] to save settings to EEPROM"));
+      Serial.println(F("Press [X] to restore settings from EEPROM"));
       Serial.println();
 
       bindPrint();  
@@ -86,6 +88,9 @@ void CLI_menu_headers(void) {
       break;
     case 101:
       Serial.println(F("Data saved in EEPROM, press [B] to go to the main menu"));
+      break;
+    case 102:
+      Serial.println(F("Data Restored from EEPROM, press [B] to go to the main menu"));
       break;
   }
 }
@@ -124,13 +129,26 @@ void handleCLI(void)
   
   if (CLI_menu == 0) {
     switch (c) {
-      case '?':
+      case '\n':
+        CLI_active = 1;
+        CLI_menu_headers();
+        break;
+      case '\r':
+        CLI_active = 1;
         CLI_menu_headers();
         break;
       case 's':
         // save settings to EEPROM
         // bindWriteEeprom();
+        
         CLI_menu = 101;
+        CLI_menu_headers();
+        break;
+      case 'x':
+        // restore settings from EEPROM
+        bindInitDefaults();
+        
+        CLI_menu = 102;
         CLI_menu_headers();
         break;
       case '1':
@@ -303,6 +321,16 @@ void handleCLI(void)
         break;
       case 101:
         if (c == 0x42 || c == 0x62) { // B
+          CLI_active = 0;
+          
+          CLI_menu = 0;
+          CLI_menu_headers();          
+        }
+        break;
+      case 102:
+        if (c == 0x42 || c == 0x62) { // B
+          CLI_active = 0;
+          
           CLI_menu = 0;
           CLI_menu_headers();          
         }
