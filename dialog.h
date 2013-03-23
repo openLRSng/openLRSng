@@ -43,66 +43,51 @@ void bindPrint(void)
   Serial.println(bind_data.beacon_deadtime);
 }
 
-void CLI_initial_screen(void) {
+void CLI_menu_headers(void) {
   Serial.write(0x0c); // form feed
+  
+  switch (CLI_menu) {
+    case 0:
+      Serial.print(F("openLRSng v "));
+      Serial.print(1.8);
+      Serial.println();
+      Serial.println(F("Use numbers [0-9] to edit value"));
+      Serial.println(F("Press [S] to save settings to EEPROM"));
+      Serial.println();
 
-  Serial.print(F("openLRSng v "));
-  Serial.print(1.8);
-  Serial.println();
-  Serial.println(F("Use numbers [0-9] to edit value"));
-  Serial.println(F("Press [S] to save settings to EEPROM"));
-  Serial.println();
-
-  bindPrint();
+      bindPrint();  
+      break;
+    case 1:
+      Serial.print(F("Set base frequency (in Hz): "));  
+      break;
+    case 2:
+      Serial.print(F("Set RF magic: "));  
+      break;
+    case 3:
+      Serial.print(F("Set RF power (0-7): ")); 
+      break;
+    case 4:
+      Serial.print(F("Set number of hops: "));  
+      break;
+    case 5:
+      Serial.print(F("Set Hop channels: ")); 
+      break;
+    case 6:
+      Serial.print(F("Set Baudrate (0-2): ")); 
+      break;
+    case 7:
+      Serial.print(F("Set Beacon Frequency: "));  
+      break;
+    case 8:
+      Serial.print(F("Set Beacon Interval: ")); 
+      break;
+    case 9:
+      Serial.print(F("Set Beacon Deadtime: "));  
+      break;     
+  }
 }
 
-void CLI_menu_1(void) {
-  Serial.write(0x0c); // form feed
-  Serial.print(F("Set base frequency (in Hz): "));  
-}
-
-void CLI_menu_2(void) {
-  Serial.write(0x0c); // form feed
-  Serial.print(F("Set RF magic: "));  
-}
-
-void CLI_menu_3(void) {
-  Serial.write(0x0c); // form feed
-  Serial.print(F("Set RF power (0-7): "));  
-}
-
-void CLI_menu_4(void) {
-  Serial.write(0x0c); // form feed
-  Serial.print(F("Set number of hops: "));  
-}
-
-void CLI_menu_5(void) {
-  Serial.write(0x0c); // form feed
-  Serial.print(F("Set Hop channels: "));  
-}
-
-void CLI_menu_6(void) {
-  Serial.write(0x0c); // form feed
-  Serial.print(F("Set Baudrate (0-2): "));  
-}
-
-void CLI_menu_7(void) {
-  Serial.write(0x0c); // form feed
-  Serial.print(F("Set Beacon Frequency: "));  
-}
-
-void CLI_menu_8(void) {
-  Serial.write(0x0c); // form feed
-  Serial.print(F("Set Beacon Interval: "));  
-}
-
-void CLI_menu_9(void) {
-  Serial.write(0x0c); // form feed
-  Serial.print(F("Set Beacon Deadtime: "));  
-}
-
-
-void CLI_inline_edit(char c, bool str = 0) {
+void CLI_inline_edit(char c) {
   if (c == 0x7F) { // Backspace
     if (CLI_buffer_needle > 0) {
       // Remove last char from the buffer
@@ -110,7 +95,12 @@ void CLI_inline_edit(char c, bool str = 0) {
       CLI_buffer[CLI_buffer_needle] = 0;
     }
   } else if(c == 0x0D) { // Enter
-    // Do nothing
+    CLI_menu_headers();
+    
+    // Print data stored in the buffer
+    for (uint8_t i = 0; i < CLI_buffer_needle; i++) {
+      Serial.write(CLI_buffer[i]);
+    }
   } else {
     Serial.write(c);
     CLI_buffer[CLI_buffer_needle++] = c; // Store char in the buffer
@@ -124,7 +114,7 @@ void handleCLI(void)
   if (CLI_menu == 0) {
     switch (c) {
       case '?':
-        CLI_initial_screen();
+        CLI_menu_headers();
         break;
       case 's':
         // save settings to EEPROM
@@ -133,39 +123,39 @@ void handleCLI(void)
         break;
       case '1':
         CLI_menu = 1;
-        CLI_menu_1();
+        CLI_menu_headers();
         break;
       case '2':
         CLI_menu = 2;
-        CLI_menu_2();
+        CLI_menu_headers();
         break;
       case '3':
         CLI_menu = 3;
-        CLI_menu_3();
+        CLI_menu_headers();
         break;
       case '4':
         CLI_menu = 4;
-        CLI_menu_4();
+        CLI_menu_headers();
         break;
       case '5':
         CLI_menu = 5;
-        CLI_menu_5();
+        CLI_menu_headers();
         break;
       case '6':
         CLI_menu = 6;
-        CLI_menu_6();
+        CLI_menu_headers();
         break;
       case '7':
         CLI_menu = 7;
-        CLI_menu_7();
+        CLI_menu_headers();
         break;
       case '8':
         CLI_menu = 8;
-        CLI_menu_8();
+        CLI_menu_headers();
         break;
       case '9':
         CLI_menu = 9;
-        CLI_menu_9();
+        CLI_menu_headers();
         break;        
     }
   } else { // we are inside the menu (this enables simple inline editing)
@@ -173,14 +163,7 @@ void handleCLI(void)
       case 1:
         CLI_inline_edit(c);
         
-        if (c == 0x7F) { // Backspace
-          CLI_menu_1();
-          
-          // Print data stored in the buffer
-          for (uint8_t i = 0; i < CLI_buffer_needle; i++) {
-            Serial.write(CLI_buffer[i]);
-          }
-        } else if (c == 0x0D) { // Enter
+        if (c == 0x0D) { // Enter
           bind_data.rf_frequency = atoi(CLI_buffer);
           
           // Empty buffer and reset needle
@@ -189,7 +172,7 @@ void handleCLI(void)
           
           // Leave the editing submenu
           CLI_menu = 0;
-          CLI_initial_screen();
+          CLI_menu_headers();
         }
         break;
       case 2:
