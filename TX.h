@@ -86,20 +86,6 @@ void setupPPMinput(void)
 }
 #endif
 
-void handleCLI(char c)
-{
-  switch (c) {
-  case '?':
-    bindPrint();
-    break;
-
-  case '#':
-    buzzerOff();
-    scannerMode();
-    break;
-  }
-}
-
 void bindMode(void)
 {
   uint32_t prevsend = millis();

@@ -45,7 +45,7 @@
 // 2 = Original M2/M3 Tx Board or OrangeRx UHF TX
 // 3 = OpenLRS Rx v2 Board works as TX
 // 4 = OpenLRSngTX (tbd.)
-#define TX_BOARD_TYPE 2
+#define TX_BOARD_TYPE 4
 
 //####### RX BOARD TYPE #######
 // 3 = OpenLRS Rx v2 Board or OrangeRx UHF RX
@@ -69,7 +69,7 @@
 // 2 == 3mW
 // 1 == 1.6mW
 // 0 == 1.3mW
-#define DEFAULT_RF_POWER 7
+#define DEFAULT_RF_POWER 0
 
 //######### TRANSMISSION VARIABLES ##########
 #define DEFAULT_CARRIER_FREQUENCY 435000000  // Hz  startup frequency
@@ -142,6 +142,7 @@ static uint8_t default_rf_magic[4] = {'@', 'K', 'H', 'a'};
 #include "hardware.h"
 #include "binding.h"
 #include "common.h"
+#include "dialog.h"
 
 #ifdef COMPILE_TX
 #include "TX.h"
