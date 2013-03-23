@@ -109,6 +109,8 @@ void CLI_inline_edit(char c, bool str = 0) {
       CLI_buffer_needle--;
       CLI_buffer[CLI_buffer_needle] = 0;
     }
+  } else if(c == 0x0D) { // Enter
+    // Do nothing
   } else {
     Serial.write(c);
     CLI_buffer[CLI_buffer_needle++] = c; // Store char in the buffer
