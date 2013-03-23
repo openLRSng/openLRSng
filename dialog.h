@@ -109,6 +109,11 @@ void CLI_inline_edit(char c) {
     CLI_buffer[CLI_buffer_needle++] = c; // Store char in the buffer
   }
 }
+void CLI_buffer_reset(void) {
+  // Empty buffer and reset needle
+  CLI_buffer_needle = 0;
+  memset(CLI_buffer, 0, sizeof CLI_buffer);
+}
 
 void handleCLI(void)
 {
@@ -169,9 +174,7 @@ void handleCLI(void)
         if (c == 0x0D) { // Enter
           bind_data.rf_frequency = atoi(CLI_buffer);
           
-          // Empty buffer and reset needle
-          CLI_buffer_needle = 0;
-          memset(CLI_buffer, 0, sizeof CLI_buffer);
+          CLI_buffer_reset();
           
           // Leave the editing submenu
           CLI_menu = 0;
@@ -184,9 +187,7 @@ void handleCLI(void)
         if (c == 0x0D) { // Enter
           // crunch data
           
-          // Empty buffer and reset needle
-          CLI_buffer_needle = 0;
-          memset(CLI_buffer, 0, sizeof CLI_buffer);
+          CLI_buffer_reset();
           
           // Leave the editing submenu
           CLI_menu = 0;
@@ -199,9 +200,7 @@ void handleCLI(void)
         if (c == 0x0D) { // Enter
           // crunch data
           
-          // Empty buffer and reset needle
-          CLI_buffer_needle = 0;
-          memset(CLI_buffer, 0, sizeof CLI_buffer);
+          CLI_buffer_reset();
           
           // Leave the editing submenu
           CLI_menu = 0;
@@ -214,9 +213,7 @@ void handleCLI(void)
         if (c == 0x0D) { // Enter
           // crunch data
           
-          // Empty buffer and reset needle
-          CLI_buffer_needle = 0;
-          memset(CLI_buffer, 0, sizeof CLI_buffer);
+          CLI_buffer_reset();
           
           // Leave the editing submenu
           CLI_menu = 0;
@@ -229,9 +226,7 @@ void handleCLI(void)
         if (c == 0x0D) { // Enter
           // crunch data
           
-          // Empty buffer and reset needle
-          CLI_buffer_needle = 0;
-          memset(CLI_buffer, 0, sizeof CLI_buffer);
+          CLI_buffer_reset();
           
           // Leave the editing submenu
           CLI_menu = 0;
@@ -244,9 +239,7 @@ void handleCLI(void)
         if (c == 0x0D) { // Enter
           // crunch data
           
-          // Empty buffer and reset needle
-          CLI_buffer_needle = 0;
-          memset(CLI_buffer, 0, sizeof CLI_buffer);
+          CLI_buffer_reset();
           
           // Leave the editing submenu
           CLI_menu = 0;
@@ -259,9 +252,7 @@ void handleCLI(void)
         if (c == 0x0D) { // Enter
           // crunch data
           
-          // Empty buffer and reset needle
-          CLI_buffer_needle = 0;
-          memset(CLI_buffer, 0, sizeof CLI_buffer);
+          CLI_buffer_reset();
           
           // Leave the editing submenu
           CLI_menu = 0;
@@ -274,9 +265,7 @@ void handleCLI(void)
         if (c == 0x0D) { // Enter
           // crunch data
           
-          // Empty buffer and reset needle
-          CLI_buffer_needle = 0;
-          memset(CLI_buffer, 0, sizeof CLI_buffer);
+          CLI_buffer_reset();
           
           // Leave the editing submenu
           CLI_menu = 0;
@@ -289,9 +278,7 @@ void handleCLI(void)
         if (c == 0x0D) { // Enter
           // crunch data
           
-          // Empty buffer and reset needle
-          CLI_buffer_needle = 0;
-          memset(CLI_buffer, 0, sizeof CLI_buffer);
+          CLI_buffer_reset();
           
           // Leave the editing submenu
           CLI_menu = 0;
