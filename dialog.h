@@ -125,216 +125,223 @@ void CLI_buffer_reset(void) {
 
 void handleCLI(void)
 {
-  char c = Serial.read();
-  
-  if (CLI_menu == 0) {
-    switch (c) {
-      case '\n':
-        CLI_active = 1;
-        CLI_menu_headers();
-        break;
-      case '\r':
-        CLI_active = 1;
-        CLI_menu_headers();
-        break;
-      case 's':
-        // save settings to EEPROM
-        // bindWriteEeprom();
-        
-        CLI_menu = 101;
-        CLI_menu_headers();
-        break;
-      case 'x':
-        // restore settings from EEPROM
-        bindInitDefaults();
-        
-        CLI_menu = 102;
-        CLI_menu_headers();
-        break;
-      case '1':
-        CLI_menu = 1;
-        CLI_menu_headers();
-        break;
-      case '2':
-        CLI_menu = 2;
-        CLI_menu_headers();
-        break;
-      case '3':
-        CLI_menu = 3;
-        CLI_menu_headers();
-        break;
-      case '4':
-        CLI_menu = 4;
-        CLI_menu_headers();
-        break;
-      case '5':
-        CLI_menu = 5;
-        CLI_menu_headers();
-        break;
-      case '6':
-        CLI_menu = 6;
-        CLI_menu_headers();
-        break;
-      case '7':
-        CLI_menu = 7;
-        CLI_menu_headers();
-        break;
-      case '8':
-        CLI_menu = 8;
-        CLI_menu_headers();
-        break;
-      case '9':
-        CLI_menu = 9;
-        CLI_menu_headers();
-        break;        
-    }
-  } else { // we are inside the menu (this enables simple inline editing)
-    switch (CLI_menu) {
-      case 1:
-        CLI_inline_edit(c);
-        
-        if (c == 0x0D) { // Enter
-          bind_data.rf_frequency = atoi(CLI_buffer);
-          
-          CLI_buffer_reset();
-          
-          // Leave the editing submenu
-          CLI_menu = 0;
+  while (Serial.available()) {
+    char c = Serial.read();
+    
+    if (CLI_menu == 0) {
+      switch (c) {
+        case '\n':
+          CLI_active = 1;
           CLI_menu_headers();
-        }
-        break;
-      case 2:
-        CLI_inline_edit(c);
-
-        if (c == 0x0D) { // Enter
-          // TODO   
-          
-          CLI_buffer_reset();
-          
-          // Leave the editing submenu
-          CLI_menu = 0;
+          break;
+        case '\r':
+          CLI_active = 1;
           CLI_menu_headers();
-        }
-        break;
-      case 3:
-        CLI_inline_edit(c);
-
-        if (c == 0x0D) { // Enter
-          bind_data.rf_power = atoi(CLI_buffer);
+          break;
+        case 's':
+          // save settings to EEPROM
+          // bindWriteEeprom();
           
-          CLI_buffer_reset();
-          
-          // Leave the editing submenu
-          CLI_menu = 0;
+          CLI_menu = 101;
           CLI_menu_headers();
-        }
-        break;
-      case 4:
-        CLI_inline_edit(c);
-
-        if (c == 0x0D) { // Enter
-          bind_data.hopcount = atoi(CLI_buffer);
+          break;
+        case 'x':
+          // restore settings from EEPROM
+          bindInitDefaults();
           
-          CLI_buffer_reset();
-          
-          // Leave the editing submenu
-          CLI_menu = 0;
+          CLI_menu = 102;
           CLI_menu_headers();
-        }
-        break;
-      case 5:
-        CLI_inline_edit(c);
-
-        if (c == 0x0D) { // Enter
-          char* slice;
+          break;
+        case '1':
+          CLI_menu = 1;
+          CLI_menu_headers();
+          break;
+        case '2':
+          CLI_menu = 2;
+          CLI_menu_headers();
+          break;
+        case '3':
+          CLI_menu = 3;
+          CLI_menu_headers();
+          break;
+        case '4':
+          CLI_menu = 4;
+          CLI_menu_headers();
+          break;
+        case '5':
+          CLI_menu = 5;
+          CLI_menu_headers();
+          break;
+        case '6':
+          CLI_menu = 6;
+          CLI_menu_headers();
+          break;
+        case '7':
+          CLI_menu = 7;
+          CLI_menu_headers();
+          break;
+        case '8':
+          CLI_menu = 8;
+          CLI_menu_headers();
+          break;
+        case '9':
+          CLI_menu = 9;
+          CLI_menu_headers();
+          break;        
+      }
+    } else { // we are inside the menu (this enables simple inline editing)
+      switch (CLI_menu) {
+        case 1:
+          CLI_inline_edit(c);
           
-          slice = strtok(CLI_buffer, ",");
-          uint8_t channel = 0;
-          while (slice != NULL) {
-            bind_data.hopchannel[channel++] = atoi(slice);
+          if (c == 0x0D) { // Enter
+            bind_data.rf_frequency = atoi(CLI_buffer);
             
-            slice = strtok(NULL, ",");
+            CLI_buffer_reset();
+            
+            // Leave the editing submenu
+            CLI_menu = 0;
+            CLI_menu_headers();
           }
+          break;
+        case 2:
+          CLI_inline_edit(c);
 
-          while (channel < 7) {
-            bind_data.hopchannel[channel++] = 0;
+          if (c == 0x0D) { // Enter
+            // TODO   
+            
+            CLI_buffer_reset();
+            
+            // Leave the editing submenu
+            CLI_menu = 0;
+            CLI_menu_headers();
           }
-          
-          CLI_buffer_reset();
+          break;
+        case 3:
+          CLI_inline_edit(c);
 
-          // Leave the editing submenu
-          CLI_menu = 0;
-          CLI_menu_headers();
-        }
-        break;
-      case 6:
-        CLI_inline_edit(c);
+          if (c == 0x0D) { // Enter
+            bind_data.rf_power = atoi(CLI_buffer);
+            
+            CLI_buffer_reset();
+            
+            // Leave the editing submenu
+            CLI_menu = 0;
+            CLI_menu_headers();
+          }
+          break;
+        case 4:
+          CLI_inline_edit(c);
 
-        if (c == 0x0D) { // Enter
-          bind_data.modem_params = atoi(CLI_buffer);
-          
-          CLI_buffer_reset();
-          
-          // Leave the editing submenu
-          CLI_menu = 0;
-          CLI_menu_headers();
-        }
-        break;
-      case 7:
-        CLI_inline_edit(c);
+          if (c == 0x0D) { // Enter
+            bind_data.hopcount = atoi(CLI_buffer);
+            
+            CLI_buffer_reset();
+            
+            // Leave the editing submenu
+            CLI_menu = 0;
+            CLI_menu_headers();
+          }
+          break;
+        case 5:
+          CLI_inline_edit(c);
 
-        if (c == 0x0D) { // Enter
-          bind_data.beacon_frequency = atoi(CLI_buffer);
-          
-          CLI_buffer_reset();
-          
-          // Leave the editing submenu
-          CLI_menu = 0;
-          CLI_menu_headers();
-        }
-        break;
-      case 8:
-        CLI_inline_edit(c);
+          if (c == 0x0D) { // Enter
+            char* slice;
+            
+            slice = strtok(CLI_buffer, ",");
+            uint8_t channel = 0;
+            while (slice != NULL) {
+              bind_data.hopchannel[channel++] = atoi(slice);
+              
+              slice = strtok(NULL, ",");
+            }
 
-        if (c == 0x0D) { // Enter
-          bind_data.beacon_interval = atoi(CLI_buffer);
-          
-          CLI_buffer_reset();
-          
-          // Leave the editing submenu
-          CLI_menu = 0;
-          CLI_menu_headers();
-        }
-        break;
-      case 9:
-        CLI_inline_edit(c);
+            while (channel < 7) {
+              bind_data.hopchannel[channel++] = 0;
+            }
+            
+            CLI_buffer_reset();
 
-        if (c == 0x0D) { // Enter
-          bind_data.beacon_deadtime = atoi(CLI_buffer);
-          
-          CLI_buffer_reset();
-          
-          // Leave the editing submenu
-          CLI_menu = 0;
-          CLI_menu_headers();
-        }
-        break;
-      case 101:
-        if (c == 0x42 || c == 0x62) { // B
-          CLI_active = 0;
-          
-          CLI_menu = 0;
-          CLI_menu_headers();          
-        }
-        break;
-      case 102:
-        if (c == 0x42 || c == 0x62) { // B
-          CLI_active = 0;
-          
-          CLI_menu = 0;
-          CLI_menu_headers();          
-        }
-        break;
+            // Leave the editing submenu
+            CLI_menu = 0;
+            CLI_menu_headers();
+          }
+          break;
+        case 6:
+          CLI_inline_edit(c);
+
+          if (c == 0x0D) { // Enter
+            bind_data.modem_params = atoi(CLI_buffer);
+            
+            CLI_buffer_reset();
+            
+            // Leave the editing submenu
+            CLI_menu = 0;
+            CLI_menu_headers();
+          }
+          break;
+        case 7:
+          CLI_inline_edit(c);
+
+          if (c == 0x0D) { // Enter
+            bind_data.beacon_frequency = atoi(CLI_buffer);
+            
+            CLI_buffer_reset();
+            
+            // Leave the editing submenu
+            CLI_menu = 0;
+            CLI_menu_headers();
+          }
+          break;
+        case 8:
+          CLI_inline_edit(c);
+
+          if (c == 0x0D) { // Enter
+            bind_data.beacon_interval = atoi(CLI_buffer);
+            
+            CLI_buffer_reset();
+            
+            // Leave the editing submenu
+            CLI_menu = 0;
+            CLI_menu_headers();
+          }
+          break;
+        case 9:
+          CLI_inline_edit(c);
+
+          if (c == 0x0D) { // Enter
+            bind_data.beacon_deadtime = atoi(CLI_buffer);
+            
+            CLI_buffer_reset();
+            
+            // Leave the editing submenu
+            CLI_menu = 0;
+            CLI_menu_headers();
+          }
+          break;
+        case 101:
+          if (c == 0x42 || c == 0x62) { // B
+            CLI_active = 0;
+            
+            CLI_menu = 0;
+            CLI_menu_headers();          
+          }
+          break;
+        case 102:
+          if (c == 0x42 || c == 0x62) { // B
+            CLI_active = 0;
+            
+            CLI_menu = 0;
+            CLI_menu_headers();          
+          }
+          break;
+      }
     }
+  }
+  
+  // This reboots MCU
+  while (CLI_active) { // LOCK user here until settings are saved
+    handleCLI();
   }
 }
