@@ -70,7 +70,7 @@ void CLI_menu_headers(void) {
       Serial.print(F("Set number of hops: "));  
       break;
     case 5:
-      Serial.print(F("Set Hop channels: ")); 
+      Serial.print(F("Set Hop channels (separated by coma) [MAX 8]: ")); 
       break;
     case 6:
       Serial.print(F("Set Baudrate (0-2): ")); 
@@ -83,7 +83,10 @@ void CLI_menu_headers(void) {
       break;
     case 9:
       Serial.print(F("Set Beacon Deadtime: "));  
-      break;     
+      break;
+    case 101:
+      Serial.println(F("Data saved in EEPROM, press [B] to go to the main menu"));
+      break;
   }
 }
 
@@ -126,8 +129,9 @@ void handleCLI(void)
         break;
       case 's':
         // save settings to EEPROM
-        
-        // TODO
+        // bindWriteEeprom();
+        CLI_menu = 101;
+        CLI_menu_headers();
         break;
       case '1':
         CLI_menu = 1;
@@ -185,13 +189,7 @@ void handleCLI(void)
         CLI_inline_edit(c);
 
         if (c == 0x0D) { // Enter
-          // TODO
-          /*
-          bind_data.rf_magic[0] = CLI_buffer[0]
-          bind_data.rf_magic[1] =
-          bind_data.rf_magic[2] =
-          bind_data.rf_magic[3] =
-          */
+          // TODO   
           
           CLI_buffer_reset();
           
@@ -230,10 +228,22 @@ void handleCLI(void)
         CLI_inline_edit(c);
 
         if (c == 0x0D) { // Enter
-          // TODO
+          char* slice;
+          
+          slice = strtok(CLI_buffer, ",");
+          uint8_t channel = 0;
+          while (slice != NULL) {
+            bind_data.hopchannel[channel++] = atoi(slice);
+            
+            slice = strtok(NULL, ",");
+          }
+
+          while (channel < 7) {
+            bind_data.hopchannel[channel++] = 0;
+          }
           
           CLI_buffer_reset();
-          
+
           // Leave the editing submenu
           CLI_menu = 0;
           CLI_menu_headers();
@@ -290,7 +300,13 @@ void handleCLI(void)
           CLI_menu = 0;
           CLI_menu_headers();
         }
-        break;        
+        break;
+      case 101:
+        if (c == 0x42 || c == 0x62) { // B
+          CLI_menu = 0;
+          CLI_menu_headers();          
+        }
+        break;
     }
   }
 }
