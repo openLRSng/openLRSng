@@ -90,6 +90,10 @@ void bindMode(void)
 {
   uint32_t prevsend = millis();
   init_rfm(1);
+  
+  while (Serial.available()) {
+    Serial.read();    // flush serial
+  }  
 
   while (1) {
     if (millis() - prevsend > 200) {
@@ -101,6 +105,10 @@ void bindMode(void)
       buzzerOff();
     }
   }
+  
+  while (Serial.available()) {
+    handleCLI();
+  }  
 }
 
 void checkButton(void)
@@ -273,11 +281,7 @@ void loop(void)
       rx_buf[i] = spiReadData();
     }
     // Serial.println(rx_buf[0]); // print rssi value
-  }
-
-  while (Serial.available()) {
-    handleCLI();
-  }    
+  }  
   
   uint32_t time = micros();
 
