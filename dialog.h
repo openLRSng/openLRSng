@@ -11,11 +11,12 @@ uint8_t CLI_menu  = 0;
 uint8_t CLI_level = 0;
 
 void CLI_head(void) {
+  Serial.write(0x0c); // form feed
   Serial.print(F("openLRSng v "));
-  Serial.print(1.8);
+  Serial.print(1.8); // version should be fed from some version constant/variable in the code
   
   if (CLI_level == 0) {
-    Serial.println();  
+    Serial.println(F(" - use numbers [0-9] to navigate through the menu"));  
   } else if (CLI_level == 100) {
     Serial.println(F(" - press [B] to go back to the main menu"));
   } else {
@@ -23,53 +24,35 @@ void CLI_head(void) {
   }
 }
 
-void handleCLI(char c)
-{
-  switch (CLI_menu) {
-    case 0: // initial screen
-      switch (CLI_level) {
-        case 0: // level 0
-          if (c == '?') {
-            Serial.write(0x0c); // form feed
-            
-            CLI_head();
-          } else if (c == '1') { // print binding info
-            CLI_level = 100;
-            
-            CLI_head();
-            
-            bindPrint();
-          }          
-          break;
-        case 100: // we are in binding info
-          if (c == 'b') { // go back to the main menu
-            Serial.write(0x0c); // form feed
-            
-            CLI_level = 0; // reset level
-            
-            CLI_head();
-          }
-          break;
-      }
-      break;
-    case 1: // configuration screen
-      switch (CLI_level) {
-        case 0:
-          break;
-      }
-      break;
-  }
+void CLI_initial_screen(void) {
+  CLI_head();
   
-  /*
-  switch (c) {
-  case '?':
-    bindPrint();
-    break;
+  Serial.println(F("1 - Print Binding Info"));
+  Serial.println(F("2 - Enter Scanner Mode"));
+}
 
-  case '#':
-    buzzerOff();
-    scannerMode();
-    break;
+void handleCLI(void)
+{
+  uint8_t c = Serial.read();
+  
+  if (CLI_menu == 0) {
+    if (CLI_level == 0) { 
+      if (c == '?') {
+        CLI_initial_screen();
+      } else if (c == '1') { // Print binding info
+        CLI_level = 1;
+        
+        CLI_head();
+        bindPrint();
+      } else if (c == '2') { // Enter scanner mode
+        buzzerOff();
+        scannerMode();
+      }
+    } else if (CLI_level == 1) {
+      if (c == 'b') { // go back to the main menu
+        CLI_level = 0; // reset level
+        CLI_initial_screen();
+      }
+    }
   }
-  */
 }

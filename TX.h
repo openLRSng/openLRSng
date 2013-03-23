@@ -91,10 +91,6 @@ void bindMode(void)
   uint32_t prevsend = millis();
   init_rfm(1);
 
-  while (Serial.available()) {
-    Serial.read();    // flush serial
-  }
-
   while (1) {
     if (millis() - prevsend > 200) {
       prevsend = millis();
@@ -103,10 +99,6 @@ void bindMode(void)
       tx_packet((uint8_t*)&bind_data, sizeof(bind_data));
       Green_LED_OFF;
       buzzerOff();
-    }
-
-    while (Serial.available()) {
-      handleCLI(Serial.read());
     }
   }
 }
@@ -227,7 +219,7 @@ void setup(void)
   Serial.begin(SERIAL_BAUD_RATE);
 
   if (bindReadEeprom()) {
-    Serial.print("Loaded settings from EEPROM\n");
+    Serial.println("Loaded settings from EEPROM\n");
   } else {
     Serial.print("EEPROM data not valid, reiniting\n");
     bindInitDefaults();
@@ -283,6 +275,10 @@ void loop(void)
     // Serial.println(rx_buf[0]); // print rssi value
   }
 
+  while (Serial.available()) {
+    handleCLI();
+  }    
+  
   uint32_t time = micros();
 
   if ((time - lastSent) >= modem_params[bind_data.modem_params].interval) {
@@ -356,7 +352,7 @@ void loop(void)
     }
 
   }
-
+  
   //Green LED will be OFF
   Green_LED_OFF;
 
