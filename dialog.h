@@ -61,7 +61,7 @@ void CLI_menu_headers(void) {
       Serial.print(F("Set base frequency (in Hz): "));  
       break;
     case 2:
-      Serial.print(F("Set RF magic: "));  
+      Serial.print(F("Set RF magic (HEX): "));  
       break;
     case 3:
       Serial.print(F("Set RF power (0-7): ")); 
@@ -185,7 +185,13 @@ void handleCLI(void)
         CLI_inline_edit(c);
 
         if (c == 0x0D) { // Enter
-          // crunch data
+          // TODO
+          /*
+          bind_data.rf_magic[0] = CLI_buffer[0]
+          bind_data.rf_magic[1] =
+          bind_data.rf_magic[2] =
+          bind_data.rf_magic[3] =
+          */
           
           CLI_buffer_reset();
           
@@ -198,7 +204,7 @@ void handleCLI(void)
         CLI_inline_edit(c);
 
         if (c == 0x0D) { // Enter
-          // crunch data
+          bind_data.rf_power = atoi(CLI_buffer);
           
           CLI_buffer_reset();
           
@@ -211,7 +217,7 @@ void handleCLI(void)
         CLI_inline_edit(c);
 
         if (c == 0x0D) { // Enter
-          // crunch data
+          bind_data.hopcount = atoi(CLI_buffer);
           
           CLI_buffer_reset();
           
@@ -224,7 +230,7 @@ void handleCLI(void)
         CLI_inline_edit(c);
 
         if (c == 0x0D) { // Enter
-          // crunch data
+          // TODO
           
           CLI_buffer_reset();
           
@@ -237,7 +243,7 @@ void handleCLI(void)
         CLI_inline_edit(c);
 
         if (c == 0x0D) { // Enter
-          // crunch data
+          bind_data.modem_params = atoi(CLI_buffer);
           
           CLI_buffer_reset();
           
@@ -250,7 +256,7 @@ void handleCLI(void)
         CLI_inline_edit(c);
 
         if (c == 0x0D) { // Enter
-          // crunch data
+          bind_data.beacon_frequency = atoi(CLI_buffer);
           
           CLI_buffer_reset();
           
@@ -263,7 +269,7 @@ void handleCLI(void)
         CLI_inline_edit(c);
 
         if (c == 0x0D) { // Enter
-          // crunch data
+          bind_data.beacon_interval = atoi(CLI_buffer);
           
           CLI_buffer_reset();
           
@@ -276,7 +282,7 @@ void handleCLI(void)
         CLI_inline_edit(c);
 
         if (c == 0x0D) { // Enter
-          // crunch data
+          bind_data.beacon_deadtime = atoi(CLI_buffer);
           
           CLI_buffer_reset();
           
