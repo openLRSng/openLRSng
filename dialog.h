@@ -93,9 +93,15 @@ void CLI_menu_headers(void) {
       Serial.println(F("Data Restored from EEPROM, press [B] to go to the main menu"));
       break;
   }
+  // Flush input
+  delay(10);
+  while (Serial.available()) {
+    Serial.read();
+  }
 }
 
 void CLI_inline_edit(char c) {
+
   if (c == 0x7F) { // Backspace
     if (CLI_buffer_needle > 0) {
       // Remove last char from the buffer
@@ -184,7 +190,7 @@ void handleCLImenu(char c)
         CLI_inline_edit(c);
         
         if (c == 0x0D) { // Enter
-          bind_data.rf_frequency = atoi(CLI_buffer);
+          bind_data.rf_frequency = atol(CLI_buffer);
           
           CLI_buffer_reset();
           
