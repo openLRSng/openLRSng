@@ -93,6 +93,7 @@ void CLI_menu_headers(void) {
       Serial.println(F("Data Restored from EEPROM, press [B] to go to the main menu"));
       break;
   }
+  
   // Flush input
   delay(10);
   while (Serial.available()) {
@@ -139,13 +140,13 @@ void handleCLImenu(char c)
         break;
       case 's':
         // save settings to EEPROM
-        // bindWriteEeprom();
-        CLI_active=0;
+        bindWriteEeprom();
+        CLI_active = 0;
         break;
       case 'x':
         // restore settings from EEPROM
         bindInitDefaults();
-        CLI_active=0;
+        CLI_active = 0;
         break;
       case '1':
         CLI_menu = 1;
@@ -320,7 +321,7 @@ void handleCLImenu(char c)
 }
 
 void handleCLI() {
-  CLI_active=1;
+  CLI_active = 1;
 
   CLI_menu_headers();
   while (CLI_active) { // LOCK user here until settings are saved
@@ -328,6 +329,7 @@ void handleCLI() {
       handleCLImenu(Serial.read());
     }
   }
+  
   // Clear buffer
   delay(10);
   while (Serial.available()) {
