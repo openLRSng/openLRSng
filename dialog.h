@@ -86,12 +86,6 @@ void CLI_menu_headers(void) {
     case 9:
       Serial.print(F("Set Beacon Deadtime: "));  
       break;
-    case 101:
-      Serial.println(F("Data saved in EEPROM, press [B] to go to the main menu"));
-      break;
-    case 102:
-      Serial.println(F("Data Restored from EEPROM, press [B] to go to the main menu"));
-      break;
   }
   
   // Flush input
