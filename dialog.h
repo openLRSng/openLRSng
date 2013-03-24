@@ -193,41 +193,21 @@ void handleCLImenu(char c)
       case 1:
         if (c == 0x0D) { // Enter
           bind_data.rf_frequency = atol(CLI_buffer);
-          
-          CLI_buffer_reset();
         }
         break;
       case 2:
         if (c == 0x0D) { // Enter
           // TODO   
-          
-          CLI_buffer_reset();
-          
-          // Leave the editing submenu
-          CLI_menu = 0;
-          CLI_menu_headers();
         }
         break;
       case 3:
         if (c == 0x0D) { // Enter
           bind_data.rf_power = atoi(CLI_buffer);
-          
-          CLI_buffer_reset();
-          
-          // Leave the editing submenu
-          CLI_menu = 0;
-          CLI_menu_headers();
         }
         break;
       case 4:
         if (c == 0x0D) { // Enter
           bind_data.hopcount = atoi(CLI_buffer);
-          
-          CLI_buffer_reset();
-          
-          // Leave the editing submenu
-          CLI_menu = 0;
-          CLI_menu_headers();
         }
         break;
       case 5:
@@ -245,58 +225,36 @@ void handleCLImenu(char c)
           while (channel < 7) {
             bind_data.hopchannel[channel++] = 0;
           }
-          
-          CLI_buffer_reset();
-
-          // Leave the editing submenu
-          CLI_menu = 0;
-          CLI_menu_headers();
         }
         break;
       case 6:
         if (c == 0x0D) { // Enter
           bind_data.modem_params = atoi(CLI_buffer);
-          
-          CLI_buffer_reset();
-          
-          // Leave the editing submenu
-          CLI_menu = 0;
-          CLI_menu_headers();
         }
         break;
       case 7:
         if (c == 0x0D) { // Enter
           bind_data.beacon_frequency = atoi(CLI_buffer);
-          
-          CLI_buffer_reset();
-          
-          // Leave the editing submenu
-          CLI_menu = 0;
-          CLI_menu_headers();
         }
         break;
       case 8:
         if (c == 0x0D) { // Enter
           bind_data.beacon_interval = atoi(CLI_buffer);
-          
-          CLI_buffer_reset();
-          
-          // Leave the editing submenu
-          CLI_menu = 0;
-          CLI_menu_headers();
         }
         break;
       case 9:
         if (c == 0x0D) { // Enter
           bind_data.beacon_deadtime = atoi(CLI_buffer);
-          
-          CLI_buffer_reset();
-          
-          // Leave the editing submenu
-          CLI_menu = 0;
-          CLI_menu_headers();
         }
         break;
+    }
+    
+    if (c == 0x0D) { // Enter
+      CLI_buffer_reset();
+      
+      // Leave the editing submenu
+      CLI_menu = 0;
+      CLI_menu_headers();
     }
   }
 }
