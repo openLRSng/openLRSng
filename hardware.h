@@ -212,6 +212,22 @@ void buzzerOn(uint16_t freq)
 #endif
 #define BUZZER 6
 #define BTN 7
+void buzzerInit()
+{
+  pinMode(BUZZER, OUTPUT);
+  digitalWrite(BUZZER, LOW);
+}
+
+void buzzerOn(uint16_t freq)
+{
+  if (freq) {
+    digitalWrite(BUZZER,HIGH);
+  } else {
+    digitalWrite(BUZZER,LOW);
+  }
+}
+
+#define buzzerOff(foo) buzzerOn(0)
 #else
 #define PPM_OUT 9 // OCP1A
 #define RSSI_OUT 3 // PD3 OC2B
