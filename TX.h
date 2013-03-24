@@ -106,8 +106,19 @@ void bindMode(void)
     }
     
     while (Serial.available()) {
-      handleCLI();
-    } 
+      switch (Serial.read()) {
+        case '\n':
+        case '\r':
+          Serial.println(F("Enter menu..."));
+          handleCLI();
+          break;
+        case '#':
+          scannerMode();
+          break;
+        default:
+          break;
+      }
+    }
   } 
 }
 
