@@ -112,7 +112,7 @@ void CLI_inline_edit(char c) {
       }     
     }
   } else if(c == 0x0D) { // Enter
-    // do nothing
+    // data is crunched independently (depending on the submenu)
   } else {
     Serial.write(c);
     CLI_buffer[CLI_buffer_needle++] = c; // Store char in the buffer
@@ -135,11 +135,18 @@ void handleCLImenu(char c)
       case 's':
         // save settings to EEPROM
         bindWriteEeprom();
+        
+        // leave CLI
         CLI_active = 0;
         break;
       case 'x':
         // restore settings from EEPROM
         bindInitDefaults();
+        
+        // serve back the menu before leaving CLI
+        CLI_menu_headers();
+        
+        // leave CLI
         CLI_active = 0;
         break;
       case '1':
@@ -179,24 +186,18 @@ void handleCLImenu(char c)
         CLI_menu_headers();
         break;        
     }
-  } else { // we are inside the menu (this enables simple inline editing)
+  } else { // we are inside the menu
+    CLI_inline_edit(c); // this enables simple inline editing
+    
     switch (CLI_menu) {
       case 1:
-        CLI_inline_edit(c);
-        
         if (c == 0x0D) { // Enter
           bind_data.rf_frequency = atol(CLI_buffer);
           
           CLI_buffer_reset();
-          
-          // Leave the editing submenu
-          CLI_menu = 0;
-          CLI_menu_headers();
         }
         break;
       case 2:
-        CLI_inline_edit(c);
-
         if (c == 0x0D) { // Enter
           // TODO   
           
@@ -208,8 +209,6 @@ void handleCLImenu(char c)
         }
         break;
       case 3:
-        CLI_inline_edit(c);
-
         if (c == 0x0D) { // Enter
           bind_data.rf_power = atoi(CLI_buffer);
           
@@ -221,8 +220,6 @@ void handleCLImenu(char c)
         }
         break;
       case 4:
-        CLI_inline_edit(c);
-
         if (c == 0x0D) { // Enter
           bind_data.hopcount = atoi(CLI_buffer);
           
@@ -234,8 +231,6 @@ void handleCLImenu(char c)
         }
         break;
       case 5:
-        CLI_inline_edit(c);
-
         if (c == 0x0D) { // Enter
           char* slice;
           
@@ -259,8 +254,6 @@ void handleCLImenu(char c)
         }
         break;
       case 6:
-        CLI_inline_edit(c);
-
         if (c == 0x0D) { // Enter
           bind_data.modem_params = atoi(CLI_buffer);
           
@@ -272,8 +265,6 @@ void handleCLImenu(char c)
         }
         break;
       case 7:
-        CLI_inline_edit(c);
-
         if (c == 0x0D) { // Enter
           bind_data.beacon_frequency = atoi(CLI_buffer);
           
@@ -285,8 +276,6 @@ void handleCLImenu(char c)
         }
         break;
       case 8:
-        CLI_inline_edit(c);
-
         if (c == 0x0D) { // Enter
           bind_data.beacon_interval = atoi(CLI_buffer);
           
@@ -298,8 +287,6 @@ void handleCLImenu(char c)
         }
         break;
       case 9:
-        CLI_inline_edit(c);
-
         if (c == 0x0D) { // Enter
           bind_data.beacon_deadtime = atoi(CLI_buffer);
           
