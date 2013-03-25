@@ -204,66 +204,63 @@ void handleCLImenu(char c)
         CLI_menu_headers();
       } else {
         switch (CLI_menu) {
-          case 1:
-            {
-              uint32_t frq = atol(CLI_buffer);
-              if ((frq>MIN_RFM_FREQUENCY) && (frq<MAX_RFM_FREQUENCY)) {
-                bind_data.rf_frequency = atol(CLI_buffer);
-              } else {
-                Serial.println("Invalid frequency entered, discarded\n");
-              }
-            }
-            break;
-          case 2:
-            // TODO
-            break;
-          case 3:
-            bind_data.rf_power = atoi(CLI_buffer);
-            break;
-          case 4:
-            bind_data.rf_channel_spacing = atoi(CLI_buffer);
-            break;
-          case 5:
-            {
-              char* slice = strtok(CLI_buffer, ",");
-              uint8_t channel = 0;
-              while (slice != NULL) {
-                bind_data.hopchannel[channel++] = atoi(slice);
-                slice = strtok(NULL, ",");
-              }
-              bind_data.hopcount = channel;
-            }
-            break;
-          case 6:
-            if ((uint8_t)(atoi(CLI_buffer)) < DATARATE_COUNT) {
-              bind_data.modem_params = atoi(CLI_buffer);
-            } else {
-              Serial.println("Invalid datarate entered, discarded\n");
-            }
-            break;
-          case 7:
-            {
-              uint32_t frq = atol(CLI_buffer);
-              if ((!frq) || ((frq>MIN_RFM_FREQUENCY) && (frq<MAX_RFM_FREQUENCY))) {
-                bind_data.beacon_frequency = atol(CLI_buffer);
-              } else {
-                Serial.println("Invalid frequency entered, discarded\n");
-              }
-            }
-            break;
-          case 8:
-            bind_data.beacon_interval = atoi(CLI_buffer);
-            break;
-          case 9:
-            bind_data.beacon_deadtime = atoi(CLI_buffer);
-            break;
+        case 1: {
+          uint32_t frq = atol(CLI_buffer);
+          if ((frq>MIN_RFM_FREQUENCY) && (frq<MAX_RFM_FREQUENCY)) {
+            bind_data.rf_frequency = atol(CLI_buffer);
+          } else {
+            Serial.println("Invalid frequency entered, discarded\n");
+          }
+        }
+        break;
+        case 2:
+          // TODO
+          break;
+        case 3:
+          bind_data.rf_power = atoi(CLI_buffer);
+          break;
+        case 4:
+          bind_data.rf_channel_spacing = atoi(CLI_buffer);
+          break;
+        case 5: {
+          char* slice = strtok(CLI_buffer, ",");
+          uint8_t channel = 0;
+          while (slice != NULL) {
+            bind_data.hopchannel[channel++] = atoi(slice);
+            slice = strtok(NULL, ",");
+          }
+          bind_data.hopcount = channel;
+        }
+        break;
+        case 6:
+          if ((uint8_t)(atoi(CLI_buffer)) < DATARATE_COUNT) {
+            bind_data.modem_params = atoi(CLI_buffer);
+          } else {
+            Serial.println("Invalid datarate entered, discarded\n");
+          }
+          break;
+        case 7: {
+          uint32_t frq = atol(CLI_buffer);
+          if ((!frq) || ((frq>MIN_RFM_FREQUENCY) && (frq<MAX_RFM_FREQUENCY))) {
+            bind_data.beacon_frequency = atol(CLI_buffer);
+          } else {
+            Serial.println("Invalid frequency entered, discarded\n");
+          }
+        }
+        break;
+        case 8:
+          bind_data.beacon_interval = atoi(CLI_buffer);
+          break;
+        case 9:
+          bind_data.beacon_deadtime = atoi(CLI_buffer);
+          break;
         }
         CLI_buffer_reset();
         // Leave the editing submenu
         CLI_menu = -1;
         Serial.println('\n');
         CLI_menu_headers();
-      }      
+      }
     }
   }
 }

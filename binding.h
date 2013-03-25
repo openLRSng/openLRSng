@@ -95,7 +95,7 @@ int16_t bindReadEeprom()
   if (temp!=BIND_MAGIC) {
     return 0;
   }
-  
+
   for (uint8_t i = 0; i < sizeof(bind_data); i++) {
     *((uint8_t*)&bind_data + i) = EEPROM.read(EEPROM_OFFSET + 4 + i);
   }
@@ -124,7 +124,7 @@ void bindInitDefaults(void)
   bind_data.rf_power = DEFAULT_RF_POWER;
   bind_data.rf_frequency = DEFAULT_CARRIER_FREQUENCY;
   bind_data.rf_channel_spacing = DEFAULT_CHANNEL_SPACING;
-  
+
   bind_data.rf_magic = DEFAULT_RF_MAGIC;
 
   bind_data.hopcount = sizeof(default_hop_list) / sizeof(default_hop_list[0]);
