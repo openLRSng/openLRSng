@@ -90,10 +90,10 @@ void bindMode(void)
 {
   uint32_t prevsend = millis();
   init_rfm(1);
-  
+
   while (Serial.available()) {
     Serial.read();    // flush serial
-  }  
+  }
 
   while (1) {
     if (millis() - prevsend > 200) {
@@ -104,22 +104,22 @@ void bindMode(void)
       Green_LED_OFF;
       buzzerOff();
     }
-    
+
     while (Serial.available()) {
       switch (Serial.read()) {
-        case '\n':
-        case '\r':
-          Serial.println(F("Enter menu..."));
-          handleCLI();
-          break;
-        case '#':
-          scannerMode();
-          break;
-        default:
-          break;
+      case '\n':
+      case '\r':
+        Serial.println(F("Enter menu..."));
+        handleCLI();
+        break;
+      case '#':
+        scannerMode();
+        break;
+      default:
+        break;
       }
     }
-  } 
+  }
 }
 
 void checkButton(void)
@@ -292,8 +292,8 @@ void loop(void)
       rx_buf[i] = spiReadData();
     }
     // Serial.println(rx_buf[0]); // print rssi value
-  }  
-  
+  }
+
   uint32_t time = micros();
 
   if ((time - lastSent) >= modem_params[bind_data.modem_params].interval) {
@@ -367,7 +367,7 @@ void loop(void)
     }
 
   }
-  
+
   //Green LED will be OFF
   Green_LED_OFF;
 
