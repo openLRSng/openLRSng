@@ -2,8 +2,7 @@
   Simple CLI dialog
 */
 
-uint8_t CLI_menu = 0;
-bool CLI_active = 0;
+int8_t CLI_menu = 0;
 char CLI_buffer[20];
 uint8_t CLI_buffer_needle = 0;
 
@@ -48,7 +47,7 @@ void CLI_menu_headers(void) {
   Serial.write(0x0c); // form feed
   
   switch (CLI_menu) {
-    case 0:
+    case -1:
       Serial.print(F("openLRSng v "));
       Serial.print(1.8);
       Serial.println();
@@ -128,7 +127,7 @@ void CLI_buffer_reset(void) {
 
 void handleCLImenu(char c)
 {
-  if (CLI_menu == 0) {
+  if (CLI_menu == -1) {
     switch (c) {
       case '\n':
       case '\r':
@@ -140,7 +139,7 @@ void handleCLImenu(char c)
         bindWriteEeprom();
         Serial.println("Settings saved to EEPROM\n");       
         // leave CLI
-        CLI_active = 0;
+        CLI_menu = -2;
         break;
       case 'x':
       case 'X':
@@ -148,7 +147,7 @@ void handleCLImenu(char c)
         bindReadEeprom();
         Serial.println("Reverted settings from EEPROM\n");       
         // leave CLI
-        CLI_active = 0;
+        CLI_menu = -2;
         break;
       case 'i':
       case 'I':
@@ -248,17 +247,17 @@ void handleCLImenu(char c)
       CLI_buffer_reset();
       
       // Leave the editing submenu
-      CLI_menu = 0;
+      CLI_menu = -1;
       CLI_menu_headers();
     }
   }
 }
 
 void handleCLI() {
-  CLI_active = 1;
+  CLI_menu = -1;
 
   CLI_menu_headers();
-  while (CLI_active) { // LOCK user here until settings are saved
+  while (CLI_menu != -2) { // LOCK user here until settings are saved
     if (Serial.available()) {
       handleCLImenu(Serial.read());
     }
