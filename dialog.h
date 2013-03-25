@@ -106,23 +106,43 @@ void showFrequencies()
   }
 }
 
+void CLI_buffer_reset(void)
+{
+  // Empty buffer and reset needle
+  CLI_buffer_needle = 0;
+  memset(CLI_buffer, 0, sizeof CLI_buffer);
+}
+
 uint8_t CLI_inline_edit(char c)
 {
 
-  if (c == 0x7F) { // Backspace
+  if (c == 0x7F || c == 0x08) { // Delete or Backspace
     if (CLI_buffer_needle > 0) {
       // Remove last char from the buffer
       CLI_buffer_needle--;
       CLI_buffer[CLI_buffer_needle] = 0;
 
       // Redraw the output
-      CLI_menu_headers();
+      Serial.write('\r');
+      CLI_menu_headers();      
+
+      // Print data stored in the buffer
+      for (uint8_t i = 0; i < CLI_buffer_needle; i++) {
+        Serial.write(CLI_buffer[i]);
+      }
+      
+      Serial.write(0x32); // space
+      Serial.write('\r'); 
+      CLI_menu_headers();      
 
       // Print data stored in the buffer
       for (uint8_t i = 0; i < CLI_buffer_needle; i++) {
         Serial.write(CLI_buffer[i]);
       }
     }
+  } else if (c == 0x1B) { // ESC
+    CLI_buffer_reset();
+    return 1; // signal editing done
   } else if(c == 0x0D) { // Enter
     return 1; // signal editing done
   } else {
@@ -130,13 +150,6 @@ uint8_t CLI_inline_edit(char c)
     CLI_buffer[CLI_buffer_needle++] = c; // Store char in the buffer
   }
   return 0;
-}
-
-void CLI_buffer_reset(void)
-{
-  // Empty buffer and reset needle
-  CLI_buffer_needle = 0;
-  memset(CLI_buffer, 0, sizeof CLI_buffer);
 }
 
 void handleCLImenu(char c)
@@ -182,7 +195,7 @@ void handleCLImenu(char c)
     case 'f':
     case 'F':
       showFrequencies();
-      CLI_menu_headers();
+      //CLI_menu_headers();
       break;
     case '1':
     case '2':
