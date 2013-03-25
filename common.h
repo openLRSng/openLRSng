@@ -383,24 +383,11 @@ void init_rfm(uint8_t isbind)
   spiWriteRegister(0x38, 0x00);    // synch word 1 (not used)
   spiWriteRegister(0x39, 0x00);    // synch word 0 (not used)
 
-  if (isbind) {
-    spiWriteRegister(0x3a, bind_magic[0]);   // tx header
-    spiWriteRegister(0x3b, bind_magic[1]);
-    spiWriteRegister(0x3c, bind_magic[2]);
-    spiWriteRegister(0x3d, bind_magic[3]);
-    spiWriteRegister(0x3f, bind_magic[0]);   // verify header
-    spiWriteRegister(0x40, bind_magic[1]);
-    spiWriteRegister(0x41, bind_magic[2]);
-    spiWriteRegister(0x42, bind_magic[3]);
-  } else {
-    spiWriteRegister(0x3a, bind_data.rf_magic[0]);   // tx header
-    spiWriteRegister(0x3b, bind_data.rf_magic[1]);
-    spiWriteRegister(0x3c, bind_data.rf_magic[2]);
-    spiWriteRegister(0x3d, bind_data.rf_magic[3]);
-    spiWriteRegister(0x3f, bind_data.rf_magic[0]);   // verify header
-    spiWriteRegister(0x40, bind_data.rf_magic[1]);
-    spiWriteRegister(0x41, bind_data.rf_magic[2]);
-    spiWriteRegister(0x42, bind_data.rf_magic[3]);
+  uint32_t magic = isbind ? BIND_MAGIC : bind_data.rf_magic;
+  for (uint8_t i=0; i<4; i++) {
+    spiWriteRegister(0x3a + i, (magic >> 24) & 0xff);   // tx header
+    spiWriteRegister(0x3f + i, (magic >> 24) & 0xff);   // rx header
+    magic = magic << 8; // advance to next byte
   }
 
   spiWriteRegister(0x43, 0xff);    // all the bit to be checked
@@ -409,14 +396,14 @@ void init_rfm(uint8_t isbind)
   spiWriteRegister(0x46, 0xff);    // all the bit to be checked
 
   if (isbind) {
-    spiWriteRegister(0x6d, BINDING_POWER);   // set power
+    spiWriteRegister(0x6d, BINDING_POWER);
   } else {
-    spiWriteRegister(0x6d, bind_data.rf_power);   // 7 set power max power
+    spiWriteRegister(0x6d, bind_data.rf_power);
   }
 
   spiWriteRegister(0x79, 0);
 
-  spiWriteRegister(0x7a, 0x06);   // 60kHz channel spacing
+  spiWriteRegister(0x7a, bind_data.rf_channel_spacing);   // channel spacing
 
   spiWriteRegister(0x73, 0x00);
   spiWriteRegister(0x74, 0x00);    // no offset

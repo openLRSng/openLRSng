@@ -142,7 +142,7 @@ void checkButton(void)
     // Check the button again, If it is still down reinitialize
     if (0 == digitalRead(BTN)) {
       int8_t bzstate = HIGH;
-      uint8_t doRandomize = 1;
+      uint8_t doDefaults = 0;
 
       buzzerOn(bzstate?BZ_FREQ:0);
       loop_time = millis();
@@ -150,7 +150,7 @@ void checkButton(void)
       while (0 == digitalRead(BTN)) {     // wait for button to release
         if (loop_time > time + 9800) {
           buzzerOn(BZ_FREQ);
-          doRandomize = 0;
+          doDefaults = 1;
         } else {
           if ((millis() - loop_time) > 200) {
             loop_time = millis();
@@ -162,10 +162,10 @@ void checkButton(void)
 
       buzzerOff();
       randomSeed(micros());   // button release time in us should give us enough seed
-      bindInitDefaults();
-      if (doRandomize) {
-        bindRandomize();
+      if (doDefaults) {
+        bindInitDefaults();
       }
+      bindRandomize();
       bindWriteEeprom();
       bindPrint();
     }
