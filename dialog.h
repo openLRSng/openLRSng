@@ -185,13 +185,13 @@ defautlt:
     }
   } else { // we are inside the menu
     CLI_inline_edit(c); // this enables simple inline editing
-    
+
     if (c == 0x0D && CLI_buffer_needle == 0) { // Enter & buffer = empty
       c = 0x00; // throw c out of case range
-        
+
       // load main menu
       CLI_menu = -1;
-      CLI_menu_headers();        
+      CLI_menu_headers();
     }
 
     switch (CLI_menu) {
