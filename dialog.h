@@ -53,8 +53,10 @@ void CLI_menu_headers(void) {
       Serial.print(1.8);
       Serial.println();
       Serial.println(F("Use numbers [0-9] to edit value"));
-      Serial.println(F("Press [S] to save settings to EEPROM"));
-      Serial.println(F("Press [X] to restore settings from EEPROM"));
+      Serial.println(F("Press [S] to save settings to EEPROM and exit menu"));
+      Serial.println(F("Press [X] to revert changes and exit menu"));
+      Serial.println(F("Press [I] to renitialize settings to sketch defaults"));
+      Serial.println(F("Press [R] to calculate random key and hop list"));
       Serial.println();
 
       bindPrint();  
@@ -133,58 +135,51 @@ void handleCLImenu(char c)
         CLI_menu_headers();
         break;
       case 's':
+      case 'S':
         // save settings to EEPROM
         bindWriteEeprom();
-        
+        Serial.println("Settings saved to EEPROM\n");       
         // leave CLI
         CLI_active = 0;
         break;
       case 'x':
+      case 'X':
         // restore settings from EEPROM
-        bindInitDefaults();
-        
-        // serve back the menu before leaving CLI
-        CLI_menu_headers();
-        
+        bindReadEeprom();
+        Serial.println("Reverted settings from EEPROM\n");       
         // leave CLI
         CLI_active = 0;
         break;
+      case 'i':
+      case 'I':
+        // restore factory settings
+        bindInitDefaults();
+        Serial.println("Loaded factory defautls\n");       
+
+        CLI_menu_headers();
+        break;
+      case 'r':
+      case 'R':
+        // randomize channels and key
+        bindRandomize();
+        Serial.println("Key and channels randomized\n");       
+
+        CLI_menu_headers();
+        break;
       case '1':
-        CLI_menu = 1;
-        CLI_menu_headers();
-        break;
       case '2':
-        CLI_menu = 2;
-        CLI_menu_headers();
-        break;
       case '3':
-        CLI_menu = 3;
-        CLI_menu_headers();
-        break;
       case '4':
-        CLI_menu = 4;
-        CLI_menu_headers();
-        break;
       case '5':
-        CLI_menu = 5;
-        CLI_menu_headers();
-        break;
       case '6':
-        CLI_menu = 6;
-        CLI_menu_headers();
-        break;
       case '7':
-        CLI_menu = 7;
-        CLI_menu_headers();
-        break;
       case '8':
-        CLI_menu = 8;
-        CLI_menu_headers();
-        break;
       case '9':
-        CLI_menu = 9;
+        CLI_menu = c - '0';
         CLI_menu_headers();
         break;        
+      defautlt:
+        break;
     }
   } else { // we are inside the menu
     CLI_inline_edit(c); // this enables simple inline editing
@@ -234,7 +229,7 @@ void handleCLImenu(char c)
         break;
       case 7:
         if (c == 0x0D) { // Enter
-          bind_data.beacon_frequency = atoi(CLI_buffer);
+          bind_data.beacon_frequency = atol(CLI_buffer);
         }
         break;
       case 8:
