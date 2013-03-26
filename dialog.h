@@ -131,13 +131,13 @@ uint8_t CLI_inline_edit(char c)
         Serial.write(CLI_buffer[i]);
       }
       Serial.write(' ');
-      Serial.write('\r'); 
+      Serial.write('\r');
       for (uint8_t i = 0; i < CLI_buffer_needle; i++) {
         Serial.write(CLI_buffer[i]);
       }
     } else {
       Serial.print('\007'); // bell
-    }  
+    }
   } else if (c == 0x1B) { // ESC
     CLI_buffer_reset();
     return 1; // signal editing done
@@ -227,7 +227,7 @@ void handleCLImenu(char c)
             bind_data.rf_frequency = value;
             valid_input = 1;
           }
-        break;
+          break;
         case 2:
           bind_data.rf_magic = value;
           valid_input = 1;
@@ -268,7 +268,7 @@ void handleCLImenu(char c)
             bind_data.beacon_frequency = value;
             valid_input = 1;
           }
-        break;
+          break;
         case 8:
           if ((value > 10) && (value < 256)) {
             bind_data.beacon_interval = value;
