@@ -2,90 +2,94 @@
   Simple CLI dialog
 */
 
+#define EDIT_BUFFER_SIZE 20
+
 int8_t CLI_menu = 0;
-char CLI_buffer[20];
+char CLI_buffer[EDIT_BUFFER_SIZE+1];
 uint8_t CLI_buffer_needle = 0;
 
 void bindPrint(void)
 {
 
-  Serial.print("1) Base frequency:   ");
+  Serial.print(F("1) Base frequency:   "));
   Serial.println(bind_data.rf_frequency);
-  Serial.print("2) RF magic:         ");
+
+  Serial.print(F("2) RF magic:         "));
   Serial.println(bind_data.rf_magic, 16);
-  Serial.print("3) RF power (0-7):   ");
+
+  Serial.print(F("3) RF power (0-7):   "));
   Serial.println(bind_data.rf_power);
-  Serial.print("4) Channel spacing:  ");
+
+  Serial.print(F("4) Channel spacing:  "));
   Serial.println(bind_data.rf_channel_spacing);
-  Serial.print("5) Hop channels (");
+
+  Serial.print(F("5) Hop channels ("));
   Serial.print(bind_data.hopcount);
   Serial.print("): ");
-
-  for (uint8_t c = 0; c < bind_data.hopcount; c++) {
-    Serial.print(bind_data.hopchannel[c]);   // max 8 channels
-    if (c + 1 != bind_data.hopcount) {
+  for (uint8_t c = 0; c < bind_data.hopcount;) {
+    Serial.print(bind_data.hopchannel[c++]);   // max 8 channels
+    if (c != bind_data.hopcount) {
       Serial.print(",");
+    } else {
+      Serial.println();
     }
   }
 
-  Serial.println();
-//  Serial.print("NCH: ");
-//  Serial.println(bind_data.rc_channels); //normally 8
-  Serial.print("6) Baudrate (0-2):   ");
+  Serial.print(F("6) Baudrate (0-2):   "));
   Serial.println(bind_data.modem_params);
-  Serial.print("7) Beacon frequency: ");
+
+  Serial.print(F("7) Beacon frequency: "));
   Serial.println(bind_data.beacon_frequency);
-  Serial.print("8) Beacon Interval:  ");
+
+  Serial.print(F("8) Beacon Interval:  "));
   Serial.println(bind_data.beacon_interval);
-  Serial.print("9) Beacon Deadtime:  ");
+
+  Serial.print(F("9) Beacon Deadtime:  "));
   Serial.println(bind_data.beacon_deadtime);
 }
 
 void CLI_menu_headers(void)
 {
-  Serial.write(0x0c); // form feed
 
   switch (CLI_menu) {
   case -1:
-    Serial.print(F("\nopenLRSng v "));
-    Serial.print(1.8);
-    Serial.println();
-    Serial.println(F("Use numbers [0-9] to edit value"));
+    Serial.write(0x0c); // form feed
+    Serial.println(F("\nopenLRSng v2.0"));
+    Serial.println(F("Use numbers [0-9] to edit parameters"));
     Serial.println(F("[S] save settings to EEPROM and exit menu"));
     Serial.println(F("[X] revert changes and exit menu"));
     Serial.println(F("[I] renitialize settings to sketch defaults"));
     Serial.println(F("[R] calculate random key and hop list"));
     Serial.println(F("[F] display actual frequencies used"));
     Serial.println();
-
     bindPrint();
     break;
   case 1:
-    Serial.print(F("Set base frequency (in Hz): "));
+    Serial.println(F("Set base frequency (in Hz): "));
     break;
   case 2:
-    Serial.print(F("Set RF magic (HEX): "));
+    Serial.println(F("Set RF magic (HEX): "));
     break;
   case 3:
-    Serial.print(F("Set RF power (0-7): "));
+    Serial.println(F("Set RF power (0-7): "));
     break;
   case 4:
-    Serial.print(F("Set channel spacing: "));
+    Serial.println(F("Set channel spacing: "));
     break;
   case 5:
-    Serial.print(F("Set Hop channels (separated by coma) [MAX 8]: "));
+    Serial.println(F("Set Hop channels (separated by coma) [MAX 8]: "));
     break;
   case 6:
-    Serial.print(F("Set Baudrate (0-2): "));
+    Serial.println(F("Set Baudrate (0-2): "));
     break;
   case 7:
-    Serial.print(F("Set Beacon Frequency: "));
+    Serial.println(F("Set Beacon Frequency: "));
     break;
   case 8:
-    Serial.print(F("Set Beacon Interval: "));
+    Serial.println(F("Set Beacon Interval: "));
     break;
   case 9:
-    Serial.print(F("Set Beacon Deadtime: "));
+    Serial.println(F("Set Beacon Deadtime: "));
     break;
   }
 
@@ -115,39 +119,37 @@ void CLI_buffer_reset(void)
 
 uint8_t CLI_inline_edit(char c)
 {
-
   if (c == 0x7F || c == 0x08) { // Delete or Backspace
     if (CLI_buffer_needle > 0) {
       // Remove last char from the buffer
       CLI_buffer_needle--;
       CLI_buffer[CLI_buffer_needle] = 0;
 
-      // Redraw the output
+      // Redraw the output with last character erased
       Serial.write('\r');
-      CLI_menu_headers();      
-
-      // Print data stored in the buffer
       for (uint8_t i = 0; i < CLI_buffer_needle; i++) {
         Serial.write(CLI_buffer[i]);
       }
-      
-      Serial.write(0x32); // space
+      Serial.write(' ');
       Serial.write('\r'); 
-      CLI_menu_headers();      
-
-      // Print data stored in the buffer
       for (uint8_t i = 0; i < CLI_buffer_needle; i++) {
         Serial.write(CLI_buffer[i]);
       }
-    }
+    } else {
+      Serial.print('\007'); // bell
+    }  
   } else if (c == 0x1B) { // ESC
     CLI_buffer_reset();
     return 1; // signal editing done
   } else if(c == 0x0D) { // Enter
     return 1; // signal editing done
   } else {
-    Serial.write(c);
-    CLI_buffer[CLI_buffer_needle++] = c; // Store char in the buffer
+    if (CLI_buffer_needle < EDIT_BUFFER_SIZE) {
+      Serial.write(c);
+      CLI_buffer[CLI_buffer_needle++] = c; // Store char in the buffer
+    } else {
+      Serial.print('\007'); // bell
+    }
   }
   return 0;
 }
@@ -170,6 +172,7 @@ void handleCLImenu(char c)
       break;
     case 'x':
     case 'X':
+    case 0x1b: //ESC
       // restore settings from EEPROM
       bindReadEeprom();
       Serial.println("Reverted settings from EEPROM\n");
@@ -216,57 +219,71 @@ void handleCLImenu(char c)
         CLI_menu = -1;
         CLI_menu_headers();
       } else {
+        uint32_t value = strtoul(CLI_buffer, NULL, 0);
+        bool valid_input = 0;
         switch (CLI_menu) {
-        case 1: {
-          uint32_t frq = atol(CLI_buffer);
-          if ((frq>MIN_RFM_FREQUENCY) && (frq<MAX_RFM_FREQUENCY)) {
-            bind_data.rf_frequency = atol(CLI_buffer);
-          } else {
-            Serial.println("Invalid frequency entered, discarded\n");
+        case 1:
+          if ((value > MIN_RFM_FREQUENCY) && (value < MAX_RFM_FREQUENCY)) {
+            bind_data.rf_frequency = value;
+            valid_input = 1;
           }
-        }
         break;
         case 2:
-          // TODO
+          bind_data.rf_magic = value;
+          valid_input = 1;
           break;
         case 3:
-          bind_data.rf_power = atoi(CLI_buffer);
+          if (value < 8) {
+            bind_data.rf_power = value;
+            valid_input = 1;
+          }
           break;
         case 4:
-          bind_data.rf_channel_spacing = atoi(CLI_buffer);
+          if ((value > 0) && (value<11)) {
+            bind_data.rf_channel_spacing = value;
+            valid_input = 1;
+          }
           break;
         case 5: {
           char* slice = strtok(CLI_buffer, ",");
           uint8_t channel = 0;
           while (slice != NULL) {
-            bind_data.hopchannel[channel++] = atoi(slice);
+            if (channel < 8) {
+              bind_data.hopchannel[channel++] = atoi(slice);
+            }
             slice = strtok(NULL, ",");
           }
+          valid_input = 1;
           bind_data.hopcount = channel;
         }
         break;
         case 6:
-          if ((uint8_t)(atoi(CLI_buffer)) < DATARATE_COUNT) {
-            bind_data.modem_params = atoi(CLI_buffer);
-          } else {
-            Serial.println("Invalid datarate entered, discarded\n");
+          if (value < DATARATE_COUNT) {
+            bind_data.modem_params = value;
+            valid_input = 1;
           }
           break;
-        case 7: {
-          uint32_t frq = atol(CLI_buffer);
-          if ((!frq) || ((frq>MIN_RFM_FREQUENCY) && (frq<MAX_RFM_FREQUENCY))) {
-            bind_data.beacon_frequency = atol(CLI_buffer);
-          } else {
-            Serial.println("Invalid frequency entered, discarded\n");
+        case 7:
+          if ((value == 0) || ((value > MIN_RFM_FREQUENCY) && (value < MAX_RFM_FREQUENCY))) {
+            bind_data.beacon_frequency = value;
+            valid_input = 1;
           }
-        }
         break;
         case 8:
-          bind_data.beacon_interval = atoi(CLI_buffer);
+          if ((value > 10) && (value < 256)) {
+            bind_data.beacon_interval = value;
+            valid_input = 1;
+          }
           break;
         case 9:
-          bind_data.beacon_deadtime = atoi(CLI_buffer);
+          if ((value > 10) && (value < 256)) {
+            bind_data.beacon_deadtime = value;
+            valid_input = 1;
+          }
           break;
+        }
+        if (!valid_input) {
+          Serial.println("\r\nInvalid input - discarded!\007");
         }
         CLI_buffer_reset();
         // Leave the editing submenu
