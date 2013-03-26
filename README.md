@@ -19,6 +19,8 @@ TRANSMITTER HW:
     - button between ground and ch3
     - buzzer at ch2 (active high)
 
+  - openLRSngTX -- set TX_BOARD_TYPE 4
+
 RECEIVER HW:  
 ============
   - Flytron openLRS RX 
