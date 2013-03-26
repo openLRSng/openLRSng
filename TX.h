@@ -352,7 +352,7 @@ void loop(void)
       }
 
       // do not switch channel as we may receive telemetry on the old channel
-      if (modem_params[bind_data.modem_params].flags & 0x01) {
+      if (modem_params[bind_data.modem_params].flags & TELEMETRY_ENABLED) {
         RF_Mode = Receive;
         rx_reset();
       }

@@ -62,18 +62,19 @@ struct bind_data {
   uint8_t rf_power;
   uint8_t hopcount;
   uint8_t rf_channel_spacing;
-  uint8_t hopchannel[8]; // max 8 channels
-  uint8_t rc_channels; //normally 8
+  uint8_t hopchannel[8];
   uint8_t modem_params;
   uint32_t beacon_frequency;
   uint8_t beacon_interval;
   uint8_t beacon_deadtime;
 } bind_data;
 
+#define TELEMETRY_ENABLED 0x01
+
 struct rfm22_modem_regs {
   uint32_t bps;
   uint32_t interval;
-  uint8_t  flags; // 0x01 = telemetry enabled
+  uint8_t  flags;
   uint8_t  r_1c, r_1d, r_1e, r_20, r_21, r_22, r_23, r_24, r_25, r_2a, r_6e, r_6f, r_70, r_71, r_72;
 } modem_params[] = {
   { 4800,  50000, 0x00, 0x1a, 0x40, 0x0a, 0xa1, 0x20, 0x4e, 0xa5, 0x00, 0x1b, 0x1e, 0x27, 0x52, 0x2c, 0x23, 0x30 },
@@ -133,7 +134,6 @@ void bindInitDefaults(void)
     bind_data.hopchannel[c] = (c < bind_data.hopcount) ? default_hop_list[c] : 0;
   }
 
-  bind_data.rc_channels = 8;
   bind_data.modem_params = DEFAULT_DATARATE;
   bind_data.beacon_frequency = DEFAULT_BEACON_FREQUENCY;
   bind_data.beacon_interval = DEFAULT_BEACON_INTERVAL;

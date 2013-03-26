@@ -324,7 +324,7 @@ void loop()
       fs_saved = 0;
     }
 
-    if (modem_params[bind_data.modem_params].flags & 0x01) {
+    if (modem_params[bind_data.modem_params].flags & TELEMETRY_ENABLED) {
       // reply with telemetry
       uint8_t telemetry_packet[4];
       telemetry_packet[0] = last_rssi_value;
