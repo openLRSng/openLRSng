@@ -261,8 +261,6 @@ void setup()
   RF_channel = 0;
   rfmSetChannel(bind_data.hopchannel[RF_channel]);
 
-  setupPPMout();
-
   //################### RX SYNC AT STARTUP #################
   RF_Mode = Receive;
   to_rx_mode();
@@ -289,10 +287,6 @@ void loop()
     last_pack_time = micros(); // record last package time
     lostpack = 0;
 
-    if (firstpack == 0) {
-      firstpack = 1;
-    }
-
     Red_LED_OFF;
     Green_LED_ON;
 
@@ -313,6 +307,11 @@ void loop()
       PPM[6] = rx_buf[8] + ((rx_buf[10] & 0x30) << 4);
       PPM[7] = rx_buf[9] + ((rx_buf[10] & 0xc0) << 2);
       sei();
+    }
+
+    if (firstpack == 0) {
+      firstpack = 1;
+      setupPPMout();
     }
 
     if (rx_buf[0] == 0xF5) {
