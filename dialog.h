@@ -266,6 +266,21 @@ void handleCLImenu(char c)
           }
           break;
         case 7:
+          if ((CLI_buffer[0]=='P') || (CLI_buffer[0]=='p')) {
+            value = strtoul(CLI_buffer + 1, NULL, 0);
+            if ((value) && (value < 9)) {
+              value = EU_PMR_CH(value);
+            } else {
+              value = 1; //invalid
+            }
+          } else if ((CLI_buffer[0]=='F') || (CLI_buffer[0]=='f')) {
+            value = strtoul(CLI_buffer + 1, NULL, 0);
+            if ((value) && (value < 8)) {
+              value = US_FRS_CH(value);
+            } else {
+              value = 1; //invalid
+            }
+          }
           if ((value == 0) || ((value > MIN_RFM_FREQUENCY) && (value < MAX_RFM_FREQUENCY))) {
             bind_data.beacon_frequency = value;
             valid_input = 1;

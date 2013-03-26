@@ -45,7 +45,7 @@
 // 2 = Original M2/M3 Tx Board or OrangeRx UHF TX
 // 3 = OpenLRS Rx v2 Board works as TX
 // 4 = OpenLRSngTX (tbd.)
-#define TX_BOARD_TYPE 3
+#define TX_BOARD_TYPE 2
 
 //####### RX BOARD TYPE #######
 // 3 = OpenLRS Rx v2 Board or OrangeRx UHF RX
@@ -55,11 +55,8 @@
 #define SERIAL_BAUD_RATE 115200 //115.200 baud serial port speed
 
 //###### Should receiver always bind on bootup for 0.5s ######
-//###### If disabled a jumpper must be placed on RX ch1-ch2 to force it to bind
+//###### If disabled a jumpper must be placed on RX ch1-ch2 to allow it to bind
 #define RX_ALWAYS_BIND
-
-//### MISC DEBUG stuff
-//#define TX_TIMING // show time used to send packet (in uS) on serial
 
 //### Forced PPM enablingthis will put RX into combined PPM/PWM mode
 //### having channels 1-7 available in PWM on slots CH1-CH4,CH6-CH8
