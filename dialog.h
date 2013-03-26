@@ -4,9 +4,10 @@
 
 #define EDIT_BUFFER_SIZE 20
 
-int8_t CLI_menu = 0;
-char CLI_buffer[EDIT_BUFFER_SIZE+1];
-uint8_t CLI_buffer_needle = 0;
+int8_t  CLI_menu = 0;
+char    CLI_buffer[EDIT_BUFFER_SIZE+1];
+uint8_t CLI_buffer_position = 0;
+bool    CLI_magic_set = 0;
 
 void bindPrint(void)
 {
@@ -112,27 +113,27 @@ void showFrequencies()
 
 void CLI_buffer_reset(void)
 {
-  // Empty buffer and reset needle
-  CLI_buffer_needle = 0;
-  memset(CLI_buffer, 0, sizeof CLI_buffer);
+  // Empty buffer and reset position
+  CLI_buffer_position = 0;
+  memset(CLI_buffer, 0, sizeof(CLI_buffer));
 }
 
 uint8_t CLI_inline_edit(char c)
 {
   if (c == 0x7F || c == 0x08) { // Delete or Backspace
-    if (CLI_buffer_needle > 0) {
+    if (CLI_buffer_position > 0) {
       // Remove last char from the buffer
-      CLI_buffer_needle--;
-      CLI_buffer[CLI_buffer_needle] = 0;
+      CLI_buffer_position--;
+      CLI_buffer[CLI_buffer_position] = 0;
 
       // Redraw the output with last character erased
       Serial.write('\r');
-      for (uint8_t i = 0; i < CLI_buffer_needle; i++) {
+      for (uint8_t i = 0; i < CLI_buffer_position; i++) {
         Serial.write(CLI_buffer[i]);
       }
       Serial.write(' ');
       Serial.write('\r');
-      for (uint8_t i = 0; i < CLI_buffer_needle; i++) {
+      for (uint8_t i = 0; i < CLI_buffer_position; i++) {
         Serial.write(CLI_buffer[i]);
       }
     } else {
@@ -144,9 +145,9 @@ uint8_t CLI_inline_edit(char c)
   } else if(c == 0x0D) { // Enter
     return 1; // signal editing done
   } else {
-    if (CLI_buffer_needle < EDIT_BUFFER_SIZE) {
+    if (CLI_buffer_position < EDIT_BUFFER_SIZE) {
       Serial.write(c);
-      CLI_buffer[CLI_buffer_needle++] = c; // Store char in the buffer
+      CLI_buffer[CLI_buffer_position++] = c; // Store char in the buffer
     } else {
       Serial.print('\007'); // bell
     }
@@ -215,7 +216,7 @@ void handleCLImenu(char c)
     }
   } else { // we are inside the menu
     if (CLI_inline_edit(c)) {
-      if (CLI_buffer_needle == 0) { // no input - abort
+      if (CLI_buffer_position == 0) { // no input - abort
         CLI_menu = -1;
         CLI_menu_headers();
       } else {
@@ -230,6 +231,7 @@ void handleCLImenu(char c)
           break;
         case 2:
           bind_data.rf_magic = value;
+          CLI_magic_set = 1; // user wants specific magic, do not auto update
           valid_input = 1;
           break;
         case 3:
@@ -282,7 +284,11 @@ void handleCLImenu(char c)
           }
           break;
         }
-        if (!valid_input) {
+        if (valid_input) {
+          if (CLI_magic_set == 0) {
+            bind_data.rf_magic++;
+          }
+        } else {
           Serial.println("\r\nInvalid input - discarded!\007");
         }
         CLI_buffer_reset();
@@ -298,7 +304,7 @@ void handleCLImenu(char c)
 void handleCLI()
 {
   CLI_menu = -1;
-
+  CLI_magic_set = 0;
   CLI_menu_headers();
   while (CLI_menu != -2) { // LOCK user here until settings are saved
     if (Serial.available()) {
