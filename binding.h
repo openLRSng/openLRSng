@@ -1,7 +1,11 @@
 // OpenLRSng binding
 
 #define BINDING_POWER     0x00 // 1 mW
-#define BINDING_FREQUENCY 435000000 // Hz
+#ifndef RFMXX_868
+#  define BINDING_FREQUENCY 435000000 // Hz
+#else
+#  define BINDING_FREQUENCY 868000000 // Hz
+#endif
 #define BINDING_VERSION   1
 
 #define EEPROM_OFFSET     0x00
