@@ -24,7 +24,7 @@ TRANSMITTER HW:
 RECEIVER HW:  
 ============
   - Flytron openLRS RX 
-  - OrangeRX UHF RX
+  - OrangeRX UHF RX (NOTE both LEDs are RED!!)
   
   RSSI output at 'first' connector (marked as RSSI on OrangeRX) 32kHz PWM signal. To make this analog you can use a simple RC filter (R=10kOhm C=100nF).
   
@@ -75,7 +75,7 @@ TX:
 RX:
   - Binding
     - If enabled in the .ino RX always binds at boot (and times out after 0.5s) so it is enough to put TX to bind mode and power up RX.
-      On successful bind blue led lights up (both LEDs remain on until TX is put on normal mode)
+      On successful bind both red and blue (or a second red on OrangeRX RX) leds light up (and remain lit until TX is put on normal mode)
     - RX will also enter bind mode forcibly (without timeout) if EEPROM data is incorrect or a jumpper is placed between CH1 and CH2
   - Failsafe:
     - Failsafe activates after ~2s of no input data
