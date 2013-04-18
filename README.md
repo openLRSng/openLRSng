@@ -36,20 +36,10 @@ RECEIVER HW:
   
 SOFTWARE CONFIGURATION:
 =======================
-Modify configurations in openLRSng.ino as needed, mostly you are intrested in:
+  Only hardware related selections are done in the openLRSng.ino.
 
-  - DEFAULT_CARRIER_FREQUENCY
-    - sets base frequency
-
-  - DEFAULT_RF_POWER
-    - limits maximum power
-
-  - DEFAULT_HOPLIST/default_rf_magic
-    - these two parameters bind the tx/rx, note that you can generate random values by using the
-      "randomize channels and magic" feature on TX.
-
-Note: for settings to take effect the TX must be reinitialised by either randomizing or by resetting to 'factory settings'. The RX will need to be paired again.
-
+  Run time configuration is done by connecting to the TX module (which is put into binding mode) with serial terminal. For best restults use real terminal program like Putty, TeraTerm, minicom(Linux) but it is possible to use Arduino Serial Monitor too.
+  Sending 'm' will enter the menu which will guide further. It should be noted that doing edits will automatically change 'RF magic' to force rebinding, if you want to use a specific magic set that using the command (and further automatic changes are ceased for the edit session). 
   
 UPLOADING:
 ==========
@@ -70,11 +60,11 @@ TX:
     - power up while keeping button down and release button after ~1 second.
       Buzzer should emit short beep ~5 times/s in sync with led.
     - To exit bindmode powercycle TX.
-  - Reset settings and randomize channels and 'magic'
-    - power up while keeping button down for ~3 seconds (buzzer starts to emit beeps) and release button
+  - Randomize channels and 'magic'
+    - power up while keeping button down for ~5 seconds (buzzer starts to emit beeps) and release button
     - binding mode is entered automatically
-  - Reset settings to .ino values
-    - power up the TX and keep button down for >~7 seconds (buzzer beeps continously).
+  - Reset settings and randomize channels and 'magic'
+    - power up the TX and keep button down for >~10 seconds (buzzer beeps continously).
     - binding mode is entered automatically
   - Setting failsafe
     - Press and hold button for ~1s during normal operation until red LED lights and buzzer beeps, release button.
@@ -84,7 +74,7 @@ TX:
 
 RX:
   - Binding
-    - RX always binds at boot (and times out after 0.5s) so it is enough to put TX to bind mode and power up RX.
+    - If enabled in the .ino RX always binds at boot (and times out after 0.5s) so it is enough to put TX to bind mode and power up RX.
       On successful bind both red and blue (or a second red on OrangeRX RX) leds light up (and remain lit until TX is put on normal mode)
     - RX will also enter bind mode forcibly (without timeout) if EEPROM data is incorrect or a jumpper is placed between CH1 and CH2
   - Failsafe:

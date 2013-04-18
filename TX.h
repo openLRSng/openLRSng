@@ -86,20 +86,6 @@ void setupPPMinput(void)
 }
 #endif
 
-void handleCLI(char c)
-{
-  switch (c) {
-  case '?':
-    bindPrint();
-    break;
-
-  case '#':
-    buzzerOff();
-    scannerMode();
-    break;
-  }
-}
-
 void bindMode(void)
 {
   uint32_t prevsend = millis();
@@ -120,7 +106,18 @@ void bindMode(void)
     }
 
     while (Serial.available()) {
-      handleCLI(Serial.read());
+      switch (Serial.read()) {
+      case '\n':
+      case '\r':
+        Serial.println(F("Enter menu..."));
+        handleCLI();
+        break;
+      case '#':
+        scannerMode();
+        break;
+      default:
+        break;
+      }
     }
   }
 }
@@ -145,7 +142,7 @@ void checkButton(void)
     // Check the button again, If it is still down reinitialize
     if (0 == digitalRead(BTN)) {
       int8_t bzstate = HIGH;
-      uint8_t doRandomize = 1;
+      uint8_t doDefaults = 0;
 
       buzzerOn(bzstate?BZ_FREQ:0);
       loop_time = millis();
@@ -153,7 +150,7 @@ void checkButton(void)
       while (0 == digitalRead(BTN)) {     // wait for button to release
         if (loop_time > time + 9800) {
           buzzerOn(BZ_FREQ);
-          doRandomize = 0;
+          doDefaults = 1;
         } else {
           if ((millis() - loop_time) > 200) {
             loop_time = millis();
@@ -165,10 +162,10 @@ void checkButton(void)
 
       buzzerOff();
       randomSeed(micros());   // button release time in us should give us enough seed
-      bindInitDefaults();
-      if (doRandomize) {
-        bindRandomize();
+      if (doDefaults) {
+        bindInitDefaults();
       }
+      bindRandomize();
       bindWriteEeprom();
       bindPrint();
     }
@@ -241,7 +238,7 @@ void setup(void)
   Serial.begin(SERIAL_BAUD_RATE);
 
   if (bindReadEeprom()) {
-    Serial.print("Loaded settings from EEPROM\n");
+    Serial.println("Loaded settings from EEPROM\n");
   } else {
     Serial.print("EEPROM data not valid, reiniting\n");
     bindInitDefaults();
@@ -355,7 +352,7 @@ void loop(void)
       }
 
       // do not switch channel as we may receive telemetry on the old channel
-      if (modem_params[bind_data.modem_params].flags & 0x01) {
+      if (modem_params[bind_data.modem_params].flags & TELEMETRY_ENABLED) {
         RF_Mode = Receive;
         rx_reset();
       }
