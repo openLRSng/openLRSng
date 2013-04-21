@@ -88,7 +88,7 @@ RX:
 SPECIAL FUNCTIONS
 ======= =========
 
-Both TX and RX can be used as spectrum analysers with the "openLRS spectrum analyser GUI). See http://www.rcgroups.com/forums/showthread.php?t=1617297
+Both TX and RX can be used as spectrum analysers with the "openLRS spectrum analyser GUI). See http://www.rcgroups.com/forums/showpost.php?p=24549162&postcount=551 http://www.rcgroups.com/forums/showthread.php?t=1617297
 
 TX: Put TX into binding mode and connect with GUI (may need to press update once). 
 
