@@ -44,7 +44,7 @@ static uint8_t default_hop_list[] = {DEFAULT_HOPLIST};
 // HW frequency limits
 #ifdef RFMXX_868
 #  define MIN_RFM_FREQUENCY 848000000
-#  define MAX_RFM_FREQUENCY 488000000
+#  define MAX_RFM_FREQUENCY 888000000
 #  define DEFAULT_CARRIER_FREQUENCY 868000000  // Hz  (ch 0)
 #  define BINDING_FREQUENCY 868000000 // Hz
 #else
