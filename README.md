@@ -86,7 +86,7 @@ RX:
     - you can use cheap PMR walkie to listen to this signal and using your body as shield determine the direction of it. Alternatively use a directional 433Mhz antenna.
 
 SPECIAL FUNCTIONS
-======= =========
+=================
 
 Both TX and RX can be used as spectrum analysers with the "openLRS spectrum analyser GUI). See http://www.rcgroups.com/forums/showpost.php?p=24549162&postcount=551 http://www.rcgroups.com/forums/showthread.php?t=1617297
 
