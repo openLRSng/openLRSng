@@ -69,7 +69,7 @@ void CLI_menu_headers(void)
   switch (CLI_menu) {
   case -1:
     Serial.write(0x0c); // form feed
-    Serial.println(F("\nopenLRSng v2.0"));
+    Serial.println(F("\nopenLRSng v2.1"));
     Serial.println(F("Use numbers [0-9] to edit parameters"));
     Serial.println(F("[S] save settings to EEPROM and exit menu"));
     Serial.println(F("[X] revert changes and exit menu"));
