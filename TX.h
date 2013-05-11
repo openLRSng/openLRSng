@@ -267,7 +267,11 @@ void setup(void)
 
   ppmAge = 255;
   rx_reset();
-
+  
+  Serial.println("pkt size & interval");
+  Serial.print(getPacketSize(&bind_data));
+  Serial.print(',');
+  Serial.println(getInterval(&bind_data));
 }
 
 void loop(void)
@@ -296,15 +300,15 @@ void loop(void)
 
   uint32_t time = micros();
 
-  if ((time - lastSent) >= modem_params[bind_data.modem_params].interval) {
+  if ((time - lastSent) >= getInterval(&bind_data)) {
     lastSent = time;
 
     if (ppmAge < 8) {
-      uint8_t tx_buf[11];
+      uint8_t tx_buf[21];
       ppmAge++;
 
       if (lastTelemetry) {
-        if ((time - lastTelemetry) > modem_params[bind_data.modem_params].interval) {
+        if ((time - lastTelemetry) > getInterval(&bind_data)) {
           // telemetry lost
           buzzerOn(BZ_FREQ);
           lastTelemetry=0;
@@ -342,7 +346,12 @@ void loop(void)
 
       // Send the data over RF
       rfmSetChannel(bind_data.hopchannel[RF_channel]);
-      tx_packet(tx_buf, 11);
+
+      {
+        uint32_t start=micros();
+      tx_packet(tx_buf, getPacketSize(&bind_data));
+        Serial.println(micros()-start);
+      }
 
       //Hop to the next frequency
       RF_channel++;
@@ -352,7 +361,7 @@ void loop(void)
       }
 
       // do not switch channel as we may receive telemetry on the old channel
-      if (modem_params[bind_data.modem_params].flags & TELEMETRY_ENABLED) {
+      if (bind_data.flags & TELEMETRY_ENABLED) {
         RF_Mode = Receive;
         rx_reset();
       }

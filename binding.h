@@ -18,10 +18,21 @@
 #define DEFAULT_HOPLIST 22,10,19,34,49,41
 #define DEFAULT_RF_MAGIC 0xDEADFEED
 
-//  0 -- 4800bps, best range, 20Hz update rate
-//  1 -- 9600bps, medium range, 40Hz update rate
-//  2 -- 19200bps, medium range, 50Hz update rate + telemetry backlink
-#define DEFAULT_DATARATE 1
+//  0 -- 4800bps, best range
+//  1 -- 9600bps, medium range
+//  2 -- 19200bps, medium range
+#define DEFAULT_DATARATE 0
+
+// FLAGS: 8bits |4 bit reserved|3bit channel config|1bit telemetry enable|
+#define TELEMETRY_ENABLED 0x01
+#define CHANNELS_4_4  (0<<1)
+#define CHANNELS_8    (1<<1)
+#define CHANNELS_8_4  (2<<1)
+#define CHANNELS_12   (3<<1)
+#define CHANNELS_12_4 (4<<1)
+#define CHANNELS_16   (5<<1)
+
+#define DEFAULT_FLAGS CHANNELS_8
 
 // helpper macro for European PMR channels
 #define EU_PMR_CH(x) (445993750L + 12500L * (x)) // valid for ch1-ch8
@@ -34,19 +45,26 @@
 #define DEFAULT_BEACON_INTERVAL 10 // interval between beacon transmits (s)
 
 #define BINDING_POWER     0x00 // 1 mW
-#define BINDING_VERSION   2
+#define BINDING_VERSION   3
 
 #define EEPROM_OFFSET     0x00
+
+#define TELEMETRY_PACKETSIZE 9
 
 #define BIND_MAGIC (0xDEC1BE15 + BINDING_VERSION)
 static uint8_t default_hop_list[] = {DEFAULT_HOPLIST};
 
 // HW frequency limits
-#ifdef RFMXX_868
+#if (defined RFMXX_868)
 #  define MIN_RFM_FREQUENCY 848000000
 #  define MAX_RFM_FREQUENCY 888000000
 #  define DEFAULT_CARRIER_FREQUENCY 868000000  // Hz  (ch 0)
 #  define BINDING_FREQUENCY 868000000 // Hz
+#elif (defined RFMXX_915)
+#  define MIN_RFM_FREQUENCY 895000000
+#  define MAX_RFM_FREQUENCY 935000000
+#  define DEFAULT_CARRIER_FREQUENCY 915000000  // Hz  (ch 0)
+#  define BINDING_FREQUENCY 915000000 // Hz
 #else
 #  define MIN_RFM_FREQUENCY 413000000
 #  define MAX_RFM_FREQUENCY 463000000
@@ -64,28 +82,57 @@ struct bind_data {
   uint8_t rf_channel_spacing;
   uint8_t hopchannel[8];
   uint8_t modem_params;
+  uint8_t flags;
   uint32_t beacon_frequency;
   uint8_t beacon_interval;
   uint8_t beacon_deadtime;
 } bind_data;
 
-#define TELEMETRY_ENABLED 0x01
 
 struct rfm22_modem_regs {
   uint32_t bps;
-  uint32_t interval;
-  uint8_t  flags;
   uint8_t  r_1c, r_1d, r_1e, r_20, r_21, r_22, r_23, r_24, r_25, r_2a, r_6e, r_6f, r_70, r_71, r_72;
 } modem_params[] = {
-  { 4800,  50000, 0x00, 0x1a, 0x40, 0x0a, 0xa1, 0x20, 0x4e, 0xa5, 0x00, 0x1b, 0x1e, 0x27, 0x52, 0x2c, 0x23, 0x30 },
-  { 9600,  25000, 0x00, 0x05, 0x40, 0x0a, 0xa1, 0x20, 0x4e, 0xa5, 0x00, 0x20, 0x24, 0x4e, 0xa5, 0x2c, 0x23, 0x30 },
-  { 19200, 25000, 0x01, 0x06, 0x40, 0x0a, 0xd0, 0x00, 0x9d, 0x49, 0x00, 0x7b, 0x28, 0x9d, 0x49, 0x2c, 0x23, 0x30 }
+  { 4800, 0x1a, 0x40, 0x0a, 0xa1, 0x20, 0x4e, 0xa5, 0x00, 0x1b, 0x1e, 0x27, 0x52, 0x2c, 0x23, 0x30 }, // 50000 0x00
+  { 9600, 0x05, 0x40, 0x0a, 0xa1, 0x20, 0x4e, 0xa5, 0x00, 0x20, 0x24, 0x4e, 0xa5, 0x2c, 0x23, 0x30 }, // 25000 0x00
+  { 19200,0x06, 0x40, 0x0a, 0xd0, 0x00, 0x9d, 0x49, 0x00, 0x7b, 0x28, 0x9d, 0x49, 0x2c, 0x23, 0x30 }  // 25000 0x01
 };
 
 #define DATARATE_COUNT (sizeof(modem_params)/sizeof(modem_params[0]))
 
 struct rfm22_modem_regs bind_params =
-{ 9600,  25000, 0x00, 0x05, 0x40, 0x0a, 0xa1, 0x20, 0x4e, 0xa5, 0x00, 0x20, 0x24, 0x4e, 0xa5, 0x2c, 0x23, 0x30 };
+{ 9600, 0x05, 0x40, 0x0a, 0xa1, 0x20, 0x4e, 0xa5, 0x00, 0x20, 0x24, 0x4e, 0xa5, 0x2c, 0x23, 0x30 };
+
+const static uint8_t pktsizes[8] = {7, 11, 12, 16, 17, 21, 0, 0};
+
+const static char *chConfStr[8] = {"4+4", "8", "8+4", "12", "12+4", "16", "tbd.", "tbd."};
+
+uint8_t getPacketSize(struct bind_data *bd)
+{
+  return pktsizes[(bd->flags & 0x0e)>>1]; 
+}
+
+uint32_t getInterval(struct bind_data *bd)
+{
+  uint32_t ret;
+  // Sending a x byte packet on bps y takes about (emperical)
+  // usec = (x + 15) * 8200000 / baudrate  
+  #define BYTES_AT_BAUD_TO_USEC(x,y) ((uint32_t)((x)+15) * 8200000L / (uint32_t)(y))
+
+  ret = (BYTES_AT_BAUD_TO_USEC(getPacketSize(bd), modem_params[bd->modem_params].bps)+2000);
+
+  if (bd->flags & TELEMETRY_ENABLED) {
+    ret += (BYTES_AT_BAUD_TO_USEC(TELEMETRY_PACKETSIZE,modem_params[bd->modem_params].bps)+1000);
+  }
+  
+  // round up to ms
+  ret= ((ret+999) / 1000) * 1000;
+  
+  // not faster than 50Hz
+  if (ret < 20000) ret = 20000;
+  
+  return ret;
+}
 
 int16_t bindReadEeprom()
 {
@@ -135,6 +182,7 @@ void bindInitDefaults(void)
   }
 
   bind_data.modem_params = DEFAULT_DATARATE;
+  bind_data.flags = DEFAULT_FLAGS;
   bind_data.beacon_frequency = DEFAULT_BEACON_FREQUENCY;
   bind_data.beacon_interval = DEFAULT_BEACON_INTERVAL;
   bind_data.beacon_deadtime = DEFAULT_BEACON_DEADTIME;

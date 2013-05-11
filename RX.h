@@ -323,7 +323,7 @@ void loop()
       fs_saved = 0;
     }
 
-    if (modem_params[bind_data.modem_params].flags & TELEMETRY_ENABLED) {
+    if (bind_data.flags & TELEMETRY_ENABLED) {
       // reply with telemetry
       uint8_t telemetry_packet[4];
       telemetry_packet[0] = last_rssi_value;
@@ -342,7 +342,7 @@ void loop()
 
   // sample RSSI when packet is in the 'air'
   if ((lostpack < 2) && (last_rssi_time != last_pack_time) &&
-      (time - last_pack_time) > (modem_params[bind_data.modem_params].interval - 1500)) {
+      (time - last_pack_time) > (getInterval(&bind_data) - 1500)) {
     last_rssi_time = last_pack_time;
     last_rssi_value = rfmGetRSSI(); // Read the RSSI value
     RSSI_sum += last_rssi_value;    // tally up for average
@@ -359,19 +359,14 @@ void loop()
   time = micros();
 
   if (firstpack) {
-    if ((!lostpack) && (time - last_pack_time) > (modem_params[bind_data.modem_params].interval + 1000)) {
-      // we missed one packet, hop to next channel
-      lostpack = 1;
-      last_pack_time += modem_params[bind_data.modem_params].interval;
-      willhop = 1;
-    } else if ((lostpack == 1) && (time - last_pack_time) > (modem_params[bind_data.modem_params].interval + 1000)) {
-      // we lost second packet in row, hop and signal trouble
-      lostpack = 2;
-      last_pack_time += modem_params[bind_data.modem_params].interval;
+    if ((lostpack < 5) && (time - last_pack_time) > (getInterval(&bind_data) + 1000)) {
+      // we packet, hop to next channel
+      lostpack++;
+      last_pack_time += getInterval(&bind_data);
       willhop = 1;
       Red_LED_ON;
       set_RSSI_output(0);
-    } else if ((time - last_pack_time) > 200000L) {
+    } else if ((time - last_pack_time) > (getInterval(&bind_data) * bind_data.hopcount)) {
       // hop slowly to allow resync with TX
       last_pack_time = time;
 

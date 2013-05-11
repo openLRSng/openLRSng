@@ -47,6 +47,20 @@ void bindPrint(void)
 
   Serial.print(F("9) Beacon Deadtime:  "));
   Serial.println(bind_data.beacon_deadtime);
+
+  Serial.print(F("A) Channel config:  "));
+  Serial.println(chConfStr[(bind_data.flags&0x0e)>>1]);
+
+  Serial.print(F("B) Telemetry:       "));
+  Serial.println((bind_data.flags&TELEMETRY_ENABLED)?"Enabled":"Disabled");
+    
+  Serial.print(F("Calculated packet interval: "));
+  Serial.print(getInterval(&bind_data));
+  Serial.print(F(" == "));
+  Serial.print(1000000L/getInterval(&bind_data));
+  Serial.println(F("Hz"));
+  
+
 }
 
 void CLI_menu_headers(void)
@@ -91,6 +105,13 @@ void CLI_menu_headers(void)
     break;
   case 9:
     Serial.println(F("Set Beacon Deadtime: "));
+    break;
+  case 10:
+    Serial.println(F("Set Channel config: "));
+    Serial.println(F("Valid choices: 0 - 4+4 / 1 - 8 / 2 - 8+4 / 3 - 12 / 4 - 12+4 / 5 - 16"));
+    break;
+  case 11:
+    Serial.println(F("Toggled telemetry!"));
     break;
   }
 
@@ -213,6 +234,19 @@ void handleCLImenu(char c)
       CLI_menu = c - '0';
       CLI_menu_headers();
       break;
+    case 'a':
+    case 'A':
+      CLI_menu = 10;
+      CLI_menu_headers();
+      break;
+    case 'b':
+    case 'B':
+      CLI_menu = 11;
+      CLI_menu_headers();
+      bind_data.flags ^= TELEMETRY_ENABLED;
+      CLI_menu = -1;
+      CLI_menu_headers();
+      break;
     }
   } else { // we are inside the menu
     if (CLI_inline_edit(c)) {
@@ -295,6 +329,13 @@ void handleCLImenu(char c)
         case 9:
           if ((value > 10) && (value < 256)) {
             bind_data.beacon_deadtime = value;
+            valid_input = 1;
+          }
+          break;
+        case 10:
+          if ((value >= 0) && (value <= 6)) {
+            bind_data.flags &= 0xf1;
+            bind_data.flags |= (value<<1);
             valid_input = 1;
           }
           break;
