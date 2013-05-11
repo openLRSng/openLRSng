@@ -298,14 +298,7 @@ void loop()
 
     if ((rx_buf[0] == 0x5E) || (rx_buf[0] == 0xF5)) {
       cli();
-      PPM[0] = rx_buf[1] + ((rx_buf[5] & 0x03) << 8);
-      PPM[1] = rx_buf[2] + ((rx_buf[5] & 0x0c) << 6);
-      PPM[2] = rx_buf[3] + ((rx_buf[5] & 0x30) << 4);
-      PPM[3] = rx_buf[4] + ((rx_buf[5] & 0xc0) << 2);
-      PPM[4] = rx_buf[6] + ((rx_buf[10] & 0x03) << 8);
-      PPM[5] = rx_buf[7] + ((rx_buf[10] & 0x0c) << 6);
-      PPM[6] = rx_buf[8] + ((rx_buf[10] & 0x30) << 4);
-      PPM[7] = rx_buf[9] + ((rx_buf[10] & 0xc0) << 2);
+      unpackChannels(&bind_data, PPM, rx_buf + 1);
       sei();
     }
 

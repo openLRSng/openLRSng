@@ -329,17 +329,13 @@ void loop(void)
       }
 
       cli(); // disable interrupts when copying servo positions, to avoid race on 2 byte variable
-      tx_buf[1] = (PPM[0] & 0xff);
-      tx_buf[2] = (PPM[1] & 0xff);
-      tx_buf[3] = (PPM[2] & 0xff);
-      tx_buf[4] = (PPM[3] & 0xff);
-      tx_buf[5] = ((PPM[0] >> 8) & 3) | (((PPM[1] >> 8) & 3) << 2) | (((PPM[2] >> 8) & 3) << 4) | (((PPM[3] >> 8) & 3) << 6);
-      tx_buf[6] = (PPM[4] & 0xff);
-      tx_buf[7] = (PPM[5] & 0xff);
-      tx_buf[8] = (PPM[6] & 0xff);
-      tx_buf[9] = (PPM[7] & 0xff);
-      tx_buf[10] = ((PPM[4] >> 8) & 3) | (((PPM[5] >> 8) & 3) << 2) | (((PPM[6] >> 8) & 3) << 4) | (((PPM[7] >> 8) & 3) << 6);
+      packChannels(&bind_data, PPM, tx_buf + 1);
       sei();
+      for (int i=0; i < getPacketSize(&bind_data) ; i++) {
+        Serial.print(tx_buf[i],16);
+        Serial.print(',');
+      }
+      Serial.println();
 
       //Green LED will be on during transmission
       Green_LED_ON ;

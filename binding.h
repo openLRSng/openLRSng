@@ -23,14 +23,15 @@
 //  2 -- 19200bps, medium range
 #define DEFAULT_DATARATE 0
 
-// FLAGS: 8bits |4 bit reserved|3bit channel config|1bit telemetry enable|
-#define TELEMETRY_ENABLED 0x01
-#define CHANNELS_4_4  (0<<1)
-#define CHANNELS_8    (1<<1)
-#define CHANNELS_8_4  (2<<1)
-#define CHANNELS_12   (3<<1)
-#define CHANNELS_12_4 (4<<1)
-#define CHANNELS_16   (5<<1)
+// FLAGS: 8bits |4 bit reserved|1bit telemetry enable|3bit channel config|
+#define TELEMETRY_ENABLED 0x08
+#define CHANNELS_4_4  1
+#define CHANNELS_8    2
+#define CHANNELS_8_4  3
+#define CHANNELS_12   4
+#define CHANNELS_12_4 5
+#define CHANNELS_16   6
+
 
 #define DEFAULT_FLAGS CHANNELS_8
 
@@ -103,13 +104,13 @@ struct rfm22_modem_regs {
 struct rfm22_modem_regs bind_params =
 { 9600, 0x05, 0x40, 0x0a, 0xa1, 0x20, 0x4e, 0xa5, 0x00, 0x20, 0x24, 0x4e, 0xa5, 0x2c, 0x23, 0x30 };
 
-const static uint8_t pktsizes[8] = {7, 11, 12, 16, 17, 21, 0, 0};
+const static uint8_t pktsizes[8] = {0, 7, 11, 12, 16, 17, 21, 0};
 
-const static char *chConfStr[8] = {"4+4", "8", "8+4", "12", "12+4", "16", "tbd.", "tbd."};
+const static char *chConfStr[8] = {"N/A", "4+4", "8", "8+4", "12", "12+4", "16", "N/A"};
 
 uint8_t getPacketSize(struct bind_data *bd)
 {
-  return pktsizes[(bd->flags & 0x0e)>>1]; 
+  return pktsizes[(bd->flags & 0x07)]; 
 }
 
 uint32_t getInterval(struct bind_data *bd)
@@ -117,7 +118,7 @@ uint32_t getInterval(struct bind_data *bd)
   uint32_t ret;
   // Sending a x byte packet on bps y takes about (emperical)
   // usec = (x + 15) * 8200000 / baudrate  
-  #define BYTES_AT_BAUD_TO_USEC(x,y) ((uint32_t)((x)+15) * 8200000L / (uint32_t)(y))
+  #define BYTES_AT_BAUD_TO_USEC(bytes,bps) ((uint32_t)((bytes)+15) * 8200000L / (uint32_t)(bps))
 
   ret = (BYTES_AT_BAUD_TO_USEC(getPacketSize(bd), modem_params[bd->modem_params].bps)+2000);
 

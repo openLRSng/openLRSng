@@ -16,8 +16,54 @@ void tx_packet(uint8_t* pkt, uint8_t size);
 void to_rx_mode(void);
 volatile uint8_t rx_buf[11]; // RX buffer
 
-#define PPM_CHANNELS 8
-volatile uint16_t PPM[PPM_CHANNELS] = { 512, 512, 512, 512, 512, 512, 512, 512 };
+#define PPM_CHANNELS 16
+volatile uint16_t PPM[PPM_CHANNELS] = { 512, 512, 512, 512, 512, 512, 512, 512 ,512,512,512,512,512,512,512,512};
+
+uint8_t twoBitfy(uint16_t in) {
+  if (in<256) {
+    return 0;
+  } else if (in<512) {
+    return 1;
+  } else if (in<768) {
+    return 2;
+  } else {
+    return 3;
+  }
+}
+
+void packChannels(struct bind_data *bd, volatile uint16_t PPM[], uint8_t *p)
+{
+  uint8_t i;
+  for (i=0; i<=((bd->flags & 7)/2); i++) { // 4ch packed in 5 bytes
+    p[0] = (PPM[0] & 0xff);
+    p[1] = (PPM[1] & 0xff);
+    p[2] = (PPM[2] & 0xff);
+    p[3] = (PPM[3] & 0xff);
+    p[4] = ((PPM[0] >> 8) & 3) | (((PPM[1] >> 8) & 3) << 2) | (((PPM[2] >> 8) & 3) << 4) | (((PPM[3] >> 8) & 3) << 6);
+    p+=5; PPM+=4;
+  }
+  if ((bd->flags & 7) & 1) { // 4ch packed in 1 byte;
+    p[0] = (twoBitfy(PPM[0])<<6) | (twoBitfy(PPM[1])<<4) | (twoBitfy(PPM[2])<<2) | twoBitfy(PPM[3]);
+  }
+}
+
+void unpackChannels(struct bind_data *bd, volatile uint16_t PPM[], uint8_t *p)
+{
+  uint8_t i;
+  for (i=0; i<=((bd->flags & 7)/2); i++) { // 4ch packed in 5 bytes
+    PPM[0] = ((p[4] & 0xc0) << 2) & p[0];
+    PPM[1] = ((p[4] & 0x30) << 4) & p[1];
+    PPM[2] = ((p[4] & 0x0c) << 6) & p[2];
+    PPM[3] = ((p[4] & 0x03) << 8) & p[3];
+    p+=5; PPM+=4;
+  }
+  if ((bd->flags & 7) & 1) { // 4ch packed in 1 byte;
+    PPM[0] = ((p[0]>>6)&3)*333;
+    PPM[1] = ((p[0]>>4)&3)*333;
+    PPM[2] = ((p[0]>>2)&3)*333;
+    PPM[3] = ((p[0]>>0)&3)*333;
+  }
+}
 
 // conversion between microseconds 800-2200 and value 0-1023
 // 808-1000 == 0 - 11     (16us per step)
