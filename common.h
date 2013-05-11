@@ -14,7 +14,6 @@ uint8_t spiReadRegister(uint8_t address);
 void spiWriteRegister(uint8_t address, uint8_t data);
 void tx_packet(uint8_t* pkt, uint8_t size);
 void to_rx_mode(void);
-volatile uint8_t rx_buf[11]; // RX buffer
 
 #define PPM_CHANNELS 16
 volatile uint16_t PPM[PPM_CHANNELS] = { 512, 512, 512, 512, 512, 512, 512, 512 ,512,512,512,512,512,512,512,512};

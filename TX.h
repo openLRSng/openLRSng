@@ -332,8 +332,10 @@ void loop(void)
       packChannels(&bind_data, PPM, tx_buf + 1);
       sei();
       for (int i=0; i < getPacketSize(&bind_data) ; i++) {
+        if (i) {
+          Serial.print(',');
+        }
         Serial.print(tx_buf[i],16);
-        Serial.print(',');
       }
       Serial.println();
 
@@ -343,11 +345,11 @@ void loop(void)
       // Send the data over RF
       rfmSetChannel(bind_data.hopchannel[RF_channel]);
 
-      {
-        uint32_t start=micros();
+//      {
+//        uint32_t start=micros();
       tx_packet(tx_buf, getPacketSize(&bind_data));
-        Serial.println(micros()-start);
-      }
+//        Serial.println(micros()-start);
+//      }
 
       //Hop to the next frequency
       RF_channel++;

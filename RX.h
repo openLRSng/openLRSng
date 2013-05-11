@@ -269,6 +269,8 @@ void setup()
 
 }
 
+uint8_t rx_buf[21]; // RX buffer
+
 //############ MAIN LOOP ##############
 void loop()
 {
