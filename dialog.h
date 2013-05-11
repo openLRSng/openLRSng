@@ -49,7 +49,7 @@ void bindPrint(void)
   Serial.println(bind_data.beacon_deadtime);
 
   Serial.print(F("A) Channel config:  "));
-  Serial.println(chConfStr[(bind_data.flags&0x0e)>>1]);
+  Serial.println(chConfStr[bind_data.flags&0x07]);
 
   Serial.print(F("B) Telemetry:       "));
   Serial.println((bind_data.flags&TELEMETRY_ENABLED)?"Enabled":"Disabled");
@@ -108,7 +108,7 @@ void CLI_menu_headers(void)
     break;
   case 10:
     Serial.println(F("Set Channel config: "));
-    Serial.println(F("Valid choices: 0 - 4+4 / 1 - 8 / 2 - 8+4 / 3 - 12 / 4 - 12+4 / 5 - 16"));
+    Serial.println(F("Valid choices: 1 - 4+4 / 2 - 8 / 3 - 8+4 / 4 - 12 / 5 - 12+4 / 6 - 16"));
     break;
   case 11:
     Serial.println(F("Toggled telemetry!"));
@@ -333,9 +333,9 @@ void handleCLImenu(char c)
           }
           break;
         case 10:
-          if ((value >= 0) && (value <= 6)) {
-            bind_data.flags &= 0xf1;
-            bind_data.flags |= (value<<1);
+          if ((value >= 1) && (value <= 6)) {
+            bind_data.flags &= 0xf8;
+            bind_data.flags |= value;
             valid_input = 1;
           }
           break;
