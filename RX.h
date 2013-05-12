@@ -16,7 +16,8 @@ uint16_t RSSI_sum = 0;
 uint8_t  last_rssi_value = 0;
 
 uint8_t  ppmCountter = 0;
-uint16_t ppmTotal = 0;
+uint16_t ppmSync = 40000;
+uint8_t  ppmChannels = 8;
 
 boolean PPM_output = 0; // set if PPM output is desired
 
@@ -27,10 +28,10 @@ boolean willhop = 0, fs_saved = 0;
 
 ISR(TIMER1_OVF_vect)
 {
-  if (ppmCountter >= PPM_CHANNELS) {
-    ICR1 = 40000 - ppmTotal; // 20ms total frame
+  if (ppmCountter >= ppmChannels) {
+    ICR1 = ppmSync;
     ppmCountter = 0;
-    ppmTotal = 0;
+    ppmSync = 40000;
 
     if (PPM_output) {   // clear all bits
       PORTB &= ~PWM_MASK_PORTB(PWM_WITHPPM_MASK);
@@ -41,7 +42,8 @@ ISR(TIMER1_OVF_vect)
     }
   } else {
     uint16_t ppmOut = servoBits2Us(PPM[ppmCountter]) * 2;
-    ppmTotal += ppmOut;
+    ppmSync -= ppmOut;
+    if (ppmSync<5000) ppmSync=5000;
     ICR1 = ppmOut;
 
     if (PPM_output) {
@@ -56,8 +58,10 @@ ISR(TIMER1_OVF_vect)
     } else {
       PORTB &= ~PWM_MASK_PORTB(PWM_ALL_MASK);
       PORTD &= ~PWM_MASK_PORTD(PWM_ALL_MASK);
-      PORTB |= PWM_MASK_PORTB(PWM_MASK[ppmCountter]);
-      PORTD |= PWM_MASK_PORTD(PWM_MASK[ppmCountter]);
+      if (ppmCountter < 8) {
+        PORTB |= PWM_MASK_PORTB(PWM_MASK[ppmCountter]);
+        PORTD |= PWM_MASK_PORTD(PWM_MASK[ppmCountter]);
+      }
     }
 
     ppmCountter++;

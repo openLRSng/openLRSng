@@ -104,37 +104,6 @@ struct rfm22_modem_regs {
 struct rfm22_modem_regs bind_params =
 { 9600, 0x05, 0x40, 0x0a, 0xa1, 0x20, 0x4e, 0xa5, 0x00, 0x20, 0x24, 0x4e, 0xa5, 0x2c, 0x23, 0x30 };
 
-const static uint8_t pktsizes[8] = {0, 7, 11, 12, 16, 17, 21, 0};
-
-const static char *chConfStr[8] = {"N/A", "4+4", "8", "8+4", "12", "12+4", "16", "N/A"};
-
-uint8_t getPacketSize(struct bind_data *bd)
-{
-  return pktsizes[(bd->flags & 0x07)]; 
-}
-
-uint32_t getInterval(struct bind_data *bd)
-{
-  uint32_t ret;
-  // Sending a x byte packet on bps y takes about (emperical)
-  // usec = (x + 15) * 8200000 / baudrate  
-  #define BYTES_AT_BAUD_TO_USEC(bytes,bps) ((uint32_t)((bytes)+15) * 8200000L / (uint32_t)(bps))
-
-  ret = (BYTES_AT_BAUD_TO_USEC(getPacketSize(bd), modem_params[bd->modem_params].bps)+2000);
-
-  if (bd->flags & TELEMETRY_ENABLED) {
-    ret += (BYTES_AT_BAUD_TO_USEC(TELEMETRY_PACKETSIZE,modem_params[bd->modem_params].bps)+1000);
-  }
-  
-  // round up to ms
-  ret= ((ret+999) / 1000) * 1000;
-  
-  // not faster than 50Hz
-  if (ret < 20000) ret = 20000;
-  
-  return ret;
-}
-
 int16_t bindReadEeprom()
 {
   uint32_t temp = 0;
