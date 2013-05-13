@@ -268,10 +268,6 @@ void setup(void)
   ppmAge = 255;
   rx_reset();
 
-  Serial.println("pkt size & interval");
-  Serial.print(getPacketSize(&bind_data));
-  Serial.print(',');
-  Serial.println(getInterval(&bind_data));
 }
 
 void loop(void)
@@ -331,13 +327,6 @@ void loop(void)
       cli(); // disable interrupts when copying servo positions, to avoid race on 2 byte variable
       packChannels(&bind_data, PPM, tx_buf + 1);
       sei();
-      for (int i=0; i < getPacketSize(&bind_data) ; i++) {
-        if (i) {
-          Serial.print(',');
-        }
-        Serial.print(tx_buf[i],16);
-      }
-      Serial.println();
 
       //Green LED will be on during transmission
       Green_LED_ON ;
@@ -345,11 +334,7 @@ void loop(void)
       // Send the data over RF
       rfmSetChannel(bind_data.hopchannel[RF_channel]);
 
-//      {
-//        uint32_t start=micros();
       tx_packet(tx_buf, getPacketSize(&bind_data));
-//        Serial.println(micros()-start);
-//      }
 
       //Hop to the next frequency
       RF_channel++;

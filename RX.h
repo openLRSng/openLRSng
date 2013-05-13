@@ -414,12 +414,4 @@ void loop()
     willhop = 0;
   }
 
-  if (Serial.available()) {
-    Serial.read();
-    for (int i=0; i<16; i++) {
-      Serial.print(PPM[i]);
-      Serial.print(',');
-    }
-    Serial.println();
-  }
 }
