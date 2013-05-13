@@ -259,8 +259,12 @@ void setup()
   PPM_output = 1;
 #endif
 
+  ppmChannels = getChannelCount(&bind_data);
+
   Serial.print("Entering normal mode with PPM=");
-  Serial.println(PPM_output);
+  Serial.print(PPM_output);
+  Serial.print("CHs=");
+  Serial.print(ppmChannels);
   init_rfm(0);   // Configure the RFM22B's registers for normal operation
   RF_channel = 0;
   rfmSetChannel(bind_data.hopchannel[RF_channel]);
@@ -298,7 +302,7 @@ void loop()
 
     spiSendAddress(0x7f);   // Send the package read command
 
-    for (int16_t i = 0; i < 11; i++) {
+    for (int16_t i = 0; i < getPacketSize(&bind_data); i++) {
       rx_buf[i] = spiReadData();
     }
 
@@ -406,5 +410,14 @@ void loop()
 
     rfmSetChannel(bind_data.hopchannel[RF_channel]);
     willhop = 0;
+  }
+
+  if (Serial.available()) {
+    Serial.read();
+    for (int i=0; i<16; i++) {
+      Serial.print(PPM[i]);
+      Serial.print(',');
+    }
+    Serial.println();
   }
 }

@@ -84,17 +84,17 @@ void unpackChannels(struct bind_data *bd, volatile uint16_t PPM[], uint8_t *p)
 {
   uint8_t i;
   for (i=0; i<=((bd->flags & 7)/2); i++) { // 4ch packed in 5 bytes
-    PPM[0] = ((p[4] & 0xc0) << 2) + p[0];
-    PPM[1] = ((p[4] & 0x30) << 4) + p[1];
-    PPM[2] = ((p[4] & 0x0c) << 6) + p[2];
-    PPM[3] = ((p[4] & 0x03) << 8) +  p[3];
+    PPM[0] = (((uint16_t)p[4] & 0x03) << 8) + p[0];
+    PPM[1] = (((uint16_t)p[4] & 0x0c) << 6) + p[1];
+    PPM[2] = (((uint16_t)p[4] & 0x30) << 4) + p[2];
+    PPM[3] = (((uint16_t)p[4] & 0xc0) << 2) + p[3];
     p+=5; PPM+=4;
   }
   if ((bd->flags & 7) & 1) { // 4ch packed in 1 byte;
-    PPM[0] = ((p[0]>>6)&3)*333+12;
-    PPM[1] = ((p[0]>>4)&3)*333+12;
-    PPM[2] = ((p[0]>>2)&3)*333+12;
-    PPM[3] = ((p[0]>>0)&3)*333+12;
+    PPM[0] = (((uint16_t)p[0]>>6)&3)*333+12;
+    PPM[1] = (((uint16_t)p[0]>>4)&3)*333+12;
+    PPM[2] = (((uint16_t)p[0]>>2)&3)*333+12;
+    PPM[3] = (((uint16_t)p[0]>>0)&3)*333+12;
   }
 }
 
