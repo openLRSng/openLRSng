@@ -53,13 +53,13 @@ void bindPrint(void)
 
   Serial.print(F("B) Telemetry:       "));
   Serial.println((bind_data.flags&TELEMETRY_ENABLED)?"Enabled":"Disabled");
-    
+
   Serial.print(F("Calculated packet interval: "));
   Serial.print(getInterval(&bind_data));
   Serial.print(F(" == "));
   Serial.print(1000000L/getInterval(&bind_data));
   Serial.println(F("Hz"));
-  
+
 
 }
 

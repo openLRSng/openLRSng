@@ -267,7 +267,7 @@ void setup(void)
 
   ppmAge = 255;
   rx_reset();
-  
+
   Serial.println("pkt size & interval");
   Serial.print(getPacketSize(&bind_data));
   Serial.print(',');

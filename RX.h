@@ -43,7 +43,9 @@ ISR(TIMER1_OVF_vect)
   } else {
     uint16_t ppmOut = servoBits2Us(PPM[ppmCountter]) * 2;
     ppmSync -= ppmOut;
-    if (ppmSync<5000) ppmSync=5000;
+    if (ppmSync<5000) {
+      ppmSync=5000;
+    }
     ICR1 = ppmOut;
 
     if (PPM_output) {

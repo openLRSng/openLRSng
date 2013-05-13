@@ -24,7 +24,7 @@ const static char *chConfStr[8] = {"N/A", "4+4", "8", "8+4", "12", "12+4", "16",
 
 uint8_t getPacketSize(struct bind_data *bd)
 {
-  return pktsizes[(bd->flags & 0x07)]; 
+  return pktsizes[(bd->flags & 0x07)];
 }
 
 uint8_t getChannelCount(struct bind_data *bd)
@@ -36,23 +36,27 @@ uint32_t getInterval(struct bind_data *bd)
 {
   uint32_t ret;
   // Sending a x byte packet on bps y takes about (emperical)
-  // usec = (x + 15) * 8200000 / baudrate  
-  #define BYTES_AT_BAUD_TO_USEC(bytes,bps) ((uint32_t)((bytes)+15) * 8200000L / (uint32_t)(bps))
+  // usec = (x + 15) * 8200000 / baudrate
+#define BYTES_AT_BAUD_TO_USEC(bytes,bps) ((uint32_t)((bytes)+15) * 8200000L / (uint32_t)(bps))
 
   ret = (BYTES_AT_BAUD_TO_USEC(getPacketSize(bd), modem_params[bd->modem_params].bps)+2000);
 
   if (bd->flags & TELEMETRY_ENABLED) {
     ret += (BYTES_AT_BAUD_TO_USEC(TELEMETRY_PACKETSIZE,modem_params[bd->modem_params].bps)+1000);
   }
-  
+
   // round up to ms
   ret= ((ret+999) / 1000) * 1000;
-  
+
   // not faster than 50Hz
-  if (ret < 20000) ret = 20000;
-  
+  if (ret < 20000) {
+    ret = 20000;
+  }
+
   return ret;
-}uint8_t twoBitfy(uint16_t in) {
+}
+uint8_t twoBitfy(uint16_t in)
+{
   if (in<256) {
     return 0;
   } else if (in<512) {
@@ -73,7 +77,8 @@ void packChannels(struct bind_data *bd, volatile uint16_t PPM[], uint8_t *p)
     p[2] = (PPM[2] & 0xff);
     p[3] = (PPM[3] & 0xff);
     p[4] = ((PPM[0] >> 8) & 3) | (((PPM[1] >> 8) & 3) << 2) | (((PPM[2] >> 8) & 3) << 4) | (((PPM[3] >> 8) & 3) << 6);
-    p+=5; PPM+=4;
+    p+=5;
+    PPM+=4;
   }
   if ((bd->flags & 7) & 1) { // 4ch packed in 1 byte;
     p[0] = (twoBitfy(PPM[0])<<6) | (twoBitfy(PPM[1])<<4) | (twoBitfy(PPM[2])<<2) | twoBitfy(PPM[3]);
@@ -88,7 +93,8 @@ void unpackChannels(struct bind_data *bd, volatile uint16_t PPM[], uint8_t *p)
     PPM[1] = (((uint16_t)p[4] & 0x0c) << 6) + p[1];
     PPM[2] = (((uint16_t)p[4] & 0x30) << 4) + p[2];
     PPM[3] = (((uint16_t)p[4] & 0xc0) << 2) + p[3];
-    p+=5; PPM+=4;
+    p+=5;
+    PPM+=4;
   }
   if ((bd->flags & 7) & 1) { // 4ch packed in 1 byte;
     PPM[0] = (((uint16_t)p[0]>>6)&3)*333+12;

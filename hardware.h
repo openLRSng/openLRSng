@@ -243,7 +243,7 @@ void setup_RSSI_output()
 void set_RSSI_output( uint8_t val )
 {
   if ((val == 0) || (val == 255)) {
-  TCCR2A &= ~(1<<COM2B1); // disable PWM output
+    TCCR2A &= ~(1<<COM2B1); // disable PWM output
     digitalWrite(RSSI_OUT, (val == 0) ? LOW : HIGH);
   } else {
     OCR2B = val;
