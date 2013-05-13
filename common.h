@@ -68,10 +68,10 @@ uint8_t twoBitfy(uint16_t in)
   }
 }
 
-void packChannels(struct bind_data *bd, volatile uint16_t PPM[], uint8_t *p)
+void packChannels(uint8_t config, volatile uint16_t PPM[], uint8_t *p)
 {
   uint8_t i;
-  for (i=0; i<=((bd->flags & 7)/2); i++) { // 4ch packed in 5 bytes
+  for (i=0; i<=(config/2); i++) { // 4ch packed in 5 bytes
     p[0] = (PPM[0] & 0xff);
     p[1] = (PPM[1] & 0xff);
     p[2] = (PPM[2] & 0xff);
@@ -80,15 +80,15 @@ void packChannels(struct bind_data *bd, volatile uint16_t PPM[], uint8_t *p)
     p+=5;
     PPM+=4;
   }
-  if ((bd->flags & 7) & 1) { // 4ch packed in 1 byte;
+  if (config & 1) { // 4ch packed in 1 byte;
     p[0] = (twoBitfy(PPM[0])<<6) | (twoBitfy(PPM[1])<<4) | (twoBitfy(PPM[2])<<2) | twoBitfy(PPM[3]);
   }
 }
 
-void unpackChannels(struct bind_data *bd, volatile uint16_t PPM[], uint8_t *p)
+void unpackChannels(uint8_t config, volatile uint16_t PPM[], uint8_t *p)
 {
   uint8_t i;
-  for (i=0; i<=((bd->flags & 7)/2); i++) { // 4ch packed in 5 bytes
+  for (i=0; i<=(config/2); i++) { // 4ch packed in 5 bytes
     PPM[0] = (((uint16_t)p[4] & 0x03) << 8) + p[0];
     PPM[1] = (((uint16_t)p[4] & 0x0c) << 6) + p[1];
     PPM[2] = (((uint16_t)p[4] & 0x30) << 4) + p[2];
@@ -96,7 +96,7 @@ void unpackChannels(struct bind_data *bd, volatile uint16_t PPM[], uint8_t *p)
     p+=5;
     PPM+=4;
   }
-  if ((bd->flags & 7) & 1) { // 4ch packed in 1 byte;
+  if (config & 1) { // 4ch packed in 1 byte;
     PPM[0] = (((uint16_t)p[0]>>6)&3)*333+12;
     PPM[1] = (((uint16_t)p[0]>>4)&3)*333+12;
     PPM[2] = (((uint16_t)p[0]>>2)&3)*333+12;

@@ -104,34 +104,38 @@ void setupPPMout()
 
 void save_failsafe_values(void)
 {
-  EEPROM.write(FAILSAFE_OFFSET + 0, (PPM[0] & 0xff));
-  EEPROM.write(FAILSAFE_OFFSET + 1, (PPM[1] & 0xff));
-  EEPROM.write(FAILSAFE_OFFSET + 2, (PPM[2] & 0xff));
-  EEPROM.write(FAILSAFE_OFFSET + 3, (PPM[3] & 0xff));
-  EEPROM.write(FAILSAFE_OFFSET + 4, (((PPM[0] >> 8) & 3) | (((PPM[1] >> 8) & 3) << 2) | (((PPM[2] >> 8) & 3) << 4) | (((PPM[3] >> 8) & 3) << 6)));
-  EEPROM.write(FAILSAFE_OFFSET + 5, (PPM[4] & 0xff));
-  EEPROM.write(FAILSAFE_OFFSET + 6, (PPM[5] & 0xff));
-  EEPROM.write(FAILSAFE_OFFSET + 7, (PPM[6] & 0xff));
-  EEPROM.write(FAILSAFE_OFFSET + 8, (PPM[7] & 0xff));
-  EEPROM.write(FAILSAFE_OFFSET + 9, (((PPM[4] >> 8) & 3) | (((PPM[5] >> 8) & 3) << 2) | (((PPM[6] >> 8) & 3) << 4) | (((PPM[7] >> 8) & 3) << 6)));
+  uint8_t ee_buf[20];
+
+  packChannels(6, PPM, ee_buf);
+  for (int16_t i = 0; i < 20; i++) {
+    EEPROM.write(FAILSAFE_OFFSET + 4 +i, ee_buf[i]);
+  }
+
+  ee_buf[0]=0xFA;
+  ee_buf[1]=0x11;
+  ee_buf[2]=0x5A;
+  ee_buf[3]=0xFE;
+  for (int16_t i = 0; i < 4; i++) {
+    EEPROM.write(FAILSAFE_OFFSET + i, ee_buf[i]);
+  }
 }
 
 void load_failsafe_values(void)
 {
-  uint8_t ee_buf[10];
+  uint8_t ee_buf[20];
 
-  for (int16_t i = 0; i < 10; i++) {
+  for (int16_t i = 0; i < 4; i++) {
     ee_buf[i] = EEPROM.read(FAILSAFE_OFFSET + i);
   }
 
-  PPM[0] = ee_buf[0] + ((ee_buf[4] & 0x03) << 8);
-  PPM[1] = ee_buf[1] + ((ee_buf[4] & 0x0c) << 6);
-  PPM[2] = ee_buf[2] + ((ee_buf[4] & 0x30) << 4);
-  PPM[3] = ee_buf[3] + ((ee_buf[4] & 0xc0) << 2);
-  PPM[4] = ee_buf[5] + ((ee_buf[9] & 0x03) << 8);
-  PPM[5] = ee_buf[6] + ((ee_buf[9] & 0x0c) << 6);
-  PPM[6] = ee_buf[7] + ((ee_buf[9] & 0x30) << 4);
-  PPM[7] = ee_buf[8] + ((ee_buf[9] & 0xc0) << 2);
+  if ((ee_buf[0]==0xFA) && (ee_buf[1]==0x11) && (ee_buf[2]==0x5A) && (ee_buf[3]==0xFE)) {
+    for (int16_t i = 0; i < 20; i++) {
+      ee_buf[i] = EEPROM.read(FAILSAFE_OFFSET + 4 +i);
+    }
+    cli();
+    unpackChannels(6, PPM, ee_buf);
+    sei();
+  }
 }
 
 uint8_t bindReceive(uint32_t timeout)
@@ -310,7 +314,7 @@ void loop()
 
     if ((rx_buf[0] == 0x5E) || (rx_buf[0] == 0xF5)) {
       cli();
-      unpackChannels(&bind_data, PPM, rx_buf + 1);
+      unpackChannels(bind_data.flags & 7, PPM, rx_buf + 1);
       sei();
     }
 

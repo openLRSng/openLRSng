@@ -325,7 +325,7 @@ void loop(void)
       }
 
       cli(); // disable interrupts when copying servo positions, to avoid race on 2 byte variable
-      packChannels(&bind_data, PPM, tx_buf + 1);
+      packChannels(bind_data.flags & 7, PPM, tx_buf + 1);
       sei();
 
       //Green LED will be on during transmission
