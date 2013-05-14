@@ -73,6 +73,9 @@ ISR(TIMER1_OVF_vect)
 void setupPPMout()
 {
   if (PPM_output) {
+    digitalWrite(PPM_OUT,HIGH);
+  }
+  if (PPM_output) {
     TCCR1A = (1 << WGM11) | (1 << COM1A1) | (1 << COM1A0);
   } else {
     TCCR1A = (1 << WGM11);
@@ -321,6 +324,10 @@ void loop()
     if (firstpack == 0) {
       firstpack = 1;
       setupPPMout();
+    } else {
+      if ((PPM_output) && (bind_data.flags & FAILSAFE_NOPPM)) {
+        TCCR1A |= ((1 << COM1A1) | (1 << COM1A0));
+      }
     }
 
     if (rx_buf[0] == 0xF5) {
@@ -381,10 +388,16 @@ void loop()
 
       if (lostpack < 10) {
         lostpack++;
+        if ((bind_data.flags & FAILSAFE_FAST) && (lostpack > 6)) {
+          lostpack=10; // go to failsafe faster
+        }
       } else if (lostpack == 10) {
         lostpack = 11;
         // Serious trouble, apply failsafe
         load_failsafe_values();
+        if ((PPM_output) && (bind_data.flags & FAILSAFE_NOPPM)) {
+          TCCR1A &= ~((1 << COM1A1) | (1 << COM1A0));
+        }
         fs_time = time;
       } else if (bind_data.beacon_interval && bind_data.beacon_deadtime &&
                  bind_data.beacon_frequency) {

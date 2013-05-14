@@ -54,6 +54,12 @@ void bindPrint(void)
   Serial.print(F("B) Telemetry:       "));
   Serial.println((bind_data.flags&TELEMETRY_ENABLED)?"Enabled":"Disabled");
 
+  Serial.print(F("C) Failsafe delay:  "));
+  Serial.println((bind_data.flags&FAILSAFE_FAST)?"Short (0.5s)":"Long (2s)");
+    
+  Serial.print(F("D) Stop PPM on F/S: "));
+  Serial.println((bind_data.flags&FAILSAFE_NOPPM)?"Enabled":"Disabled");
+
   Serial.print(F("Calculated packet interval: "));
   Serial.print(getInterval(&bind_data));
   Serial.print(F(" == "));
@@ -112,6 +118,12 @@ void CLI_menu_headers(void)
     break;
   case 11:
     Serial.println(F("Toggled telemetry!"));
+    break;
+  case 12:
+    Serial.println(F("Toggled failsafe delay!"));
+    break;
+  case 13:
+    Serial.println(F("Toggled failsafe PPM!"));
     break;
   }
 
@@ -244,6 +256,22 @@ void handleCLImenu(char c)
       CLI_menu = 11;
       CLI_menu_headers();
       bind_data.flags ^= TELEMETRY_ENABLED;
+      CLI_menu = -1;
+      CLI_menu_headers();
+      break;
+    case 'c':
+    case 'C':
+      CLI_menu = 11;
+      CLI_menu_headers();
+      bind_data.flags ^= FAILSAFE_FAST;
+      CLI_menu = -1;
+      CLI_menu_headers();
+      break;
+    case 'd':
+    case 'D':
+      CLI_menu = 11;
+      CLI_menu_headers();
+      bind_data.flags ^= FAILSAFE_NOPPM;
       CLI_menu = -1;
       CLI_menu_headers();
       break;
