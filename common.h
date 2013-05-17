@@ -447,8 +447,8 @@ void init_rfm(uint8_t isbind)
   spiWriteRegister(0x09, 0x7f);   // c = 12.5p
   spiWriteRegister(0x0a, 0x05);
 #ifdef SWAP_GPIOS
-  spiWriteRegister(0x0b, 0x15);    // gpio0 TX State
-  spiWriteRegister(0x0c, 0x12);    // gpio1 RX State
+  spiWriteRegister(0x0b, 0x15);    // gpio0 RX State
+  spiWriteRegister(0x0c, 0x12);    // gpio1 TX State
 #else
   spiWriteRegister(0x0b, 0x12);    // gpio0 TX State
   spiWriteRegister(0x0c, 0x15);    // gpio1 RX State
