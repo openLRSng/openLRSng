@@ -56,7 +56,7 @@ void bindPrint(void)
 
   Serial.print(F("C) Failsafe delay:  "));
   Serial.println((bind_data.flags&FAILSAFE_FAST)?"Short (0.5s)":"Long (2s)");
-    
+
   Serial.print(F("D) Stop PPM on F/S: "));
   Serial.println((bind_data.flags&FAILSAFE_NOPPM)?"Enabled":"Disabled");
 
