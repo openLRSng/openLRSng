@@ -383,4 +383,7 @@ void buzzerOn(uint16_t freq)
 #define nSel_pin 4
 
 #define IRQ_interrupt 0
+
+#define SWAP_GPIOS
+
 #endif
