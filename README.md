@@ -9,16 +9,11 @@ TRANSMITTER HW:
 
   - OrangeRX UHF TX unit -- set TX_BOARD_TYPE 2
   
-  - Flytron openLRS M2 RX as TX -- set TX_BOARD_TYPE 3
-    - connect PPM input to 5th slot (fifth from left )
-    - button between ground and ch4 (fourth frem left
-    - buzzer at ch3 (active high)
+  - Flytron openLRS RX v2 / OrangeRX UHF RX as TX -- set TX_BOARD_TYPE 3
+    - connect PPM input to 5th slot from left (channel 4)
+    - button between ground and 4th slot from left (ch3)
+    - buzzer via transistor on 3rd slot (ch2) (active high)
     
-  - OrangeRX UHF RX as TX -- set TX_BOARD_TYPE 3
-    - connect PPM input to 'ch4' slot
-    - button between ground and ch3
-    - buzzer at ch2 (active high)
-
   - openLRSngTX -- set TX_BOARD_TYPE 4
 
 RECEIVER HW:  
@@ -33,6 +28,8 @@ RECEIVER HW:
   To enable PPM (combined) mode connect a jumper between CH7-CH8. PPM will be available at CH5. PWM channels 1-6 are available at CH1-CH4,CH6,CH7(which is jumppered to CH8)
   NOTE: you can make the connection in the AVRISP header (MISO-MOSI) to have servo at CH7 (=channel6)
   NOTE: it is also possible to force the PPM mode in the .ino and thus get PWM output for channels 1-7 (CH1-CH4,Ch6-CH8).
+
+  See https://www.dropbox.com/s/2x3rc83ovkwoy2z/RX_pinning.pdf
   
 SOFTWARE CONFIGURATION:
 =======================
@@ -40,6 +37,8 @@ SOFTWARE CONFIGURATION:
 
   Run time configuration is done by connecting to the TX module (which is put into binding mode) with serial terminal. For best restults use real terminal program like Putty, TeraTerm, minicom(Linux) but it is possible to use Arduino Serial Monitor too.
   Sending 'm' will enter the menu which will guide further. It should be noted that doing edits will automatically change 'RF magic' to force rebinding, if you want to use a specific magic set that using the command (and further automatic changes are ceased for the edit session). 
+
+  Datarates are: 0==4800bps 1==9600bps 2==19200 bps
   
 UPLOADING:
 ==========
@@ -78,7 +77,7 @@ RX:
       On successful bind both red and blue (or a second red on OrangeRX RX) leds light up (and remain lit until TX is put on normal mode)
     - RX will also enter bind mode forcibly (without timeout) if EEPROM data is incorrect or a jumpper is placed between CH1 and CH2
   - Failsafe:
-    - Failsafe activates after ~2s of no input data
+    - Failsafe activates after 0.4s / ~2s of no input data
   - LEDs
     - Blue LED lights when packet is received (losing a single packet shows as no pulse on LED)
     - Red LED indicates trouble, it blinks when two consequent packets are lost, and lights up when more than 2 packets are lost
