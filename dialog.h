@@ -47,6 +47,26 @@ void bindPrint(void)
 
   Serial.print(F("9) Beacon Deadtime:  "));
   Serial.println(bind_data.beacon_deadtime);
+
+  Serial.print(F("A) Channel config:  "));
+  Serial.println(chConfStr[bind_data.flags&0x07]);
+
+  Serial.print(F("B) Telemetry:       "));
+  Serial.println((bind_data.flags&TELEMETRY_ENABLED)?"Enabled":"Disabled");
+
+  Serial.print(F("C) Failsafe delay:  "));
+  Serial.println((bind_data.flags&FAILSAFE_FAST)?"Short (0.5s)":"Long (2s)");
+
+  Serial.print(F("D) Stop PPM on F/S: "));
+  Serial.println((bind_data.flags&FAILSAFE_NOPPM)?"Enabled":"Disabled");
+
+  Serial.print(F("Calculated packet interval: "));
+  Serial.print(getInterval(&bind_data));
+  Serial.print(F(" == "));
+  Serial.print(1000000L/getInterval(&bind_data));
+  Serial.println(F("Hz"));
+
+
 }
 
 void CLI_menu_headers(void)
@@ -55,7 +75,7 @@ void CLI_menu_headers(void)
   switch (CLI_menu) {
   case -1:
     Serial.write(0x0c); // form feed
-    Serial.println(F("\nopenLRSng v2.0"));
+    Serial.println(F("\nopenLRSng v2.1"));
     Serial.println(F("Use numbers [0-9] to edit parameters"));
     Serial.println(F("[S] save settings to EEPROM and exit menu"));
     Serial.println(F("[X] revert changes and exit menu"));
@@ -91,6 +111,19 @@ void CLI_menu_headers(void)
     break;
   case 9:
     Serial.println(F("Set Beacon Deadtime: "));
+    break;
+  case 10:
+    Serial.println(F("Set Channel config: "));
+    Serial.println(F("Valid choices: 1 - 4+4 / 2 - 8 / 3 - 8+4 / 4 - 12 / 5 - 12+4 / 6 - 16"));
+    break;
+  case 11:
+    Serial.println(F("Toggled telemetry!"));
+    break;
+  case 12:
+    Serial.println(F("Toggled failsafe delay!"));
+    break;
+  case 13:
+    Serial.println(F("Toggled failsafe PPM!"));
     break;
   }
 
@@ -213,6 +246,35 @@ void handleCLImenu(char c)
       CLI_menu = c - '0';
       CLI_menu_headers();
       break;
+    case 'a':
+    case 'A':
+      CLI_menu = 10;
+      CLI_menu_headers();
+      break;
+    case 'b':
+    case 'B':
+      CLI_menu = 11;
+      CLI_menu_headers();
+      bind_data.flags ^= TELEMETRY_ENABLED;
+      CLI_menu = -1;
+      CLI_menu_headers();
+      break;
+    case 'c':
+    case 'C':
+      CLI_menu = 11;
+      CLI_menu_headers();
+      bind_data.flags ^= FAILSAFE_FAST;
+      CLI_menu = -1;
+      CLI_menu_headers();
+      break;
+    case 'd':
+    case 'D':
+      CLI_menu = 11;
+      CLI_menu_headers();
+      bind_data.flags ^= FAILSAFE_NOPPM;
+      CLI_menu = -1;
+      CLI_menu_headers();
+      break;
     }
   } else { // we are inside the menu
     if (CLI_inline_edit(c)) {
@@ -295,6 +357,13 @@ void handleCLImenu(char c)
         case 9:
           if ((value > 10) && (value < 256)) {
             bind_data.beacon_deadtime = value;
+            valid_input = 1;
+          }
+          break;
+        case 10:
+          if ((value >= 1) && (value <= 6)) {
+            bind_data.flags &= 0xf8;
+            bind_data.flags |= value;
             valid_input = 1;
           }
           break;

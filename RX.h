@@ -16,7 +16,8 @@ uint16_t RSSI_sum = 0;
 uint8_t  last_rssi_value = 0;
 
 uint8_t  ppmCountter = 0;
-uint16_t ppmTotal = 0;
+uint16_t ppmSync = 40000;
+uint8_t  ppmChannels = 8;
 
 boolean PPM_output = 0; // set if PPM output is desired
 
@@ -27,10 +28,12 @@ boolean willhop = 0, fs_saved = 0;
 
 ISR(TIMER1_OVF_vect)
 {
-  if (ppmCountter >= PPM_CHANNELS) {
-    ICR1 = 40000 - ppmTotal; // 20ms total frame
+  if (ppmCountter >= ppmChannels) {
+    ICR1 = ppmSync;
     ppmCountter = 0;
-    ppmTotal = 0;
+    ppmSync = 40000;
+
+    while (TCNT1<32);
 
     if (PPM_output) {   // clear all bits
       PORTB &= ~PWM_MASK_PORTB(PWM_WITHPPM_MASK);
@@ -41,8 +44,13 @@ ISR(TIMER1_OVF_vect)
     }
   } else {
     uint16_t ppmOut = servoBits2Us(PPM[ppmCountter]) * 2;
-    ppmTotal += ppmOut;
+    ppmSync -= ppmOut;
+    if (ppmSync < (PPM_MINSYNC_US * 2)) {
+      ppmSync=PPM_MINSYNC_US * 2;
+    }
     ICR1 = ppmOut;
+
+    while (TCNT1<32);
 
     if (PPM_output) {
       PORTB &= ~PWM_MASK_PORTB(PWM_WITHPPM_MASK);
@@ -56,8 +64,10 @@ ISR(TIMER1_OVF_vect)
     } else {
       PORTB &= ~PWM_MASK_PORTB(PWM_ALL_MASK);
       PORTD &= ~PWM_MASK_PORTD(PWM_ALL_MASK);
-      PORTB |= PWM_MASK_PORTB(PWM_MASK[ppmCountter]);
-      PORTD |= PWM_MASK_PORTD(PWM_MASK[ppmCountter]);
+      if (ppmCountter < 8) {
+        PORTB |= PWM_MASK_PORTB(PWM_MASK[ppmCountter]);
+        PORTD |= PWM_MASK_PORTD(PWM_MASK[ppmCountter]);
+      }
     }
 
     ppmCountter++;
@@ -66,6 +76,9 @@ ISR(TIMER1_OVF_vect)
 
 void setupPPMout()
 {
+  if (PPM_output) {
+    digitalWrite(PPM_OUT,HIGH);
+  }
   if (PPM_output) {
     TCCR1A = (1 << WGM11) | (1 << COM1A1) | (1 << COM1A0);
   } else {
@@ -98,34 +111,38 @@ void setupPPMout()
 
 void save_failsafe_values(void)
 {
-  EEPROM.write(FAILSAFE_OFFSET + 0, (PPM[0] & 0xff));
-  EEPROM.write(FAILSAFE_OFFSET + 1, (PPM[1] & 0xff));
-  EEPROM.write(FAILSAFE_OFFSET + 2, (PPM[2] & 0xff));
-  EEPROM.write(FAILSAFE_OFFSET + 3, (PPM[3] & 0xff));
-  EEPROM.write(FAILSAFE_OFFSET + 4, (((PPM[0] >> 8) & 3) | (((PPM[1] >> 8) & 3) << 2) | (((PPM[2] >> 8) & 3) << 4) | (((PPM[3] >> 8) & 3) << 6)));
-  EEPROM.write(FAILSAFE_OFFSET + 5, (PPM[4] & 0xff));
-  EEPROM.write(FAILSAFE_OFFSET + 6, (PPM[5] & 0xff));
-  EEPROM.write(FAILSAFE_OFFSET + 7, (PPM[6] & 0xff));
-  EEPROM.write(FAILSAFE_OFFSET + 8, (PPM[7] & 0xff));
-  EEPROM.write(FAILSAFE_OFFSET + 9, (((PPM[4] >> 8) & 3) | (((PPM[5] >> 8) & 3) << 2) | (((PPM[6] >> 8) & 3) << 4) | (((PPM[7] >> 8) & 3) << 6)));
+  uint8_t ee_buf[20];
+
+  packChannels(6, PPM, ee_buf);
+  for (int16_t i = 0; i < 20; i++) {
+    EEPROM.write(FAILSAFE_OFFSET + 4 +i, ee_buf[i]);
+  }
+
+  ee_buf[0]=0xFA;
+  ee_buf[1]=0x11;
+  ee_buf[2]=0x5A;
+  ee_buf[3]=0xFE;
+  for (int16_t i = 0; i < 4; i++) {
+    EEPROM.write(FAILSAFE_OFFSET + i, ee_buf[i]);
+  }
 }
 
 void load_failsafe_values(void)
 {
-  uint8_t ee_buf[10];
+  uint8_t ee_buf[20];
 
-  for (int16_t i = 0; i < 10; i++) {
+  for (int16_t i = 0; i < 4; i++) {
     ee_buf[i] = EEPROM.read(FAILSAFE_OFFSET + i);
   }
 
-  PPM[0] = ee_buf[0] + ((ee_buf[4] & 0x03) << 8);
-  PPM[1] = ee_buf[1] + ((ee_buf[4] & 0x0c) << 6);
-  PPM[2] = ee_buf[2] + ((ee_buf[4] & 0x30) << 4);
-  PPM[3] = ee_buf[3] + ((ee_buf[4] & 0xc0) << 2);
-  PPM[4] = ee_buf[5] + ((ee_buf[9] & 0x03) << 8);
-  PPM[5] = ee_buf[6] + ((ee_buf[9] & 0x0c) << 6);
-  PPM[6] = ee_buf[7] + ((ee_buf[9] & 0x30) << 4);
-  PPM[7] = ee_buf[8] + ((ee_buf[9] & 0xc0) << 2);
+  if ((ee_buf[0]==0xFA) && (ee_buf[1]==0x11) && (ee_buf[2]==0x5A) && (ee_buf[3]==0xFE)) {
+    for (int16_t i = 0; i < 20; i++) {
+      ee_buf[i] = EEPROM.read(FAILSAFE_OFFSET + 4 +i);
+    }
+    cli();
+    unpackChannels(6, PPM, ee_buf);
+    sei();
+  }
 }
 
 uint8_t bindReceive(uint32_t timeout)
@@ -255,8 +272,12 @@ void setup()
   PPM_output = 1;
 #endif
 
+  ppmChannels = getChannelCount(&bind_data);
+
   Serial.print("Entering normal mode with PPM=");
-  Serial.println(PPM_output);
+  Serial.print(PPM_output);
+  Serial.print("CHs=");
+  Serial.print(ppmChannels);
   init_rfm(0);   // Configure the RFM22B's registers for normal operation
   RF_channel = 0;
   rfmSetChannel(bind_data.hopchannel[RF_channel]);
@@ -268,6 +289,8 @@ void setup()
   firstpack = 0;
 
 }
+
+uint8_t rx_buf[21]; // RX buffer
 
 //############ MAIN LOOP ##############
 void loop()
@@ -292,26 +315,23 @@ void loop()
 
     spiSendAddress(0x7f);   // Send the package read command
 
-    for (int16_t i = 0; i < 11; i++) {
+    for (int16_t i = 0; i < getPacketSize(&bind_data); i++) {
       rx_buf[i] = spiReadData();
     }
 
     if ((rx_buf[0] == 0x5E) || (rx_buf[0] == 0xF5)) {
       cli();
-      PPM[0] = rx_buf[1] + ((rx_buf[5] & 0x03) << 8);
-      PPM[1] = rx_buf[2] + ((rx_buf[5] & 0x0c) << 6);
-      PPM[2] = rx_buf[3] + ((rx_buf[5] & 0x30) << 4);
-      PPM[3] = rx_buf[4] + ((rx_buf[5] & 0xc0) << 2);
-      PPM[4] = rx_buf[6] + ((rx_buf[10] & 0x03) << 8);
-      PPM[5] = rx_buf[7] + ((rx_buf[10] & 0x0c) << 6);
-      PPM[6] = rx_buf[8] + ((rx_buf[10] & 0x30) << 4);
-      PPM[7] = rx_buf[9] + ((rx_buf[10] & 0xc0) << 2);
+      unpackChannels(bind_data.flags & 7, PPM, rx_buf + 1);
       sei();
     }
 
     if (firstpack == 0) {
       firstpack = 1;
       setupPPMout();
+    } else {
+      if ((PPM_output) && (bind_data.flags & FAILSAFE_NOPPM)) {
+        TCCR1A |= ((1 << COM1A1) | (1 << COM1A0));
+      }
     }
 
     if (rx_buf[0] == 0xF5) {
@@ -323,7 +343,7 @@ void loop()
       fs_saved = 0;
     }
 
-    if (modem_params[bind_data.modem_params].flags & TELEMETRY_ENABLED) {
+    if (bind_data.flags & TELEMETRY_ENABLED) {
       // reply with telemetry
       uint8_t telemetry_packet[4];
       telemetry_packet[0] = last_rssi_value;
@@ -342,7 +362,7 @@ void loop()
 
   // sample RSSI when packet is in the 'air'
   if ((lostpack < 2) && (last_rssi_time != last_pack_time) &&
-      (time - last_pack_time) > (modem_params[bind_data.modem_params].interval - 1500)) {
+      (time - last_pack_time) > (getInterval(&bind_data) - 1500)) {
     last_rssi_time = last_pack_time;
     last_rssi_value = rfmGetRSSI(); // Read the RSSI value
     RSSI_sum += last_rssi_value;    // tally up for average
@@ -359,28 +379,29 @@ void loop()
   time = micros();
 
   if (firstpack) {
-    if ((!lostpack) && (time - last_pack_time) > (modem_params[bind_data.modem_params].interval + 1000)) {
-      // we missed one packet, hop to next channel
-      lostpack = 1;
-      last_pack_time += modem_params[bind_data.modem_params].interval;
-      willhop = 1;
-    } else if ((lostpack == 1) && (time - last_pack_time) > (modem_params[bind_data.modem_params].interval + 1000)) {
-      // we lost second packet in row, hop and signal trouble
-      lostpack = 2;
-      last_pack_time += modem_params[bind_data.modem_params].interval;
+    if ((lostpack < 5) && (time - last_pack_time) > (getInterval(&bind_data) + 1000)) {
+      // we packet, hop to next channel
+      lostpack++;
+      last_pack_time += getInterval(&bind_data);
       willhop = 1;
       Red_LED_ON;
       set_RSSI_output(0);
-    } else if ((time - last_pack_time) > 200000L) {
+    } else if ((time - last_pack_time) > (getInterval(&bind_data) * bind_data.hopcount)) {
       // hop slowly to allow resync with TX
       last_pack_time = time;
 
       if (lostpack < 10) {
         lostpack++;
+        if ((bind_data.flags & FAILSAFE_FAST) && (lostpack > 6)) {
+          lostpack=10; // go to failsafe faster
+        }
       } else if (lostpack == 10) {
         lostpack = 11;
         // Serious trouble, apply failsafe
         load_failsafe_values();
+        if ((PPM_output) && (bind_data.flags & FAILSAFE_NOPPM)) {
+          TCCR1A &= ~((1 << COM1A1) | (1 << COM1A0));
+        }
         fs_time = time;
       } else if (bind_data.beacon_interval && bind_data.beacon_deadtime &&
                  bind_data.beacon_frequency) {
@@ -413,4 +434,5 @@ void loop()
     rfmSetChannel(bind_data.hopchannel[RF_channel]);
     willhop = 0;
   }
+
 }

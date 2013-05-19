@@ -14,10 +14,95 @@ uint8_t spiReadRegister(uint8_t address);
 void spiWriteRegister(uint8_t address, uint8_t data);
 void tx_packet(uint8_t* pkt, uint8_t size);
 void to_rx_mode(void);
-volatile uint8_t rx_buf[11]; // RX buffer
 
-#define PPM_CHANNELS 8
-volatile uint16_t PPM[PPM_CHANNELS] = { 512, 512, 512, 512, 512, 512, 512, 512 };
+#define PPM_CHANNELS 16
+volatile uint16_t PPM[PPM_CHANNELS] = { 512, 512, 512, 512, 512, 512, 512, 512 ,512,512,512,512,512,512,512,512};
+
+const static uint8_t pktsizes[8] = {0, 7, 11, 12, 16, 17, 21, 0};
+
+const static char *chConfStr[8] = {"N/A", "4+4", "8", "8+4", "12", "12+4", "16", "N/A"};
+
+uint8_t getPacketSize(struct bind_data *bd)
+{
+  return pktsizes[(bd->flags & 0x07)];
+}
+
+uint8_t getChannelCount(struct bind_data *bd)
+{
+  return (((bd->flags & 7)/2) + 1 + (bd->flags & 1)) * 4;
+}
+
+uint32_t getInterval(struct bind_data *bd)
+{
+  uint32_t ret;
+  // Sending a x byte packet on bps y takes about (emperical)
+  // usec = (x + 15) * 8200000 / baudrate
+#define BYTES_AT_BAUD_TO_USEC(bytes,bps) ((uint32_t)((bytes)+15) * 8200000L / (uint32_t)(bps))
+
+  ret = (BYTES_AT_BAUD_TO_USEC(getPacketSize(bd), modem_params[bd->modem_params].bps)+2000);
+
+  if (bd->flags & TELEMETRY_ENABLED) {
+    ret += (BYTES_AT_BAUD_TO_USEC(TELEMETRY_PACKETSIZE,modem_params[bd->modem_params].bps)+1000);
+  }
+
+  // round up to ms
+  ret= ((ret+999) / 1000) * 1000;
+
+  // not faster than 50Hz
+  if (ret < 20000) {
+    ret = 20000;
+  }
+
+  return ret;
+}
+uint8_t twoBitfy(uint16_t in)
+{
+  if (in<256) {
+    return 0;
+  } else if (in<512) {
+    return 1;
+  } else if (in<768) {
+    return 2;
+  } else {
+    return 3;
+  }
+}
+
+void packChannels(uint8_t config, volatile uint16_t PPM[], uint8_t *p)
+{
+  uint8_t i;
+  for (i=0; i<=(config/2); i++) { // 4ch packed in 5 bytes
+    p[0] = (PPM[0] & 0xff);
+    p[1] = (PPM[1] & 0xff);
+    p[2] = (PPM[2] & 0xff);
+    p[3] = (PPM[3] & 0xff);
+    p[4] = ((PPM[0] >> 8) & 3) | (((PPM[1] >> 8) & 3) << 2) | (((PPM[2] >> 8) & 3) << 4) | (((PPM[3] >> 8) & 3) << 6);
+    p+=5;
+    PPM+=4;
+  }
+  if (config & 1) { // 4ch packed in 1 byte;
+    p[0] = (twoBitfy(PPM[0])<<6) | (twoBitfy(PPM[1])<<4) | (twoBitfy(PPM[2])<<2) | twoBitfy(PPM[3]);
+  }
+}
+
+void unpackChannels(uint8_t config, volatile uint16_t PPM[], uint8_t *p)
+{
+  uint8_t i;
+  for (i=0; i<=(config/2); i++) { // 4ch packed in 5 bytes
+    PPM[0] = (((uint16_t)p[4] & 0x03) << 8) + p[0];
+    PPM[1] = (((uint16_t)p[4] & 0x0c) << 6) + p[1];
+    PPM[2] = (((uint16_t)p[4] & 0x30) << 4) + p[2];
+    PPM[3] = (((uint16_t)p[4] & 0xc0) << 2) + p[3];
+    p+=5;
+    PPM+=4;
+  }
+  if (config & 1) { // 4ch packed in 1 byte;
+    PPM[0] = (((uint16_t)p[0]>>6)&3)*333+12;
+    PPM[1] = (((uint16_t)p[0]>>4)&3)*333+12;
+    PPM[2] = (((uint16_t)p[0]>>2)&3)*333+12;
+    PPM[3] = (((uint16_t)p[0]>>0)&3)*333+12;
+  }
+}
 
 // conversion between microseconds 800-2200 and value 0-1023
 // 808-1000 == 0 - 11     (16us per step)
@@ -65,7 +150,7 @@ void scannerMode(void)
 {
   char c;
   uint32_t nextConfig[4] = {0, 0, 0, 0};
-  uint32_t startFreq = 430000000, endFreq = 440000000, nrSamples = 500, stepSize = 50000;
+  uint32_t startFreq = MIN_RFM_FREQUENCY, endFreq = MAX_RFM_FREQUENCY, nrSamples = 500, stepSize = 50000;
   uint32_t currentFrequency = startFreq;
   uint32_t currentSamples = 0;
   uint8_t nextIndex = 0;
@@ -361,8 +446,13 @@ void init_rfm(uint8_t isbind)
   spiWriteRegister(0x07, RF22B_PWRSTATE_READY); // disable lbd, wakeup timer, use internal 32768,xton = 1; in ready mode
   spiWriteRegister(0x09, 0x7f);   // c = 12.5p
   spiWriteRegister(0x0a, 0x05);
+#ifdef SWAP_GPIOS
+  spiWriteRegister(0x0b, 0x15);    // gpio0 RX State
+  spiWriteRegister(0x0c, 0x12);    // gpio1 TX State
+#else
   spiWriteRegister(0x0b, 0x12);    // gpio0 TX State
   spiWriteRegister(0x0c, 0x15);    // gpio1 RX State
+#endif
   spiWriteRegister(0x0d, 0xfd);    // gpio 2 micro-controller clk output
   spiWriteRegister(0x0e, 0x00);    // gpio    0, 1,2 NO OTHER FUNCTION.
 

@@ -296,15 +296,15 @@ void loop(void)
 
   uint32_t time = micros();
 
-  if ((time - lastSent) >= modem_params[bind_data.modem_params].interval) {
+  if ((time - lastSent) >= getInterval(&bind_data)) {
     lastSent = time;
 
     if (ppmAge < 8) {
-      uint8_t tx_buf[11];
+      uint8_t tx_buf[21];
       ppmAge++;
 
       if (lastTelemetry) {
-        if ((time - lastTelemetry) > modem_params[bind_data.modem_params].interval) {
+        if ((time - lastTelemetry) > getInterval(&bind_data)) {
           // telemetry lost
           buzzerOn(BZ_FREQ);
           lastTelemetry=0;
@@ -325,16 +325,7 @@ void loop(void)
       }
 
       cli(); // disable interrupts when copying servo positions, to avoid race on 2 byte variable
-      tx_buf[1] = (PPM[0] & 0xff);
-      tx_buf[2] = (PPM[1] & 0xff);
-      tx_buf[3] = (PPM[2] & 0xff);
-      tx_buf[4] = (PPM[3] & 0xff);
-      tx_buf[5] = ((PPM[0] >> 8) & 3) | (((PPM[1] >> 8) & 3) << 2) | (((PPM[2] >> 8) & 3) << 4) | (((PPM[3] >> 8) & 3) << 6);
-      tx_buf[6] = (PPM[4] & 0xff);
-      tx_buf[7] = (PPM[5] & 0xff);
-      tx_buf[8] = (PPM[6] & 0xff);
-      tx_buf[9] = (PPM[7] & 0xff);
-      tx_buf[10] = ((PPM[4] >> 8) & 3) | (((PPM[5] >> 8) & 3) << 2) | (((PPM[6] >> 8) & 3) << 4) | (((PPM[7] >> 8) & 3) << 6);
+      packChannels(bind_data.flags & 7, PPM, tx_buf + 1);
       sei();
 
       //Green LED will be on during transmission
@@ -342,7 +333,8 @@ void loop(void)
 
       // Send the data over RF
       rfmSetChannel(bind_data.hopchannel[RF_channel]);
-      tx_packet(tx_buf, 11);
+
+      tx_packet(tx_buf, getPacketSize(&bind_data));
 
       //Hop to the next frequency
       RF_channel++;
@@ -352,7 +344,7 @@ void loop(void)
       }
 
       // do not switch channel as we may receive telemetry on the old channel
-      if (modem_params[bind_data.modem_params].flags & TELEMETRY_ENABLED) {
+      if (bind_data.flags & TELEMETRY_ENABLED) {
         RF_Mode = Receive;
         rx_reset();
       }

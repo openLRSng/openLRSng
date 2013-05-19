@@ -37,7 +37,7 @@
 
 //####### COMPILATION TARGET #######
 // Enable to compile transmitter code, default is RX
-#define COMPILE_TX
+//#define COMPILE_TX
 
 //####### TX BOARD TYPE #######
 // 0 = Original Flytron M1 Tx Board (not verified)
@@ -62,8 +62,12 @@
 //### having channels 1-7 available in PWM on slots CH1-CH4,CH6-CH8
 //#define FORCED_PPM_OUTPUT
 
+//### minimum sync period generated to PPM (us)
+#define PPM_MINSYNC_US 2700
+
 //### Module type selection (only for modified HW)
 //#define RFMXX_868
+//#define RFMXX_915
 
 //####################
 //### CODE SECTION ###
