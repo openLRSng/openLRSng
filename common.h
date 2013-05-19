@@ -150,7 +150,7 @@ void scannerMode(void)
 {
   char c;
   uint32_t nextConfig[4] = {0, 0, 0, 0};
-  uint32_t startFreq = 430000000, endFreq = 440000000, nrSamples = 500, stepSize = 50000;
+  uint32_t startFreq = MIN_RFM_FREQUENCY, endFreq = MAX_RFM_FREQUENCY, nrSamples = 500, stepSize = 50000;
   uint32_t currentFrequency = startFreq;
   uint32_t currentSamples = 0;
   uint8_t nextIndex = 0;
