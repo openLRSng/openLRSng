@@ -33,6 +33,8 @@ ISR(TIMER1_OVF_vect)
     ppmCountter = 0;
     ppmSync = 40000;
 
+    while (TCNT1<32);
+
     if (PPM_output) {   // clear all bits
       PORTB &= ~PWM_MASK_PORTB(PWM_WITHPPM_MASK);
       PORTD &= ~PWM_MASK_PORTD(PWM_WITHPPM_MASK);
@@ -47,6 +49,8 @@ ISR(TIMER1_OVF_vect)
       ppmSync=PPM_MINSYNC_US * 2;
     }
     ICR1 = ppmOut;
+
+    while (TCNT1<32);
 
     if (PPM_output) {
       PORTB &= ~PWM_MASK_PORTB(PWM_WITHPPM_MASK);
