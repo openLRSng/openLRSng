@@ -252,21 +252,15 @@ void set_RSSI_output( uint8_t val )
 }
 
 #define PWM_1 5
-#define PWM_1_MASK 0x0020 //PD5
 #define PWM_2 6
-#define PWM_2_MASK 0x0040 //PD6
 #define PWM_3 7
-#define PWM_3_MASK 0x0080 //PD7
 #define PWM_4 8
-#define PWM_4_MASK 0x0100 //PB0
 #define PWM_5 9
-#define PWM_5_MASK 0x0200 // PB1
 #define PWM_6 10
-#define PWM_6_MASK 0x0400 // PB2
 #define PWM_7 11
-#define PWM_7_MASK 0x0800 // PB3
 #define PWM_8 12
-#define PWM_8_MASK 0x1000 // PB4
+
+#define PWM_CHANNELS 4 // PWM channels available
 
 const uint8_t PWM_MASKB_PPM[8] = { 0x00, 0x00, 0x00, 0x02, 0x04, 0x08, 0x10, 0x00 };
 const uint8_t PWM_MASKC_PPM[8] = { 0x20, 0x40, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00 };
