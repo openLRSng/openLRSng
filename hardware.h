@@ -268,14 +268,17 @@ void set_RSSI_output( uint8_t val )
 #define PWM_8 12
 #define PWM_8_MASK 0x1000 // PB4
 
-#define PPM_CH 4 // CH5 slot
+const uint8_t PWM_MASKB_PPM[8] = { 0x00, 0x00, 0x00, 0x02, 0x04, 0x08, 0x10, 0x00 };
+const uint8_t PWM_MASKC_PPM[8] = { 0x20, 0x40, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00 };
 
-const uint16_t PWM_MASK[8] = { PWM_1_MASK, PWM_2_MASK, PWM_3_MASK, PWM_4_MASK, PWM_5_MASK, PWM_6_MASK, PWM_7_MASK, PWM_8_MASK };
-#define PWM_ALL_MASK 0x1FE0 // all bits used for PWM (logic OR of above)
-#define PWM_WITHPPM_MASK 0x1DE0 // all but the PPM pin
+const uint8_t PWM_MASKB[8] = { 0x00, 0x00, 0x00, 0x01, 0x02, 0x04, 0x08, 0x10 };
+const uint8_t PWM_MASKC[8] = { 0x20, 0x40, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00 };
 
-#define PWM_MASK_PORTB(x) (((x)>>8) & 0xff)
-#define PWM_MASK_PORTD(x) ((x) & 0xff)
+#define PWM_ALL_DOWN_PPM { PORTB &= ~0x1D; PORTD &= ~0xE0; }
+#define PWM_ALL_DOWN     { PORTB &= ~0x1F; PORTD &= ~0xE0; }
+
+#define PWM_CH_UP_PPM(x) { PORTB |= PWM_MASKB_PPM[(x)]; PORTD |= PWM_MASKD_PPM[(x)]; }
+#define PWM_CH_UP(x) { PORTB |= PWM_MASKB[(x)]; PORTD |= PWM_MASKD[(x)]; }
 
 #endif
 
@@ -351,6 +354,126 @@ void buzzerOn(uint16_t freq)
     TCCR2A &= ~(1<<COM2B0); // disable output
   }
 }
+
+#define buzzerOff(foo) buzzerOn(0)
+
+#define Red_LED_ON  PORTD |= _BV(6);
+#define Red_LED_OFF  PORTD &= ~_BV(6);
+
+#define Green_LED_ON   PORTD |= _BV(5);
+#define Green_LED_OFF  PORTD &= ~_BV(5);
+
+//## RFM22B Pinouts for Public Edition (M2)
+#define  nIRQ_1 (PIND & 0x04)==0x04 //D2
+#define  nIRQ_0 (PIND & 0x04)==0x00 //D2
+
+#define  nSEL_on PORTD |= (1<<4) //D4
+#define  nSEL_off PORTD &= 0xEF //D4
+
+#define  SCK_on  PORTB |= _BV(5)  //B5
+#define  SCK_off PORTB &= ~_BV(5) //B5
+
+#define  SDI_on  PORTB |= _BV(3)  //B3
+#define  SDI_off PORTB &= ~_BV(3) //B3
+
+#define  SDO_1 (PINB & _BV(4)) == _BV(4) //B4
+#define  SDO_0 (PINB & _BV(4)) == 0x00  //B4
+
+#define SDO_pin 12
+#define SDI_pin 11
+#define SCLK_pin 13
+#define IRQ_pin 2
+#define nSel_pin 4
+
+#define IRQ_interrupt 0
+
+#define SWAP_GPIOS
+
+#endif
+
+#if (BOARD_TYPE == 5) // openLRSngRX-4ch
+#ifdef COMPILE_TX
+// TX operation
+
+#define USE_ICP1 // use ICP1 for PPM input for less jitter
+#define PPM_IN 8 // ICP1
+
+#define BUZZER 3 // OCR2B
+#define BTN A0
+
+void buzzerInit()
+{
+  TCCR2A = (1<<WGM21); // mode=CTC
+  TCCR2B = (1<<CS22) | (1<<CS20); // prescaler = 128
+  pinMode(BUZZER, OUTPUT);
+  digitalWrite(BUZZER, LOW);
+}
+
+void buzzerOn(uint16_t freq)
+{
+  if (freq) {
+    uint32_t ocr = 125000L / freq;
+    if (ocr>255) {
+      ocr=255;
+    }
+    if (!ocr) {
+      ocr=1;
+    }
+    OCR2A = ocr;
+    TCCR2A |= (1<<COM2B0); // enable output
+  } else {
+    TCCR2A &= ~(1<<COM2B0); // disable output
+  }
+}
+
+#else
+// RX operation
+#define PPM_OUT 9 // OCP1A
+#define RSSI_OUT 3 // PD3 OC2B
+
+void setup_RSSI_output()
+{
+  pinMode(RSSI_OUT, OUTPUT);
+  digitalWrite(RSSI_OUT, LOW);
+  TCCR2B = (1<<CS20);
+  TCCR2A = (1<<WGM20);
+}
+
+void set_RSSI_output( uint8_t val )
+{
+  if ((val == 0) || (val == 255)) {
+    TCCR2A &= ~(1<<COM2B1); // disable PWM output
+    digitalWrite(RSSI_OUT, (val == 0) ? LOW : HIGH);
+  } else {
+    OCR2B = val;
+    TCCR2A |= (1<<COM2B1);
+  }
+}
+
+#define PWM_1 9 // PB1 - also PPM
+#define PWM_2 3 // PD3 - also RSSI
+#define PWM_3 A4 // PC4
+#define PWM_4 A5 // PC5
+
+#define PWM_CHANNELS 4 // PWM channels available
+
+const uint8_t PWM_MASKB_PPM[4] = { 0x00, 0x00, 0x00, 0x00 };
+const uint8_t PWM_MASKC_PPM[4] = { 0x10, 0x20, 0x00, 0x00 };
+const uint8_t PWM_MASKD_PPM[4] = { 0x00, 0x00, 0x00, 0x00 };
+const uint8_t PWM_MASKB[4] = { 0x02, 0x00, 0x00, 0x00 };
+const uint8_t PWM_MASKC[4] = { 0x00, 0x00, 0x10, 0x20 };
+const uint8_t PWM_MASKD[4] = { 0x00, 0x08, 0x00, 0x00 };
+
+#define PWM_ALL_DOWN_PPM { PORTB &= ~0x00; PORTC &= ~0x30; PORTD &= ~0x00; }
+#define PWM_ALL_DOWN     { PORTB &= ~0x02; PORTC &= ~0x30; PORTD &= ~0x08; }
+
+#define PWM_CH_UP_PPM(x) { PORTB |= PWM_MASKB_PPM[(x)]; PORTC |= PWM_MASKC_PPM[(x)]; PORTD |= PWM_MASKD_PPM[(x)]; }
+#define PWM_CH_UP(x) { PORTB |= PWM_MASKB[(x)]; PORTC |= PWM_MASKC[(x)]; PORTD |= PWM_MASKD[(x)]; }
+
+#endif
+
+#define Red_LED 6
+#define Green_LED 5
 
 #define buzzerOff(foo) buzzerOn(0)
 

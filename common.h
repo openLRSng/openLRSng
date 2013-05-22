@@ -179,10 +179,17 @@ void scannerMode(void)
 
         if (nextIndex == 4) {
           nextIndex = 0;
-          startFreq = nextConfig[0] * 1000000UL; // MHz
-          endFreq   = nextConfig[1] * 1000000UL; // MHz
+#ifdef LEGACY_SCANNER_INTERFACE
+          startFreq = nextConfig[0] * 1000000UL; // MHz -> Hz
+          endFreq   = nextConfig[1] * 1000000UL; // MHz -> Hz
           nrSamples = nextConfig[2]; // count
-          stepSize  = nextConfig[3] * 10000UL;   // 10kHz
+          stepSize  = nextConfig[3] * 10000UL;   // 10kHz -> Hz
+#else
+          startFreq = nextConfig[0] * 1000UL; // kHz -> Hz
+          endFreq   = nextConfig[1] * 1000UL; // kHz -> Hz
+          nrSamples = nextConfig[2]; // count
+          stepSize  = nextConfig[3] * 1000UL;   // kHz -> Hz
+#endif
           currentFrequency = startFreq;
           currentSamples = 0;
 
@@ -239,7 +246,11 @@ void scannerMode(void)
 
       currentSamples++;
     } else {
+#ifdef LEGACY_SCANNER_INTERFACE
       Serial.print(currentFrequency / 10000UL);
+#else
+      Serial.print(currentFrequency / 1000UL);
+#endif
       Serial.print(',');
       Serial.print(rssiMax);
       Serial.print(',');

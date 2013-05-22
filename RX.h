@@ -19,8 +19,6 @@ uint8_t  ppmCountter = 0;
 uint16_t ppmSync = 40000;
 uint8_t  ppmChannels = 8;
 
-boolean PPM_output = 0; // set if PPM output is desired
-
 uint8_t firstpack = 0;
 uint8_t lostpack = 0;
 
@@ -35,12 +33,10 @@ ISR(TIMER1_OVF_vect)
 
     while (TCNT1<32);
 
-    if (PPM_output) {   // clear all bits
-      PORTB &= ~PWM_MASK_PORTB(PWM_WITHPPM_MASK);
-      PORTD &= ~PWM_MASK_PORTD(PWM_WITHPPM_MASK);
+    if (bind_data.flags & PPM_OUTPUT) {   // clear all bits
+      PWM_ALL_DOWN_PPM;
     } else {
-      PORTB &= ~PWM_MASK_PORTB(PWM_ALL_MASK);
-      PORTD &= ~PWM_MASK_PORTD(PWM_ALL_MASK);
+      PWM_ALL_DOWN;
     }
   } else {
     uint16_t ppmOut = servoBits2Us(PPM[ppmCountter]) * 2;
@@ -52,21 +48,15 @@ ISR(TIMER1_OVF_vect)
 
     while (TCNT1<32);
 
-    if (PPM_output) {
-      PORTB &= ~PWM_MASK_PORTB(PWM_WITHPPM_MASK);
-      PORTD &= ~PWM_MASK_PORTD(PWM_WITHPPM_MASK);
-      if (ppmCountter < 7) { // only 6 (7 if defined by FORCED_PPM_OUTPUT) channels available in PPM mode
-        // shift channels over the PPM pin
-        uint8_t pin = (ppmCountter >= PPM_CH) ? (ppmCountter + 1) : ppmCountter;
-        PORTB |= PWM_MASK_PORTB(PWM_MASK[pin]);
-        PORTD |= PWM_MASK_PORTD(PWM_MASK[pin]);
+    if (bind_data.flags & PPM_OUTPUT) {
+      PWM_ALL_DOWN_PPM;
+      if (ppmCountter < PWM_CHANNELS) {
+        PWM_CH_UP_PPM(ppmCountter);
       }
     } else {
-      PORTB &= ~PWM_MASK_PORTB(PWM_ALL_MASK);
-      PORTD &= ~PWM_MASK_PORTD(PWM_ALL_MASK);
-      if (ppmCountter < 8) {
-        PORTB |= PWM_MASK_PORTB(PWM_MASK[ppmCountter]);
-        PORTD |= PWM_MASK_PORTD(PWM_MASK[ppmCountter]);
+      PWM_ALL_DOWN;
+      if (ppmCountter < PWM_CHANNELS) {
+        PWM_CH_UP(ppmCountter);
       }
     }
 
@@ -76,10 +66,10 @@ ISR(TIMER1_OVF_vect)
 
 void setupPPMout()
 {
-  if (PPM_output) {
+  if (bind_data.flags & PPM_OUTPUT) {
     digitalWrite(PPM_OUT,HIGH);
   }
-  if (PPM_output) {
+  if (bind_data.flags & PPM_OUTPUT) {
     TCCR1A = (1 << WGM11) | (1 << COM1A1) | (1 << COM1A0);
   } else {
     TCCR1A = (1 << WGM11);
@@ -97,13 +87,7 @@ void setupPPMout()
   pinMode(PWM_5, OUTPUT);
   pinMode(PWM_6, OUTPUT);
   pinMode(PWM_7, OUTPUT);
-#ifdef FORCED_PPM_OUTPUT
-  pinMode(PWM_8, OUTPUT); // if PPM defined at compile time CH8 outputs channel 7 data
-#else
-  if (!PPM_output) {
-    pinMode(PWM_8, OUTPUT); // leave ch8 as input as it is connected to 7 (which can be used as servo too)
-  }
-#endif
+  pinMode(PWM_8, OUTPUT);
   pinMode(PPM_OUT, OUTPUT);
 }
 
@@ -261,21 +245,10 @@ void setup()
 #endif
   }
 
-  // Check for bind plug on ch8 (PPM enable).
-  if (checkIfConnected(PWM_7,PWM_8)) {
-    PPM_output = 1;
-  } else {
-    PPM_output = 0;
-  }
-
-#ifdef FORCED_PPM_OUTPUT
-  PPM_output = 1;
-#endif
-
   ppmChannels = getChannelCount(&bind_data);
 
-  Serial.print("Entering normal mode with PPM=");
-  Serial.print(PPM_output);
+  Serial.print("Entering normal mode with PPM ");
+  Serial.print((bind_data.flags & PPM_OUTPUT)?"Enabled":"Disabled");
   Serial.print("CHs=");
   Serial.print(ppmChannels);
   init_rfm(0);   // Configure the RFM22B's registers for normal operation
@@ -329,7 +302,7 @@ void loop()
       firstpack = 1;
       setupPPMout();
     } else {
-      if ((PPM_output) && (bind_data.flags & FAILSAFE_NOPPM)) {
+      if ((bind_data.flags & PPM_OUTPUT) && (bind_data.flags & FAILSAFE_NOPPM)) {
         TCCR1A |= ((1 << COM1A1) | (1 << COM1A0));
       }
     }
@@ -399,7 +372,7 @@ void loop()
         lostpack = 11;
         // Serious trouble, apply failsafe
         load_failsafe_values();
-        if ((PPM_output) && (bind_data.flags & FAILSAFE_NOPPM)) {
+        if ((bind_data.flags & PPM_OUTPUT) && (bind_data.flags & FAILSAFE_NOPPM)) {
           TCCR1A &= ~((1 << COM1A1) | (1 << COM1A0));
         }
         fs_time = time;

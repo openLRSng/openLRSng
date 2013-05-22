@@ -69,6 +69,9 @@
 //#define RFMXX_868
 //#define RFMXX_915
 
+//### Use legacy scanner interface (compatible with old scanner GUI)
+#define LEGACY_SCANNER_INTERFACE
+
 //####################
 //### CODE SECTION ###
 //####################

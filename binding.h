@@ -23,10 +23,11 @@
 //  2 -- 19200bps, medium range
 #define DEFAULT_DATARATE 0
 
-// FLAGS: 8bits |4 bit reserved|1bit telemetry enable|3bit channel config|
+// FLAGS: 8bits
 #define TELEMETRY_ENABLED 0x08
 #define FAILSAFE_FAST     0x10
 #define FAILSAFE_NOPPM    0x20
+#define PPM_OUTPUT        0x40
 #define CHANNELS_4_4  1
 #define CHANNELS_8    2
 #define CHANNELS_8_4  3
