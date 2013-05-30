@@ -33,7 +33,7 @@ ISR(TIMER1_OVF_vect)
 
     while (TCNT1<32);
 
-    if (bind_data.flags & PPM_OUTPUT) {   // clear all bits
+    if (rx_config.flags & PPM_OUTPUT) {   // clear all bits
       PWM_ALL_DOWN_PPM;
     } else {
       PWM_ALL_DOWN;
@@ -48,7 +48,7 @@ ISR(TIMER1_OVF_vect)
 
     while (TCNT1<32);
 
-    if (bind_data.flags & PPM_OUTPUT) {
+    if (rx_config.flags & PPM_OUTPUT) {
       PWM_ALL_DOWN_PPM;
       if (ppmCountter < PWM_CHANNELS) {
         PWM_CH_UP_PPM(ppmCountter);
@@ -66,10 +66,10 @@ ISR(TIMER1_OVF_vect)
 
 void setupPPMout()
 {
-  if (bind_data.flags & PPM_OUTPUT) {
+  if (rx_config.flags & PPM_OUTPUT) {
     digitalWrite(PPM_OUT,HIGH);
   }
-  if (bind_data.flags & PPM_OUTPUT) {
+  if (rx_config.flags & PPM_OUTPUT) {
     TCCR1A = (1 << WGM11) | (1 << COM1A1) | (1 << COM1A0);
   } else {
     TCCR1A = (1 << WGM11);
@@ -129,9 +129,18 @@ void load_failsafe_values(void)
   }
 }
 
+void configMode()
+{
+  uint8_t tx_buf[sizeof(rx_config)+1];
+  tx_buf[0]='P';
+  memcpy(tx_buf+1, &rx_config, sizeof(rx_config));
+  tx_packet(tx_buf,sizeof(rx_config)+1);
+}
+
 uint8_t bindReceive(uint32_t timeout)
 {
   uint32_t start = millis();
+  uint8_t  rxb;
   init_rfm(1);
   RF_Mode = Receive;
   to_rx_mode();
@@ -142,17 +151,24 @@ uint8_t bindReceive(uint32_t timeout)
       Serial.println("Got pkt\n");
       RF_Mode = Receive;
       spiSendAddress(0x7f);   // Send the package read command
+      rxb=spiReadData();
+      if (rxb=='b') {
+        for (uint8_t i = 0; i < sizeof(bind_data); i++) {
+          *(((uint8_t*)&bind_data) + i) = spiReadData();
+        }
 
-      for (uint8_t i = 0; i < sizeof(bind_data); i++) {
-        *(((uint8_t*)&bind_data) + i) = spiReadData();
+        if (bind_data.version == BINDING_VERSION) {
+          Serial.println("data good\n");
+          tx_packet("B",1); // ACK that we got bound
+          return 1;
+        }
+      } else if (rxb=='p') {
+        Serial.println(F("Entering config mode"));
+        configMode();
       }
 
-      if (bind_data.version == BINDING_VERSION) {
-        Serial.println("data good\n");
-        return 1;
-      } else {
-        rx_reset();
-      }
+      rx_reset();
+
     }
   }
   return 0;
@@ -248,7 +264,7 @@ void setup()
   ppmChannels = getChannelCount(&bind_data);
 
   Serial.print("Entering normal mode with PPM ");
-  Serial.print((bind_data.flags & PPM_OUTPUT)?"Enabled":"Disabled");
+  Serial.print((rx_config.flags & PPM_OUTPUT)?"Enabled":"Disabled");
   Serial.print("CHs=");
   Serial.print(ppmChannels);
   init_rfm(0);   // Configure the RFM22B's registers for normal operation
@@ -302,7 +318,7 @@ void loop()
       firstpack = 1;
       setupPPMout();
     } else {
-      if ((bind_data.flags & PPM_OUTPUT) && (bind_data.flags & FAILSAFE_NOPPM)) {
+      if ((rx_config.flags & PPM_OUTPUT) && (rx_config.flags & FAILSAFE_NOPPM)) {
         TCCR1A |= ((1 << COM1A1) | (1 << COM1A0));
       }
     }
@@ -316,7 +332,7 @@ void loop()
       fs_saved = 0;
     }
 
-    if (bind_data.flags & TELEMETRY_ENABLED) {
+    if (rx_config.flags & TELEMETRY_ENABLED) {
       // reply with telemetry
       uint8_t telemetry_packet[4];
       telemetry_packet[0] = last_rssi_value;
@@ -365,30 +381,29 @@ void loop()
 
       if (lostpack < 10) {
         lostpack++;
-        if ((bind_data.flags & FAILSAFE_FAST) && (lostpack > 6)) {
+        if ((rx_config.flags & FAILSAFE_FAST) && (lostpack > 6)) {
           lostpack=10; // go to failsafe faster
         }
       } else if (lostpack == 10) {
         lostpack = 11;
         // Serious trouble, apply failsafe
         load_failsafe_values();
-        if ((bind_data.flags & PPM_OUTPUT) && (bind_data.flags & FAILSAFE_NOPPM)) {
+        if ((rx_config.flags & PPM_OUTPUT) && (rx_config.flags & FAILSAFE_NOPPM)) {
           TCCR1A &= ~((1 << COM1A1) | (1 << COM1A0));
         }
         fs_time = time;
-      } else if (bind_data.beacon_interval && bind_data.beacon_deadtime &&
-                 bind_data.beacon_frequency) {
+      } else if (rx_config.beacon_interval) {
         if (lostpack == 11) {   // failsafes set....
-          if ((time - fs_time) > (bind_data.beacon_deadtime * 1000000UL)) {
+          if ((time - fs_time) > (rx_config.beacon_deadtime * 1000000UL)) {
             lostpack = 12;
             last_beacon = time;
           }
         } else if (lostpack == 12) {   // beacon mode active
-          if ((time - last_beacon) > (bind_data.beacon_interval * 1000000UL)) {
-            last_beacon = time;
+          if ((time - last_beacon) > (rx_config.beacon_interval * 1000000UL)) {
             beacon_send();
             init_rfm(0);   // go back to normal RX
             rx_reset();
+            last_beacon = time;
           }
         }
       }

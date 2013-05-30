@@ -173,7 +173,7 @@ void scannerMode(void)
         Serial.print(MAX_RFM_FREQUENCY);
         Serial.println(',');
         break;
-        
+
       case '#':
         nextIndex = 0;
         nextConfig[0] = 0;

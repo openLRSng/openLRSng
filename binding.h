@@ -25,9 +25,6 @@
 
 // FLAGS: 8bits
 #define TELEMETRY_ENABLED 0x08
-#define FAILSAFE_FAST     0x10
-#define FAILSAFE_NOPPM    0x20
-#define PPM_OUTPUT        0x40
 #define CHANNELS_4_4  1
 #define CHANNELS_8    2
 #define CHANNELS_8_4  3
@@ -49,9 +46,10 @@
 #define DEFAULT_BEACON_INTERVAL 10 // interval between beacon transmits (s)
 
 #define BINDING_POWER     0x00 // 1 mW
-#define BINDING_VERSION   3
+#define BINDING_VERSION   4
 
 #define EEPROM_OFFSET     0x00
+#define EEPROM_RX_OFFSET  0x40 // RX specific config struct
 
 #define TELEMETRY_PACKETSIZE 9
 
@@ -87,9 +85,6 @@ struct bind_data {
   uint8_t hopchannel[8];
   uint8_t modem_params;
   uint8_t flags;
-  uint32_t beacon_frequency;
-  uint8_t beacon_interval;
-  uint8_t beacon_deadtime;
 } bind_data;
 
 
@@ -156,9 +151,6 @@ void bindInitDefaults(void)
 
   bind_data.modem_params = DEFAULT_DATARATE;
   bind_data.flags = DEFAULT_FLAGS;
-  bind_data.beacon_frequency = DEFAULT_BEACON_FREQUENCY;
-  bind_data.beacon_interval = DEFAULT_BEACON_INTERVAL;
-  bind_data.beacon_deadtime = DEFAULT_BEACON_DEADTIME;
 }
 
 void bindRandomize(void)
@@ -184,5 +176,81 @@ again:
     bind_data.hopchannel[c] = ch;
   }
 }
+
+#define RX_FLYTRON8CH 0x01
+#define RX_OLRSNG4CH  0x02
+#define RX_OLRSNG12CH 0x03
+
+#define FAILSAFE_FAST     0x01
+#define FAILSAFE_NOPPM    0x02
+#define FAILSAFE_NOPWM    0x04
+#define PINMAP_PPM  0x20
+#define PINMAP_RSSI 0x21
+
+struct RX_config {
+  uint8_t  rx_type; // RX type fillled in by RX, do not change
+  uint8_t  pinmapping[9];
+  uint8_t  flags;
+  uint32_t beacon_frequency;
+  uint8_t  beacon_deadtime;
+  uint8_t  beacon_interval;
+} rx_config;
+
+#ifndef COMPILE_TX
+// following is only needed on receiver
+
+void rxInitDefaults()
+{
+  uint8_t i;
+#if (BOARD_TYPE == 3)
+  rx_config.rx_type = RX_FLYTRON8CH;
+  for (i=0; i<4; i++) {
+    rx_config.pinmapping[i]=i; // default to PWM out
+  }
+  rx_config.pinmapping[8]=PINMAP_RSSI; // the CH0 on 8ch RX
+#elif (BOARD_TYPE == 5)
+  rx_config.rx_type = RX_OLRSNG4CH;
+  for (i=0; i<8; i++) {
+    rx_config.pinmapping[i]=i; // default to PWM out
+  }
+#else
+#error INVALID RX BOARD
+#endif
+
+  rx_config.flags = 0;
+  rx_config.beacon_frequency = DEFAULT_BEACON_FREQUENCY;
+  rx_config.beacon_deadtime = DEFAULT_BEACON_DEADTIME;
+  rx_config.beacon_interval = DEFAULT_BEACON_INTERVAL;
+}
+
+void rxWriteEeprom()
+{
+  for (uint8_t i = 0; i < 4; i++) {
+    EEPROM.write(EEPROM_RX_OFFSET + i, (BIND_MAGIC >> ((3-i) * 8))& 0xff);
+  }
+
+  for (uint8_t i = 0; i < sizeof(rx_config); i++) {
+    EEPROM.write(EEPROM_RX_OFFSET + 4 + i, *((uint8_t*)&rx_config + i));
+  }
+}
+
+void rxReadEeprom()
+{
+  uint32_t temp = 0;
+
+  for (uint8_t i = 0; i < 4; i++) {
+    temp = (temp<<8) + EEPROM.read(EEPROM_RX_OFFSET + i);
+  }
+
+  if (temp!=BIND_MAGIC) {
+    rxInitDefaults();
+    rxWriteEeprom();
+  } else {
+    for (uint8_t i = 0; i < sizeof(rx_config); i++) {
+      *((uint8_t*)&rx_config + i) = EEPROM.read(EEPROM_RX_OFFSET + 4 + i);
+    }
+  }
+}
+
 
 

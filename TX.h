@@ -89,6 +89,8 @@ void setupPPMinput(void)
 void bindMode(void)
 {
   uint32_t prevsend = millis();
+  uint8_t  tx_buf[sizeof(bind_data)+1];
+
   init_rfm(1);
 
   while (Serial.available()) {
@@ -100,6 +102,8 @@ void bindMode(void)
       prevsend = millis();
       Green_LED_ON;
       buzzerOn(BZ_FREQ);
+      memcpy(tx_buf+1,&bind_data, sizeof(bind_data));
+      tx_buf[0]='b';
       tx_packet((uint8_t*)&bind_data, sizeof(bind_data));
       Green_LED_OFF;
       buzzerOff();
