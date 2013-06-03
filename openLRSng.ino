@@ -37,7 +37,7 @@
 
 //####### COMPILATION TARGET #######
 // Enable to compile transmitter code, default is RX
-//#define COMPILE_TX
+#define COMPILE_TX
 
 //####### TX BOARD TYPE #######
 // 0 = Original Flytron M1 Tx Board (not verified)
@@ -71,6 +71,8 @@
 
 //### Use legacy scanner interface (compatible with old scanner GUI)
 //#define LEGACY_SCANNER_INTERFACE
+
+#define TX_TIMING
 
 //####################
 //### CODE SECTION ###

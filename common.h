@@ -614,7 +614,7 @@ void beacon_send(void)
   spiWriteRegister(0x73, 0x00);
   spiWriteRegister(0x74, 0x00);    // no offset
 
-  rfmSetCarrierFrequency(bind_data.beacon_frequency);
+  rfmSetCarrierFrequency(rx_config.beacon_frequency);
 
   spiWriteRegister(0x6d, 0x07);   // 7 set max power 100mW
 

@@ -59,22 +59,22 @@ void rxPrint(void)
   Serial.print(F("RX type: "));
   if (rx_config.rx_type == RX_FLYTRON8CH) {
     pins=9;
-    Serial.print(F("Flytron/OrangeRX UHF 8ch"));
+    Serial.println(F("Flytron/OrangeRX UHF 8ch"));
   } else if (rx_config.rx_type == RX_OLRSNG4CH) {
     pins=4;
-    Serial.print(F("OpenLRSngRX mini 4ch"));
+    Serial.println(F("OpenLRSngRX mini 4ch"));
   }
   for (i=0; i<pins; i++) {
     Serial.print(i);
     Serial.print(F(") pin CH"));
     Serial.print(i);
     Serial.print(F("function: "));
-    if (rx_config.pinmapping[i]<16) {
+    if (rx_config.pinMapping[i]<16) {
       Serial.print(F("PWM channel "));
-      Serial.println(rx_config.pinmapping[i]);
-    } else if (rx_config.pinmapping[i]=PINMAP_PPM) {
+      Serial.println(rx_config.pinMapping[i]);
+    } else if (rx_config.pinMapping[i]==PINMAP_PPM) {
       Serial.println(F("PPM output"));
-    } else if (rx_config.pinmapping[i]=PINMAP_RSSI) {
+    } else if (rx_config.pinMapping[i]==PINMAP_RSSI) {
       Serial.println(F("RSSI (8kHz PWM) output"));
     } else {
       Serial.println(F("unknown-BUG"));
@@ -169,7 +169,7 @@ void RX_menu_headers(void)
   case 7:
   case 8:
   case 9:
-    if (rx_config.type != RX_FLYTRON8CH) {
+    if (rx_config.rx_type != RX_FLYTRON8CH) {
       break;
     }
     // Fallthru
@@ -180,14 +180,14 @@ void RX_menu_headers(void)
     Serial.print(F("Set output for output "));
     Serial.println(CLI_menu);
     Serial.print(F("Valid choices are: [1]-[16] (channel 1-16)"));
-    if (rx_config.type==RX_FLYTRON8CH) {
+    if (rx_config.rx_type==RX_FLYTRON8CH) {
       if (CLI_menu == 9) {
         Serial.print(F(", [0] (RSSI)"));
       }
       if (CLI_menu == 5) {
         Serial.print(F(", [0] (PPM)"));
       }
-    } else if (RX_config.type == RX_OLRSNG4CH) {
+    } else if (rx_config.rx_type == RX_OLRSNG4CH) {
       switch (CLI_menu) {
       case 1:
         Serial.print(F(", [0] (PPM)"));
@@ -298,13 +298,13 @@ void handleRXmenu(char c)
     switch (c) {
     case '\n':
     case '\r':
-      CLI_menu_headers();
+      RX_menu_headers();
       break;
     case 's':
     case 'S':
       // save settings to EEPROM
-      bindWriteEeprom();
-      Serial.println("Settings saved to EEPROM\n");
+      // bindWriteEeprom();
+      Serial.println("Sent settings to RX\n");
       // leave CLI
       CLI_menu = -2;
       break;
@@ -312,8 +312,7 @@ void handleRXmenu(char c)
     case 'X':
     case 0x1b: //ESC
       // restore settings from EEPROM
-      bindReadEeprom();
-      Serial.println("Reverted settings from EEPROM\n");
+      Serial.println("Aborted edits\n");
       // leave CLI
       CLI_menu = -2;
       break;
@@ -325,42 +324,38 @@ void handleRXmenu(char c)
 
       CLI_menu_headers();
       break;
-    case 'r':
-    case 'R':
-      // randomize channels and key
-      bindRandomize();
-      Serial.println("Key and channels randomized\n");
-
-      CLI_menu_headers();
+  case 5:
+  case 6:
+  case 7:
+  case 8:
+  case 9:
+    if (rx_config.rx_type != RX_FLYTRON8CH) {
+      Serial.println("invalid selection");
       break;
-    case 'f':
-    case 'F':
-      showFrequencies();
-      //CLI_menu_headers();
-      break;
-    case '1':
-    case '2':
-    case '3':
-    case '4':
-    case '5':
-    case '6':
-    case '7':
+    }
+    // Fallthru
+  case 1:
+  case 2:
+  case 3:
+  case 4:
       CLI_menu = c - '0';
-      CLI_menu_headers();
+      RX_menu_headers();
       break;
-    case '8':
-    case '8':
+  case 'a':
+  case 'A':
       CLI_menu = 8;
-      CLI_menu_headers();
-      bind_data.flags ^= TELEMETRY_ENABLED;
+      RX_menu_headers();
+      rx_config.flags ^= FAILSAFE_NOPPM;
       CLI_menu = -1;
-      CLI_menu_headers();
+      RX_menu_headers();
       break;
-    case 'z':
-    case 'Z':
-      CLI_RX_config();
+  case 'b':
+  case 'B':
+      CLI_menu = 8;
+      RX_menu_headers();
+      rx_config.flags ^= FAILSAFE_NOPWM;
       CLI_menu = -1;
-      CLI_menu_headers();
+      RX_menu_headers();
       break;
     }
   } else { // we are inside the menu
@@ -435,6 +430,45 @@ void handleRXmenu(char c)
         Serial.println('\n');
         CLI_menu_headers();
       }
+      if (CLI_buffer_position == 0) { // no input - abort
+        CLI_menu = -1;
+        CLI_menu_headers();
+      } else {
+        uint32_t value = strtoul(CLI_buffer, NULL, 0);
+        bool valid_input = 0;
+        switch (CLI_menu) {
+        case 5:
+        case 6:
+        case 7:
+        case 8:
+        case 9:
+            if (rx_config.rx_type != RX_FLYTRON8CH) {
+              break;
+            }
+        // Fallthru
+        case 1:
+        case 2:
+        case 3:
+        case 4:
+          if ((value >= 0) && (value<16)) {
+            rx_config.pinMapping[CLI_menu-'0'] = value;
+            valid_input = 1;
+          }
+          break;
+        }
+        if (valid_input) {
+          if (CLI_magic_set == 0) {
+            bind_data.rf_magic++;
+          }
+        } else {
+          Serial.println("\r\nInvalid input - discarded!\007");
+        }
+        CLI_buffer_reset();
+        // Leave the editing submenu
+        CLI_menu = -1;
+        Serial.println('\n');
+        CLI_menu_headers();
+      }
     }
   }
 }
@@ -445,19 +479,39 @@ void CLI_RX_config()
   uint32_t last_time = micros();
   Serial.println(F("Connecting to RX, power up the RX (with bind plug if not using always bind)"));
   init_rfm(1);
-  while ((RF_Mode==Receive) && ((micros()-last_time)<10000000)) {
+  do {
     tx_buf[0]='p';
     tx_packet(tx_buf,1);
-    delay(200);
+    rx_reset();
     RF_Mode = Receive;
-    to_rx_mode();
+    delay(200);
     Serial.print(".");
-  }
+  } while ((RF_Mode==Receive) && ((micros()-last_time)<10000000));
+  
   if (RF_Mode == Receive) {
     Serial.println("TIMEOUT");
     return;
-  } else {
   }
+  Serial.println("got response");
+  spiSendAddress(0x7f);   // Send the package read command
+  tx_buf[0]=spiReadData();
+  if (tx_buf[0]!='P') {
+    Serial.println("Invalid response");
+    return;
+  }
+  for (uint8_t i = 0; i < sizeof(rx_config); i++) {
+    *(((uint8_t*)&rx_config) + i) = spiReadData();
+  }
+
+  CLI_menu = -1;
+  CLI_magic_set = 0;
+  RX_menu_headers();
+  while (CLI_menu != -2) { // LOCK user here until settings are saved
+    if (Serial.available()) {
+      handleRXmenu(Serial.read());
+    }
+  }
+
 }
 
 void handleCLImenu(char c)
@@ -516,7 +570,6 @@ void handleCLImenu(char c)
       CLI_menu = c - '0';
       CLI_menu_headers();
       break;
-    case '8':
     case '8':
       CLI_menu = 8;
       CLI_menu_headers();

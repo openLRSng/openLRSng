@@ -189,7 +189,7 @@ again:
 
 struct RX_config {
   uint8_t  rx_type; // RX type fillled in by RX, do not change
-  uint8_t  pinmapping[9];
+  uint8_t  pinMapping[9];
   uint8_t  flags;
   uint32_t beacon_frequency;
   uint8_t  beacon_deadtime;
@@ -204,14 +204,14 @@ void rxInitDefaults()
   uint8_t i;
 #if (BOARD_TYPE == 3)
   rx_config.rx_type = RX_FLYTRON8CH;
-  for (i=0; i<4; i++) {
-    rx_config.pinmapping[i]=i; // default to PWM out
+  rx_config.pinMapping[0] = PINMAP_RSSI; // the CH0 on 8ch RX
+  for (i=1; i < 9; i++) {
+    rx_config.pinMapping[i] = i-1; // default to PWM out
   }
-  rx_config.pinmapping[8]=PINMAP_RSSI; // the CH0 on 8ch RX
 #elif (BOARD_TYPE == 5)
   rx_config.rx_type = RX_OLRSNG4CH;
-  for (i=0; i<8; i++) {
-    rx_config.pinmapping[i]=i; // default to PWM out
+  for (i=0; i<5; i++) {
+    rx_config.pinMapping[i]=i; // default to PWM out
   }
 #else
 #error INVALID RX BOARD
@@ -243,14 +243,35 @@ void rxReadEeprom()
   }
 
   if (temp!=BIND_MAGIC) {
+    Serial.println("RXconf reinit");
     rxInitDefaults();
     rxWriteEeprom();
   } else {
     for (uint8_t i = 0; i < sizeof(rx_config); i++) {
       *((uint8_t*)&rx_config + i) = EEPROM.read(EEPROM_RX_OFFSET + 4 + i);
     }
+    Serial.println("RXconf loaded");
   }
 }
 
+void printRXconf()
+{
+  uint8_t i;
+  Serial.print("Type: ");
+  Serial.println(rx_config.rx_type);
+  for (i=0; i<9; i++) {
+    Serial.print("pmap: ");
+    Serial.println(rx_config.pinMapping[i]);
+  }
+  Serial.print("Flag: ");
+  Serial.println(rx_config.flags);
+  Serial.print("Bfre: ");
+  Serial.println(rx_config.beacon_frequency);
+  Serial.print("Bdea: ");
+  Serial.println(rx_config.beacon_deadtime);
+  Serial.print("Bint: ");
+  Serial.println(rx_config.beacon_interval);
+}
 
+#endif
 

@@ -24,6 +24,23 @@ uint8_t lostpack = 0;
 
 boolean willhop = 0, fs_saved = 0;
 
+pinMask_t chToMask[PPM_CHANNELS];
+pinMask_t clearMask;
+
+void outputUp(uint8_t no)
+{
+  PORTB |= chToMask[no].B;
+  PORTC |= chToMask[no].C;
+  PORTD |= chToMask[no].D;
+}
+
+void outputDownAll()
+{
+  PORTB &= clearMask.B;
+  PORTC &= clearMask.C;
+  PORTD &= clearMask.D;  
+}
+
 ISR(TIMER1_OVF_vect)
 {
   if (ppmCountter >= ppmChannels) {
@@ -32,12 +49,7 @@ ISR(TIMER1_OVF_vect)
     ppmSync = 40000;
 
     while (TCNT1<32);
-
-    if (rx_config.flags & PPM_OUTPUT) {   // clear all bits
-      PWM_ALL_DOWN_PPM;
-    } else {
-      PWM_ALL_DOWN;
-    }
+    outputDownAll();
   } else {
     uint16_t ppmOut = servoBits2Us(PPM[ppmCountter]) * 2;
     ppmSync -= ppmOut;
@@ -47,32 +59,66 @@ ISR(TIMER1_OVF_vect)
     ICR1 = ppmOut;
 
     while (TCNT1<32);
-
-    if (rx_config.flags & PPM_OUTPUT) {
-      PWM_ALL_DOWN_PPM;
-      if (ppmCountter < PWM_CHANNELS) {
-        PWM_CH_UP_PPM(ppmCountter);
-      }
-    } else {
-      PWM_ALL_DOWN;
-      if (ppmCountter < PWM_CHANNELS) {
-        PWM_CH_UP(ppmCountter);
-      }
-    }
+    outputDownAll();
+    outputUp(ppmCountter);
 
     ppmCountter++;
   }
 }
 
-void setupPPMout()
+
+void set_RSSI_output( uint8_t val )
 {
-  if (rx_config.flags & PPM_OUTPUT) {
-    digitalWrite(PPM_OUT,HIGH);
+  if (rx_config.pinMapping[RSSI_OUTPUT] == PINMAP_RSSI) {
+    if ((val == 0) || (val == 255)) {
+      TCCR2A &= ~(1<<COM2B1); // disable PWM output
+      digitalWrite(OUTPUT_PIN[RSSI_OUTPUT], (val == 0) ? LOW : HIGH);
+    } else {
+      OCR2B = val;
+      TCCR2A |= (1<<COM2B1);
+    }
   }
-  if (rx_config.flags & PPM_OUTPUT) {
+}
+
+void setupOutputs()
+{
+  uint8_t i;
+  
+  for (i = 0; i < OUTPUTS; i++) {
+    chToMask[i].B = 0;
+    chToMask[i].C = 0;
+    chToMask[i].D = 0;
+  }
+  clearMask.B = 0xff;
+  clearMask.C = 0xff;
+  clearMask.D = 0xff;
+  for (i = 0; i < OUTPUTS; i++) {
+    if (rx_config.pinMapping[i] < PPM_CHANNELS) {
+      chToMask[rx_config.pinMapping[i]].B |= OUTPUT_MASKS[i].B;
+      chToMask[rx_config.pinMapping[i]].C |= OUTPUT_MASKS[i].C;
+      chToMask[rx_config.pinMapping[i]].D |= OUTPUT_MASKS[i].D;
+      clearMask.B &= ~OUTPUT_MASKS[i].B;
+      clearMask.C &= ~OUTPUT_MASKS[i].C;
+      clearMask.D &= ~OUTPUT_MASKS[i].D;
+    }
+  }
+
+  for (i = 0; i < OUTPUTS; i++) {
+    pinMode(OUTPUT_PIN[i], OUTPUT);
+  }
+  
+  if (rx_config.pinMapping[PPM_OUTPUT] == PINMAP_PPM) {
+    digitalWrite(OUTPUT_PIN[PPM_OUTPUT], HIGH);
     TCCR1A = (1 << WGM11) | (1 << COM1A1) | (1 << COM1A0);
   } else {
     TCCR1A = (1 << WGM11);
+  }
+
+  if (rx_config.pinMapping[RSSI_OUTPUT] == PINMAP_RSSI) {
+    pinMode(OUTPUT_PIN[RSSI_OUTPUT], OUTPUT);
+    digitalWrite(OUTPUT_PIN[RSSI_OUTPUT], LOW);
+    TCCR2B = (1<<CS20);
+    TCCR2A = (1<<WGM20);
   }
 
   TCCR1B = (1 << WGM13) | (1 << WGM12) | (1 << CS11);
@@ -80,15 +126,6 @@ void setupPPMout()
   OCR1A = 600;  // 0.3ms pulse
   TIMSK1 |= (1 << TOIE1);
 
-  pinMode(PWM_1, OUTPUT);
-  pinMode(PWM_2, OUTPUT);
-  pinMode(PWM_3, OUTPUT);
-  pinMode(PWM_4, OUTPUT);
-  pinMode(PWM_5, OUTPUT);
-  pinMode(PWM_6, OUTPUT);
-  pinMode(PWM_7, OUTPUT);
-  pinMode(PWM_8, OUTPUT);
-  pinMode(PPM_OUT, OUTPUT);
 }
 
 #define FAILSAFE_OFFSET 0x80
@@ -129,14 +166,6 @@ void load_failsafe_values(void)
   }
 }
 
-void configMode()
-{
-  uint8_t tx_buf[sizeof(rx_config)+1];
-  tx_buf[0]='P';
-  memcpy(tx_buf+1, &rx_config, sizeof(rx_config));
-  tx_packet(tx_buf,sizeof(rx_config)+1);
-}
-
 uint8_t bindReceive(uint32_t timeout)
 {
   uint32_t start = millis();
@@ -147,9 +176,8 @@ uint8_t bindReceive(uint32_t timeout)
   Serial.println("Waiting bind\n");
 
   while ((!timeout) || ((millis() - start) < timeout)) {
-    if (RF_Mode == Received) {   // RFM22B int16_t pin Enabled by received Data
+    if (RF_Mode == Received) {
       Serial.println("Got pkt\n");
-      RF_Mode = Receive;
       spiSendAddress(0x7f);   // Send the package read command
       rxb=spiReadData();
       if (rxb=='b') {
@@ -159,14 +187,26 @@ uint8_t bindReceive(uint32_t timeout)
 
         if (bind_data.version == BINDING_VERSION) {
           Serial.println("data good\n");
-          tx_packet("B",1); // ACK that we got bound
+          rxb='B';
+          tx_packet(&rxb,1); // ACK that we got bound
           return 1;
         }
       } else if (rxb=='p') {
-        Serial.println(F("Entering config mode"));
-        configMode();
+        uint8_t tx_buf[sizeof(rx_config)+1];
+        Serial.println(F("Sending RX config"));
+        tx_buf[0]='P';
+        memcpy(tx_buf+1, &rx_config, sizeof(rx_config));
+        tx_packet(tx_buf,sizeof(rx_config)+1);
+      } else if (rxb=='u') {
+        for (uint8_t i = 0; i < sizeof(rx_config); i++) {
+          *(((uint8_t*)&rx_config) + i) = spiReadData();
+        }
+        printRXconf();
+        rxb='B';
+        tx_packet(&rxb,1); // ACK that we got bound
       }
 
+      RF_Mode = Receive;
       rx_reset();
 
     }
@@ -230,20 +270,19 @@ void setup()
   pinMode(0, INPUT);   // Serial Rx
   pinMode(1, OUTPUT);   // Serial Tx
 
-  setup_RSSI_output();
-
   Serial.begin(SERIAL_BAUD_RATE);   //Serial Transmission
-
+  rxReadEeprom();
+  printRXconf();
   attachInterrupt(IRQ_interrupt, RFM22B_Int, FALLING);
 
   sei();
   Red_LED_ON;
 
-  if (checkIfConnected(PWM_3,PWM_4)) { // ch1 - ch2 --> force scannerMode
+  if (checkIfConnected(OUTPUT_PIN[2],OUTPUT_PIN[3])) { // ch1 - ch2 --> force scannerMode
     scannerMode();
   }
 
-  if (checkIfConnected(PWM_1,PWM_2) || (!bindReadEeprom())) {
+  if (checkIfConnected(OUTPUT_PIN[0],OUTPUT_PIN[1]) || (!bindReadEeprom())) {
     Serial.print("EEPROM data not valid or bind jumpper set, forcing bind\n");
 
     if (bindReceive(0)) {
@@ -316,7 +355,7 @@ void loop()
 
     if (firstpack == 0) {
       firstpack = 1;
-      setupPPMout();
+      setupOutputs();
     } else {
       if ((rx_config.flags & PPM_OUTPUT) && (rx_config.flags & FAILSAFE_NOPPM)) {
         TCCR1A |= ((1 << COM1A1) | (1 << COM1A0));

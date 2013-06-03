@@ -4,6 +4,14 @@
 #define BOARD_TYPE RX_BOARD_TYPE
 #endif
 
+typedef struct pinMask {
+  uint8_t B,C,D;
+} pinMask_t;
+
+#if (F_CPU != 16000000)
+#error Wrong board selected, select Arduino Pro/Pro Mini 5V/16MHz w/ ATMega328
+#endif
+
 //####### Board Pinouts #########
 
 #if (BOARD_TYPE == 0) // Flytron M1 TX
@@ -228,51 +236,21 @@ void buzzerOn(uint16_t freq)
 }
 
 #define buzzerOff(foo) buzzerOn(0)
-#else
+#else // RX
 #define PPM_OUT 9 // OCP1A
 #define RSSI_OUT 3 // PD3 OC2B
 
-void setup_RSSI_output()
-{
-  pinMode(RSSI_OUT, OUTPUT);
-  digitalWrite(RSSI_OUT, LOW);
-  TCCR2B = (1<<CS20);
-  TCCR2A = (1<<WGM20);
-}
+#define OUTPUTS 9 // outputs available
 
-void set_RSSI_output( uint8_t val )
-{
-  if ((val == 0) || (val == 255)) {
-    TCCR2A &= ~(1<<COM2B1); // disable PWM output
-    digitalWrite(RSSI_OUT, (val == 0) ? LOW : HIGH);
-  } else {
-    OCR2B = val;
-    TCCR2A |= (1<<COM2B1);
-  }
-}
+const pinMask_t OUTPUT_MASKS[OUTPUTS] = {
+  {0x00,0x00,0x08},{0x00,0x00,0x20},{0x00,0x00,0x40},
+  {0x00,0x00,0x80},{0x01,0x00,0x00},{0x02,0x00,0x00},
+  {0x04,0x00,0x00},{0x08,0x00,0x00},{0x10,0x00,0x00}};
 
-#define PWM_1 5
-#define PWM_2 6
-#define PWM_3 7
-#define PWM_4 8
-#define PWM_5 9
-#define PWM_6 10
-#define PWM_7 11
-#define PWM_8 12
+const uint8_t OUTPUT_PIN[OUTPUTS] = { 3, 5, 6, 7, 8, 9, 10, 11, 12 };
 
-#define PWM_CHANNELS 8 // PWM channels available
-
-const uint8_t PWM_MASKB_PPM[8] = { 0x00, 0x00, 0x00, 0x01, 0x04, 0x08, 0x10, 0x00 };
-const uint8_t PWM_MASKD_PPM[8] = { 0x20, 0x40, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00 };
-
-const uint8_t PWM_MASKB[8] = { 0x00, 0x00, 0x00, 0x01, 0x02, 0x04, 0x08, 0x10 };
-const uint8_t PWM_MASKD[8] = { 0x20, 0x40, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00 };
-
-#define PWM_ALL_DOWN_PPM { PORTB &= ~0x1D; PORTD &= ~0xE0; }
-#define PWM_ALL_DOWN     { PORTB &= ~0x1F; PORTD &= ~0xE0; }
-
-#define PWM_CH_UP_PPM(x) { PORTB |= PWM_MASKB_PPM[(x)]; PORTD |= PWM_MASKD_PPM[(x)]; }
-#define PWM_CH_UP(x) { PORTB |= PWM_MASKB[(x)]; PORTD |= PWM_MASKD[(x)]; }
+#define PPM_OUTPUT  5
+#define RSSI_OUTPUT 0
 
 #endif
 
@@ -449,20 +427,12 @@ void set_RSSI_output( uint8_t val )
 #define PWM_3 A4 // PC4
 #define PWM_4 A5 // PC5
 
-#define PWM_CHANNELS 4 // PWM channels available
+#define OUTPUTS 4 // outputs available
 
-const uint8_t PWM_MASKB_PPM[4] = { 0x00, 0x00, 0x00, 0x00 };
-const uint8_t PWM_MASKC_PPM[4] = { 0x10, 0x20, 0x00, 0x00 };
-const uint8_t PWM_MASKD_PPM[4] = { 0x00, 0x00, 0x00, 0x00 };
-const uint8_t PWM_MASKB[4] = { 0x02, 0x00, 0x00, 0x00 };
-const uint8_t PWM_MASKC[4] = { 0x00, 0x00, 0x10, 0x20 };
-const uint8_t PWM_MASKD[4] = { 0x00, 0x08, 0x00, 0x00 };
+const pinMask_t OUTPUT_MASKS[OUTPUTS] = {
+  {0x02,0x00,0x00}, {0x00,0x00,0x08}, {0x00,0x10,0x00}, {0x00,0x20,0x00}};
 
-#define PWM_ALL_DOWN_PPM { PORTB &= ~0x00; PORTC &= ~0x30; PORTD &= ~0x00; }
-#define PWM_ALL_DOWN     { PORTB &= ~0x02; PORTC &= ~0x30; PORTD &= ~0x08; }
-
-#define PWM_CH_UP_PPM(x) { PORTB |= PWM_MASKB_PPM[(x)]; PORTC |= PWM_MASKC_PPM[(x)]; PORTD |= PWM_MASKD_PPM[(x)]; }
-#define PWM_CH_UP(x) { PORTB |= PWM_MASKB[(x)]; PORTC |= PWM_MASKC[(x)]; PORTD |= PWM_MASKD[(x)]; }
+const uint8_t OUTPUT_PIN[OUTPUTS] = { 9, 3, A4, A5 };
 
 #endif
 
