@@ -8,7 +8,7 @@ typedef struct pinMask {
   uint8_t B,C,D;
 } pinMask_t;
 
-#if (F_CPU != 16000000)
+#if ((F_CPU != 16000000) || (__AVR_ATmega328P__ != 1))
 #error Wrong board selected, select Arduino Pro/Pro Mini 5V/16MHz w/ ATMega328
 #endif
 

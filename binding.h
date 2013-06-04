@@ -45,6 +45,12 @@
 #define DEFAULT_BEACON_DEADTIME 30 // time to wait until go into beacon mode (s)
 #define DEFAULT_BEACON_INTERVAL 10 // interval between beacon transmits (s)
 
+#define MIN_DEADTIME 10
+#define MAX_DEADTIME 255
+
+#define MIN_INTERVAL 5
+#define MAX_INTERVAL 255
+
 #define BINDING_POWER     0x00 // 1 mW
 #define BINDING_VERSION   4
 

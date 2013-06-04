@@ -205,28 +205,22 @@ void RX_menu_headers(void)
     }
     Serial.println();
     break;
-  case 'A':
-  case 'a':
+  case 10:
     Serial.println(F("Toggled 'stop PPM'"));
     break;
-  case 'B':
-  case 'b':
+  case 11:
     Serial.println(F("Toggled 'stop PWM'"));
     break;
-  case 'C':
-  case 'c':
+  case 12:
     Serial.println(F("Toggled failsafe speed"));
     break;
-  case 'D':
-  case 'd':
+  case 13:
     Serial.println(F("Set beacon frequency in Hz: 0=disable, Px=PMR channel x, Fx=FRS channel x"));
     break;
-  case 'E':
-  case 'e':
+  case 14:
     Serial.println(F("Set beacon delay"));
     break;
-  case 'F':
-  case 'f':
+  case 15:
     Serial.println(F("Set beacon interval"));
     break;
   }
@@ -343,7 +337,7 @@ void handleRXmenu(char c)
       break;
   case 'a':
   case 'A':
-      CLI_menu = 8;
+      CLI_menu = 10;
       RX_menu_headers();
       rx_config.flags ^= FAILSAFE_NOPPM;
       CLI_menu = -1;
@@ -351,85 +345,38 @@ void handleRXmenu(char c)
       break;
   case 'b':
   case 'B':
-      CLI_menu = 8;
+      CLI_menu = 11;
       RX_menu_headers();
       rx_config.flags ^= FAILSAFE_NOPWM;
       CLI_menu = -1;
       RX_menu_headers();
       break;
+  case 'c':
+  case 'C':
+      CLI_menu = 12;
+      RX_menu_headers();
+      rx_config.flags ^= FAILSAFE_FAST;
+      CLI_menu = -1;
+      RX_menu_headers();
+      break;
+  case 'd':
+  case 'D':
+      CLI_menu = 13;
+      RX_menu_headers();
+      break;
+  case 'e':
+  case 'E':
+      CLI_menu = 14;
+      RX_menu_headers();
+      break;
+  case 'f':
+  case 'F':
+      CLI_menu = 15;
+      RX_menu_headers();
+      break;
     }
   } else { // we are inside the menu
     if (CLI_inline_edit(c)) {
-      if (CLI_buffer_position == 0) { // no input - abort
-        CLI_menu = -1;
-        CLI_menu_headers();
-      } else {
-        uint32_t value = strtoul(CLI_buffer, NULL, 0);
-        bool valid_input = 0;
-        switch (CLI_menu) {
-        case 1:
-          if ((value > MIN_RFM_FREQUENCY) && (value < MAX_RFM_FREQUENCY)) {
-            bind_data.rf_frequency = value;
-            valid_input = 1;
-          }
-          break;
-        case 2:
-          bind_data.rf_magic = value;
-          CLI_magic_set = 1; // user wants specific magic, do not auto update
-          valid_input = 1;
-          break;
-        case 3:
-          if (value < 8) {
-            bind_data.rf_power = value;
-            valid_input = 1;
-          }
-          break;
-        case 4:
-          if ((value > 0) && (value<11)) {
-            bind_data.rf_channel_spacing = value;
-            valid_input = 1;
-          }
-          break;
-        case 5: {
-          char* slice = strtok(CLI_buffer, ",");
-          uint8_t channel = 0;
-          while (slice != NULL) {
-            if (channel < 8) {
-              bind_data.hopchannel[channel++] = atoi(slice);
-            }
-            slice = strtok(NULL, ",");
-          }
-          valid_input = 1;
-          bind_data.hopcount = channel;
-        }
-        break;
-        case 6:
-          if (value < DATARATE_COUNT) {
-            bind_data.modem_params = value;
-            valid_input = 1;
-          }
-          break;
-        case 7:
-          if ((value >= 1) && (value <= 6)) {
-            bind_data.flags &= 0xf8;
-            bind_data.flags |= value;
-            valid_input = 1;
-          }
-          break;
-        }
-        if (valid_input) {
-          if (CLI_magic_set == 0) {
-            bind_data.rf_magic++;
-          }
-        } else {
-          Serial.println("\r\nInvalid input - discarded!\007");
-        }
-        CLI_buffer_reset();
-        // Leave the editing submenu
-        CLI_menu = -1;
-        Serial.println('\n');
-        CLI_menu_headers();
-      }
       if (CLI_buffer_position == 0) { // no input - abort
         CLI_menu = -1;
         CLI_menu_headers();
@@ -455,6 +402,22 @@ void handleRXmenu(char c)
             valid_input = 1;
           }
           break;
+	case 13:
+          if ((value == 0) || ((value >= MIN_RFM_FREQUENCY) && (value <= MAX_RFM_FREQUENCY))) {
+            rx_config.beacon_frequency = value;
+            valid_input = 1;
+          }
+	case 14:
+          if ((value >= MIN_DEADTIME) && (value <= MAX_DEADTIME)) {
+            rx_config.beacon_deadtime = value;
+            valid_input = 1;
+          }
+	case 15:
+          if ((value >= MIN_INTERVAL) && (value <= MAX_INTERVAL)) {
+            rx_config.beacon_interval = value;
+            valid_input = 1;
+          }
+	  break;
         }
         if (valid_input) {
           if (CLI_magic_set == 0) {
