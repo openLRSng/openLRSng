@@ -288,27 +288,26 @@ void handleRXmenu(char c)
       RX_menu_headers();
       break;
     case 's':
-    case 'S':
-      {
-        Serial.println("Sending settings to RX\n");
-        uint8_t tx_buf[1+sizeof(rx_config)];
-        tx_buf[0]='u';
-        memcpy(tx_buf+1, &rx_config, sizeof(rx_config));
-        tx_packet(tx_buf,sizeof(rx_config)+1);
-        rx_reset();
-        RF_Mode = Receive;
-        delay(200);
-        if (RF_Mode == Received) {
-          spiSendAddress(0x7f);   // Send the package read command
-          tx_buf[0]=spiReadData();
-          if (tx_buf[0]=='U') {
-            Serial.println(F("*****************************"));
-            Serial.println(F("RX Acked - update succesfull!"));
-            Serial.println(F("*****************************"));
-          }
+    case 'S': {
+      Serial.println("Sending settings to RX\n");
+      uint8_t tx_buf[1+sizeof(rx_config)];
+      tx_buf[0]='u';
+      memcpy(tx_buf+1, &rx_config, sizeof(rx_config));
+      tx_packet(tx_buf,sizeof(rx_config)+1);
+      rx_reset();
+      RF_Mode = Receive;
+      delay(200);
+      if (RF_Mode == Received) {
+        spiSendAddress(0x7f);   // Send the package read command
+        tx_buf[0]=spiReadData();
+        if (tx_buf[0]=='U') {
+          Serial.println(F("*****************************"));
+          Serial.println(F("RX Acked - update succesfull!"));
+          Serial.println(F("*****************************"));
         }
       }
-      break;
+    }
+    break;
     case 'x':
     case 'X':
     case 0x1b: //ESC
@@ -317,59 +316,59 @@ void handleRXmenu(char c)
       // leave CLI
       CLI_menu = -2;
       break;
-  case '8':
-  case '7':
-  case '6':
-  case '5':
-  case '4':
-    if (rx_config.rx_type != RX_FLYTRON8CH) {
-      Serial.println("invalid selection");
-      break;
-    }
-    // Fallthru
-  case '3':
-  case '2':
-  case '1':
-  case '0':
+    case '8':
+    case '7':
+    case '6':
+    case '5':
+    case '4':
+      if (rx_config.rx_type != RX_FLYTRON8CH) {
+        Serial.println("invalid selection");
+        break;
+      }
+      // Fallthru
+    case '3':
+    case '2':
+    case '1':
+    case '0':
       CLI_menu = c - '0';
       RX_menu_headers();
       break;
-  case 'a':
-  case 'A':
+    case 'a':
+    case 'A':
       CLI_menu = 10;
       RX_menu_headers();
       rx_config.flags ^= FAILSAFE_NOPPM;
       CLI_menu = -1;
       RX_menu_headers();
       break;
-  case 'b':
-  case 'B':
+    case 'b':
+    case 'B':
       CLI_menu = 11;
       RX_menu_headers();
       rx_config.flags ^= FAILSAFE_NOPWM;
       CLI_menu = -1;
       RX_menu_headers();
       break;
-  case 'c':
-  case 'C':
+    case 'c':
+    case 'C':
       CLI_menu = 12;
       RX_menu_headers();
       rx_config.flags ^= FAILSAFE_FAST;
       CLI_menu = -1;
       RX_menu_headers();
       break;
-  case 'd':
-  case 'D':
+    case 'd':
+    case 'D':
       CLI_menu = 13;
       RX_menu_headers();
       break;
-  case 'e':
-  case 'E':
+    case 'e':
+    case 'E':
       CLI_menu = 14;
       RX_menu_headers();
       break;
-  case 'f':
-  case 'F':
+    case 'f':
+    case 'F':
       CLI_menu = 15;
       RX_menu_headers();
       break;
@@ -388,10 +387,10 @@ void handleRXmenu(char c)
         case 6:
         case 5:
         case 4:
-            if (rx_config.rx_type != RX_FLYTRON8CH) {
-              break;
-            }
-        // Fallthru
+          if (rx_config.rx_type != RX_FLYTRON8CH) {
+            break;
+          }
+          // Fallthru
         case 3:
         case 2:
         case 1:
@@ -419,19 +418,19 @@ void handleRXmenu(char c)
             valid_input = 1;
           }
           break;
-	case 13:
+        case 13:
           if ((value == 0) || ((value >= MIN_RFM_FREQUENCY) && (value <= MAX_RFM_FREQUENCY))) {
             rx_config.beacon_frequency = value;
             valid_input = 1;
           }
           break;
-	case 14:
+        case 14:
           if ((value >= MIN_DEADTIME) && (value <= MAX_DEADTIME)) {
             rx_config.beacon_deadtime = value;
             valid_input = 1;
           }
           break;
-	case 15:
+        case 15:
           if ((value >= MIN_INTERVAL) && (value <= MAX_INTERVAL)) {
             rx_config.beacon_interval = value;
             valid_input = 1;
@@ -469,7 +468,7 @@ void CLI_RX_config()
     delay(200);
     Serial.print(".");
   } while ((RF_Mode==Receive) && ((micros()-last_time)<10000000));
-  
+
   if (RF_Mode == Receive) {
     Serial.println("TIMEOUT");
     return;

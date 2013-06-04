@@ -38,7 +38,7 @@ void outputDownAll()
 {
   PORTB &= clearMask.B;
   PORTC &= clearMask.C;
-  PORTD &= clearMask.D;  
+  PORTD &= clearMask.D;
 }
 
 ISR(TIMER1_OVF_vect)
@@ -83,7 +83,7 @@ void set_RSSI_output( uint8_t val )
 void setupOutputs()
 {
   uint8_t i;
-  
+
   for (i = 0; i < OUTPUTS; i++) {
     chToMask[i].B = 0;
     chToMask[i].C = 0;
@@ -106,7 +106,7 @@ void setupOutputs()
   for (i = 0; i < OUTPUTS; i++) {
     pinMode(OUTPUT_PIN[i], OUTPUT);
   }
-  
+
   if (rx_config.pinMapping[PPM_OUTPUT] == PINMAP_PPM) {
     digitalWrite(OUTPUT_PIN[PPM_OUTPUT], HIGH);
     TCCR1A = (1 << WGM11) | (1 << COM1A1) | (1 << COM1A0);
