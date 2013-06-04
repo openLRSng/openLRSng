@@ -202,7 +202,7 @@ uint8_t bindReceive(uint32_t timeout)
           *(((uint8_t*)&rx_config) + i) = spiReadData();
         }
         printRXconf();
-        rxb='B';
+        rxb='U';
         tx_packet(&rxb,1); // ACK that we got bound
       }
 

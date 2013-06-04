@@ -72,8 +72,6 @@
 //### Use legacy scanner interface (compatible with old scanner GUI)
 //#define LEGACY_SCANNER_INTERFACE
 
-#define TX_TIMING
-
 //####################
 //### CODE SECTION ###
 //####################
