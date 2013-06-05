@@ -158,7 +158,8 @@ void RX_menu_headers(void)
     Serial.write(0x0c); // form feed
     Serial.println(F("\nopenLRSng v2.2 - receiver confifurator"));
     Serial.println(F("Use numbers [1-9] to edit outputs A-F for settings"));
-    Serial.println(F("[S] save settings to EEPROM and exit RX config"));
+    Serial.println(F("[I] revert RX settings to defaults"));
+    Serial.println(F("[S] save settings to RX"));
     Serial.println(F("[X] aboty changes and exit RX config"));
     Serial.println();
     rxPrint();
@@ -308,6 +309,30 @@ void handleRXmenu(char c)
       }
     }
     break;
+    case 'i':
+    case 'I': {
+      Serial.println("Resetting settings on RX\n");
+      uint8_t tx_buf[1+sizeof(rx_config)];
+      tx_buf[0]='i';
+      tx_packet(tx_buf,1);
+      rx_reset();
+      RF_Mode = Receive;
+      delay(200);
+      if (RF_Mode == Received) {
+        spiSendAddress(0x7f);   // Send the package read command
+        tx_buf[0]=spiReadData();
+        for (int i=0; i<sizeof(rx_config); i++) {
+          tx_buf[i+1]=spiReadData();
+        }
+        memcpy(&rx_config,tx_buf+1,sizeof(rx_config));
+        if (tx_buf[0]=='I') {
+          Serial.println(F("*****************************"));
+          Serial.println(F("RX Acked - revert succesfull!"));
+          Serial.println(F("*****************************"));
+        }
+      }
+    }
+    break;
     case 'x':
     case 'X':
     case 0x1b: //ESC
@@ -419,6 +444,21 @@ void handleRXmenu(char c)
           }
           break;
         case 13:
+          if ((CLI_buffer[0]|0x20)=='p') {                
+            value = strtoul(CLI_buffer+1, NULL, 0);
+            if ((value>=1) && (value<=8)) {
+              value=EU_PMR_CH(value);
+            } else {
+              value=1; //invalid
+            }
+          } else if ((CLI_buffer[0]|0x20)=='f') {                
+            value = strtoul(CLI_buffer+1, NULL, 0);
+            if ((value>=1) && (value<=7)) {
+              value=US_FRS_CH(value);
+            } else {
+              value=1; //invalid
+            }
+          }
           if ((value == 0) || ((value >= MIN_RFM_FREQUENCY) && (value <= MAX_RFM_FREQUENCY))) {
             rx_config.beacon_frequency = value;
             valid_input = 1;

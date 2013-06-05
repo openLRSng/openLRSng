@@ -191,21 +191,28 @@ uint8_t bindReceive(uint32_t timeout)
           tx_packet(&rxb,1); // ACK that we got bound
           return 1;
         }
-      } else if (rxb=='p') {
+      } else if ((rxb=='p') || (rxb=='i')) {
         uint8_t tx_buf[sizeof(rx_config)+1];
-        Serial.println(F("Sending RX config"));
-        tx_buf[0]='P';
+        if (rxb=='p') {
+          Serial.println(F("Sending RX config"));
+          tx_buf[0]='P';
+        } else {
+          Serial.println(F("Reinit RX config"));
+          rxInitDefaults();
+          rxWriteEeprom();
+          tx_buf[0]='I';
+        }      
         memcpy(tx_buf+1, &rx_config, sizeof(rx_config));
         tx_packet(tx_buf,sizeof(rx_config)+1);
       } else if (rxb=='u') {
         for (uint8_t i = 0; i < sizeof(rx_config); i++) {
           *(((uint8_t*)&rx_config) + i) = spiReadData();
         }
+        rxWriteEeprom();
         printRXconf();
         rxb='U';
         tx_packet(&rxb,1); // ACK that we got bound
       }
-
       RF_Mode = Receive;
       rx_reset();
 
