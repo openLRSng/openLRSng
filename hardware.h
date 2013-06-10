@@ -424,17 +424,17 @@ void set_RSSI_output( uint8_t val )
 }
 
 #define PWM_1 9 // PB1 - also PPM
-#define PWM_2 3 // PD3 - also RSSI
-#define PWM_3 A4 // PC4
-#define PWM_4 A5 // PC5
-
+#define PWM_2 A4 // PC4 - also SDA
+#define PWM_3 3 // PD3 - also RSSI
+#define PWM_4 A5 // PC5 - also SCL
+ 
 #define OUTPUTS 4 // outputs available
-
+ 
 const pinMask_t OUTPUT_MASKS[OUTPUTS] = {
-  {0x02,0x00,0x00}, {0x00,0x00,0x08}, {0x00,0x10,0x00}, {0x00,0x20,0x00}
+  {0x02,0x00,0x00}, {0x00,0x10,0x00}, {0x00,0x00,0x08}, {0x00,0x20,0x00}
 };
-
-const uint8_t OUTPUT_PIN[OUTPUTS] = { 9, 3, A4, A5 };
+ 
+const uint8_t OUTPUT_PIN[OUTPUTS] = { 9, A4, 3, A5 };
 
 #endif
 
