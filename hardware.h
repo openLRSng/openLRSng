@@ -404,25 +404,6 @@ void buzzerOn(uint16_t freq)
 #define PPM_OUT 9 // OCP1A
 #define RSSI_OUT 3 // PD3 OC2B
 
-void setup_RSSI_output()
-{
-  pinMode(RSSI_OUT, OUTPUT);
-  digitalWrite(RSSI_OUT, LOW);
-  TCCR2B = (1<<CS20);
-  TCCR2A = (1<<WGM20);
-}
-
-void set_RSSI_output( uint8_t val )
-{
-  if ((val == 0) || (val == 255)) {
-    TCCR2A &= ~(1<<COM2B1); // disable PWM output
-    digitalWrite(RSSI_OUT, (val == 0) ? LOW : HIGH);
-  } else {
-    OCR2B = val;
-    TCCR2A |= (1<<COM2B1);
-  }
-}
-
 #define PWM_1 9 // PB1 - also PPM
 #define PWM_2 A4 // PC4 - also SDA
 #define PWM_3 3 // PD3 - also RSSI
@@ -433,6 +414,9 @@ void set_RSSI_output( uint8_t val )
 const pinMask_t OUTPUT_MASKS[OUTPUTS] = {
   {0x02,0x00,0x00}, {0x00,0x10,0x00}, {0x00,0x00,0x08}, {0x00,0x20,0x00}
 };
+
+#define PPM_OUTPUT 0
+#define RSSI_OUTPUT 2
  
 const uint8_t OUTPUT_PIN[OUTPUTS] = { 9, A4, 3, A5 };
 
@@ -472,7 +456,5 @@ const uint8_t OUTPUT_PIN[OUTPUTS] = { 9, A4, 3, A5 };
 #define nSel_pin 4
 
 #define IRQ_interrupt 0
-
-#define SWAP_GPIOS
 
 #endif
