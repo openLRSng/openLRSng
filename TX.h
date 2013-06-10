@@ -104,7 +104,7 @@ void bindMode(void)
       buzzerOn(BZ_FREQ);
       tx_buf[0]='b';
       memcpy(tx_buf+1,&bind_data, sizeof(bind_data));
-      //tx_packet(tx_buf, sizeof(bind_data)+1);
+      tx_packet(tx_buf, sizeof(bind_data)+1);
       Green_LED_OFF;
       buzzerOff();
     }
