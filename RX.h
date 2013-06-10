@@ -201,6 +201,7 @@ uint8_t bindReceive(uint32_t timeout)
         if (rxb=='p') {
           Serial.println(F("Sending RX config"));
           tx_buf[0]='P';
+          timeout=0;
         } else {
           Serial.println(F("Reinit RX config"));
           rxInitDefaults();

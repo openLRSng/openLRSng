@@ -184,7 +184,7 @@ void RX_menu_headers(void)
       if (CLI_menu == 0) {
         Serial.print(F(", [0] (RSSI)"));
       }
-      if (CLI_menu == 4) {
+      if (CLI_menu == 5) {
         Serial.print(F(", [0] (PPM)"));
       }
     } else if (rx_config.rx_type == RX_OLRSNG4CH) {
