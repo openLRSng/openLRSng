@@ -420,6 +420,11 @@ uint8_t rfmGetRSSI(void)
   return spiReadRegister(0x26);
 }
 
+uint16_t rfmGetAFCC(void)
+{
+  return (((uint16_t)spiReadRegister(0x2B)<<2) | ((uint16_t)spiReadRegister(0x2C)>>6));
+}
+
 void setModemRegs(struct rfm22_modem_regs* r)
 {
 

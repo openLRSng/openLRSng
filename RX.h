@@ -14,6 +14,7 @@ uint32_t last_beacon;
 uint8_t  RSSI_count = 0;
 uint16_t RSSI_sum = 0;
 uint8_t  last_rssi_value = 0;
+uint16_t last_afcc_value = 0;
 
 uint8_t  ppmCountter = 0;
 uint16_t ppmSync = 40000;
@@ -192,18 +193,18 @@ uint8_t bindReceive(uint32_t timeout)
           return 1;
         }
       } else if ((rxb=='p') || (rxb=='i')) {
-        uint8_t tx_buf[sizeof(rx_config)+1];
+        uint8_t rxc_buf[sizeof(rx_config)+1];
         if (rxb=='p') {
           Serial.println(F("Sending RX config"));
-          tx_buf[0]='P';
+          rxc_buf[0]='P';
         } else {
           Serial.println(F("Reinit RX config"));
           rxInitDefaults();
           rxWriteEeprom();
-          tx_buf[0]='I';
+          rxc_buf[0]='I';
         }      
-        memcpy(tx_buf+1, &rx_config, sizeof(rx_config));
-        tx_packet(tx_buf,sizeof(rx_config)+1);
+        memcpy(rxc_buf+1, &rx_config, sizeof(rx_config));
+        tx_packet(rxc_buf,sizeof(rx_config)+1);
       } else if (rxb=='u') {
         for (uint8_t i = 0; i < sizeof(rx_config); i++) {
           *(((uint8_t*)&rx_config) + i) = spiReadData();
@@ -260,6 +261,23 @@ int8_t checkIfConnected(uint8_t pin1, uint8_t pin2)
   digitalWrite(pin2, 0);
   return ret;
 }
+
+uint8_t rx_buf[21]; // RX buffer (uplink)
+// First byte of RX buf is
+// MSB..LSB [1bit uplink seqno.] [1bit downlink seqno] [6bits type)
+// type 0x00 normal servo, 0x01 failsafe set
+// type 0x38..0x3f uplinkked serial data
+
+uint8_t tx_buf[9]; // TX buffer (downlink)(type plus 8 x data)
+// First byte is meta
+// MSB..LSB [1 bit uplink seq] [1bit downlink seqno] [6b telemtype]
+// 0x00 link info [RSSI] [AFCC]*2 etc...
+// type 0x38-0x3f downlink serial data 1-8 bytes
+
+#define SERIAL_BUFSIZE 32
+uint8_t serial_buffer[SERIAL_BUFSIZE];
+uint8_t serial_head;
+uint8_t serial_tail;
 
 void setup()
 {
@@ -321,11 +339,17 @@ void setup()
   RF_Mode = Receive;
   to_rx_mode();
 
+  Serial.begin(TELEMETRY_BAUD_RATE);
+  while (Serial.available()) {
+    Serial.read();
+  }
+  serial_head=0;
+  serial_tail=0;
   firstpack = 0;
 
 }
 
-uint8_t rx_buf[21]; // RX buffer
+
 
 //############ MAIN LOOP ##############
 void loop()
@@ -336,6 +360,11 @@ void loop()
     Serial.println("RX hang");
     init_rfm(0);
     to_rx_mode();
+  }
+
+  while (Serial.available() && (((serial_tail + 1) % SERIAL_BUFSIZE) != serial_head)) {
+    serial_tail = (serial_tail + 1) % SERIAL_BUFSIZE;
+    serial_buffer[serial_tail] = Serial.read();
   }
 
   time = micros();
@@ -354,10 +383,33 @@ void loop()
       rx_buf[i] = spiReadData();
     }
 
-    if ((rx_buf[0] == 0x5E) || (rx_buf[0] == 0xF5)) {
+    last_afcc_value = rfmGetAFCC();
+
+    if ((rx_buf[0]&0x3e) == 0x00) {
       cli();
       unpackChannels(bind_data.flags & 7, PPM, rx_buf + 1);
       sei();
+      if (rx_buf[0] & 0x01) {
+        if (!fs_saved) {
+          save_failsafe_values();
+          fs_saved = 1;
+        }
+      } else if (fs_saved) {
+        fs_saved = 0;
+      }
+    } else {
+      // something else than servo data...
+      if ((rx_buf[0] & 0x38) == 0x38) {
+        if ((rx_buf[0] ^ tx_buf[0]) & 0x80) {
+          // We got new data... (not retransmission)
+          uint8_t i;
+          tx_buf[0] ^= 0x80; // signal that we got it
+          for (i=0; i <= (rx_buf[0]&7);) {
+            i++;
+            Serial.write(rx_buf[i]);
+          }
+        }
+      }
     }
 
     if (firstpack == 0) {
@@ -369,20 +421,29 @@ void loop()
       }
     }
 
-    if (rx_buf[0] == 0xF5) {
-      if (!fs_saved) {
-        save_failsafe_values();
-        fs_saved = 1;
+    if (bind_data.flags & TELEMETRY_ENABLED) {
+      if ((tx_buf[0] ^ rx_buf[0]) & 0x40) {
+        // resend last message
+      } else {
+        if (serial_head!=serial_tail) {
+          tx_buf[0] &= 0xc0;
+          tx_buf[0] ^= 0x40; // swap sequence as we have new data
+          uint8_t bytes=0;
+          while ((bytes<8) && (serial_head!=serial_tail)) {
+            bytes++;
+            tx_buf[bytes]=serial_buffer[serial_head];
+            serial_head=(serial_head + 1) % SERIAL_BUFSIZE;
+          }
+          tx_buf[0] |= (0x37 + bytes);
+        } else {
+          // dont swap sequence for rssi
+          tx_buf[0] |= 0x00;
+          tx_buf[1] = last_rssi_value;
+          tx_buf[2] = (last_afcc_value >> 8);
+          tx_buf[3] = last_afcc_value & 0xff;
+        }
       }
-    } else if (fs_saved) {
-      fs_saved = 0;
-    }
-
-    if (rx_config.flags & TELEMETRY_ENABLED) {
-      // reply with telemetry
-      uint8_t telemetry_packet[4];
-      telemetry_packet[0] = last_rssi_value;
-      tx_packet(telemetry_packet, 4);
+      tx_packet(tx_buf, 9);
     }
 
     RF_Mode = Receive;

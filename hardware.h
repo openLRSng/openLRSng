@@ -473,6 +473,4 @@ const uint8_t OUTPUT_PIN[OUTPUTS] = { 9, 3, A4, A5 };
 
 #define IRQ_interrupt 0
 
-#define SWAP_GPIOS
-
 #endif

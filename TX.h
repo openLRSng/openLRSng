@@ -268,11 +268,14 @@ void setup(void)
 
   Red_LED_OFF;
   buzzerOff();
-
+  Serial.begin(TELEMETRY_BAUD_RATE);
   ppmAge = 255;
   rx_reset();
 
 }
+
+uint8_t tx_buf[21];
+uint8_t rx_buf[9];
 
 void loop(void)
 {
@@ -286,15 +289,25 @@ void loop(void)
   }
 
   if (RF_Mode == Received) {
-    uint8_t rx_buf[4];
     // got telemetry packet
-
     lastTelemetry = micros();
     RF_Mode = Receive;
     spiSendAddress(0x7f);   // Send the package read command
-    for (int16_t i = 0; i < 4; i++) {
+    for (int16_t i = 0; i < 9; i++) {
       rx_buf[i] = spiReadData();
     }
+    
+    if ((tx_buf[0] ^ rx_buf[0]) & 0x40) {
+      tx_buf[0]^=0x40; // swap sequence to ack
+      if ((rx_buf[0] & 0x38) == 0x38) {
+        uint8_t i;
+        // transparent serial data...
+        for (i=0; i<=(rx_buf[0]&7);) {
+          i++;
+          Serial.write(rx_buf[i]);
+        }
+      }
+    }    
     // Serial.println(rx_buf[0]); // print rssi value
   }
 
@@ -304,7 +317,6 @@ void loop(void)
     lastSent = time;
 
     if (ppmAge < 8) {
-      uint8_t tx_buf[21];
       ppmAge++;
 
       if (lastTelemetry) {
@@ -319,11 +331,12 @@ void loop(void)
       }
 
       // Construct packet to be sent
+      tx_buf[0] &= 0xc0; //preserve seq. bits
       if (FSstate == 2) {
-        tx_buf[0] = 0xF5; // save failsafe
+        tx_buf[0] |= 0x01; // save failsafe
         Red_LED_ON
       } else {
-        tx_buf[0] = 0x5E; // servo positions
+        tx_buf[0] |= 0x00; // servo positions
         Red_LED_OFF
 
       }
