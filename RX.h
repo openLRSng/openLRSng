@@ -20,6 +20,8 @@ uint8_t  ppmCountter = 0;
 uint16_t ppmSync = 40000;
 uint8_t  ppmChannels = 8;
 
+volatile uint8_t disablePWM = 0;
+
 uint8_t firstpack = 0;
 uint8_t lostpack = 0;
 
@@ -61,7 +63,7 @@ ISR(TIMER1_OVF_vect)
 
     while (TCNT1<32);
     outputDownAll();
-    outputUp(ppmCountter);
+    if (!disablePWM) outputUp(ppmCountter);
 
     ppmCountter++;
   }
@@ -114,7 +116,7 @@ void setupOutputs()
   } else {
     TCCR1A = (1 << WGM11);
   }
-
+  disablePWM = 0;
   if (rx_config.pinMapping[RSSI_OUTPUT] == PINMAP_RSSI) {
     pinMode(OUTPUT_PIN[RSSI_OUTPUT], OUTPUT);
     digitalWrite(OUTPUT_PIN[RSSI_OUTPUT], LOW);
@@ -190,13 +192,17 @@ uint8_t bindReceive(uint32_t timeout)
           Serial.println("data good\n");
           rxb='B';
           tx_packet(&rxb,1); // ACK that we got bound
-          return 1;
+          Green_LED_ON; //signal we got bound on LED:s
+//          if (timeout) {
+            return 1;
+//          }
         }
       } else if ((rxb=='p') || (rxb=='i')) {
         uint8_t rxc_buf[sizeof(rx_config)+1];
         if (rxb=='p') {
           Serial.println(F("Sending RX config"));
           rxc_buf[0]='P';
+          timeout=0;
         } else {
           Serial.println(F("Reinit RX config"));
           rxInitDefaults();
@@ -212,7 +218,7 @@ uint8_t bindReceive(uint32_t timeout)
         rxWriteEeprom();
         printRXconf();
         rxb='U';
-        tx_packet(&rxb,1); // ACK that we got bound
+        tx_packet(&rxb,1); // ACK that we updated settings
       }
       RF_Mode = Receive;
       rx_reset();
@@ -328,8 +334,8 @@ void setup()
   ppmChannels = getChannelCount(&bind_data);
 
   Serial.print("Entering normal mode with PPM ");
-  Serial.print((rx_config.flags & PPM_OUTPUT)?"Enabled":"Disabled");
-  Serial.print("CHs=");
+  Serial.print((rx_config.pinMapping[PPM_OUTPUT] == PINMAP_PPM)?"Enabled":"Disabled");
+  Serial.print(" CHs=");
   Serial.print(ppmChannels);
   init_rfm(0);   // Configure the RFM22B's registers for normal operation
   RF_channel = 0;
@@ -416,7 +422,8 @@ void loop()
       firstpack = 1;
       setupOutputs();
     } else {
-      if ((rx_config.flags & PPM_OUTPUT) && (rx_config.flags & FAILSAFE_NOPPM)) {
+      disablePWM = 0;
+      if (rx_config.pinMapping[PPM_OUTPUT] == PINMAP_PPM) {
         TCCR1A |= ((1 << COM1A1) | (1 << COM1A0));
       }
     }
@@ -495,7 +502,11 @@ void loop()
         lostpack = 11;
         // Serious trouble, apply failsafe
         load_failsafe_values();
-        if ((rx_config.flags & PPM_OUTPUT) && (rx_config.flags & FAILSAFE_NOPPM)) {
+        if (rx_config.flags & FAILSAFE_NOPPM) {
+          disablePWM = 1;
+        }
+        if ((rx_config.pinMapping[RSSI_OUTPUT] == PINMAP_RSSI) &&
+            (rx_config.flags & FAILSAFE_NOPPM)) {
           TCCR1A &= ~((1 << COM1A1) | (1 << COM1A0));
         }
         fs_time = time;

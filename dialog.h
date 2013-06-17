@@ -184,7 +184,7 @@ void RX_menu_headers(void)
       if (CLI_menu == 0) {
         Serial.print(F(", [0] (RSSI)"));
       }
-      if (CLI_menu == 4) {
+      if (CLI_menu == 5) {
         Serial.print(F(", [0] (PPM)"));
       }
     } else if (rx_config.rx_type == RX_OLRSNG4CH) {
@@ -192,7 +192,7 @@ void RX_menu_headers(void)
       case 0:
         Serial.print(F(", [0] (PPM)"));
         break;
-      case 1:
+      case 2:
         Serial.print(F(", [0] (RSSI)"));
         break;
       }
@@ -433,7 +433,7 @@ void handleRXmenu(char c)
               if (CLI_menu == 0) {
                 rx_config.pinMapping[CLI_menu] = PINMAP_PPM;
                 valid_input = 1;
-              } else if (CLI_menu == 1) {
+              } else if (CLI_menu == 2) {
                 rx_config.pinMapping[CLI_menu] = PINMAP_RSSI;
                 valid_input = 1;
               }
