@@ -446,7 +446,7 @@ void loop()
           }
           tx_buf[0] |= (0x37 + bytes);
         } else {
-          // tx_buf[0] lowest 6 bits left at 0 
+          // tx_buf[0] lowest 6 bits left at 0
           tx_buf[1] = last_rssi_value;
           tx_buf[2] = (last_afcc_value >> 8);
           tx_buf[3] = last_afcc_value & 0xff;

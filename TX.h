@@ -26,7 +26,7 @@ volatile uint8_t  ppmCounter = PPM_CHANNELS; // ignore data until first sync pul
 #define TIMER1_PRESCALER    8
 #define TIMER1_PERIOD       (F_CPU/TIMER1_PRESCALER/TIMER1_FREQUENCY_HZ)
 
-#ifndef BZ_FREQ 
+#ifndef BZ_FREQ
 #define BZ_FREQ 2000
 #endif
 
