@@ -16,6 +16,7 @@ uint32_t lastFrSky = 0;
 
 uint8_t RSSI_rx = 0;
 uint8_t RSSI_tx = 0;
+uint32_t sampleRSSI = 0;
 
 volatile uint8_t ppmAge = 0; // age of PPM data
 
@@ -304,6 +305,7 @@ void loop(void)
   if (RF_Mode == Received) {
     // got telemetry packet
     lastTelemetry = micros();
+    if (!lastTelemetry) lastTelemetry=1; //fixup rare case of zero
     RF_Mode = Receive;
     spiSendAddress(0x7f);   // Send the package read command
     for (int16_t i = 0; i < 9; i++) {
@@ -327,6 +329,11 @@ void loop(void)
 
   uint32_t time = micros();
 
+  if ((sampleRSSI) && ((time - sampleRSSI) >= 3000)) {
+    RSSI_tx = rfmGetRSSI();
+    sampleRSSI=0;
+  }
+
   if ((time - lastSent) >= getInterval(&bind_data)) {
     lastSent = time;
 
@@ -334,8 +341,7 @@ void loop(void)
       ppmAge++;
 
       if (lastTelemetry) {
-        // note: allow a little jitter here (+1000)
-        if ((time - lastTelemetry) > (getInterval(&bind_data) + 1000)) {
+        if ((time - lastTelemetry) > getInterval(&bind_data)) {
           // telemetry lost
           buzzerOn(BZ_FREQ);
           lastTelemetry=0;
@@ -367,7 +373,7 @@ void loop(void)
       rfmSetChannel(bind_data.hopchannel[RF_channel]);
 
       tx_packet(tx_buf, getPacketSize(&bind_data));
-
+ 
       //Hop to the next frequency
       RF_channel++;
 
@@ -379,6 +385,9 @@ void loop(void)
       if (bind_data.flags & TELEMETRY_ENABLED) {
         RF_Mode = Receive;
         rx_reset();
+        // tell loop to sample downlink RSSI
+        sampleRSSI=micros();
+        if (sampleRSSI==0) sampleRSSI=1;
       }
 
     } else {
@@ -395,7 +404,7 @@ void loop(void)
 #ifdef FRSKY_EMULATION
   if ((micros()-lastFrSky) > FRSKY_INTERVAL) {
     lastFrSky=micros();
-    FrSkySendFrame(0x30,0x50,RSSI_rx,RSSI_tx);
+    FrSkySendFrame(0x30,0x50,lastTelemetry?RSSI_rx:0,lastTelemetry?RSSI_tx:0);
   }
 #endif
 
