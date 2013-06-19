@@ -104,11 +104,11 @@ void CLI_menu_headers(void)
   switch (CLI_menu) {
   case -1:
     Serial.write(0x0c); // form feed
-    Serial.println(F("\nopenLRSng v2.2"));
+    Serial.println(F("\nopenLRSng v3.0"));
     Serial.println(F("Use numbers [0-9] to edit parameters"));
     Serial.println(F("[S] save settings to EEPROM and exit menu"));
     Serial.println(F("[X] revert changes and exit menu"));
-    Serial.println(F("[I] renitialize settings to sketch defaults"));
+    Serial.println(F("[I] reinitialize settings to sketch defaults"));
     Serial.println(F("[R] calculate random key and hop list"));
     Serial.println(F("[F] display actual frequencies used"));
     Serial.println(F("[Z] enter receiver configuration utily"));
@@ -120,16 +120,16 @@ void CLI_menu_headers(void)
     Serial.println(F("Set base frequency (in Hz): "));
     break;
   case 2:
-    Serial.println(F("Set RF magic (HEX): "));
+    Serial.println(F("Set RF magic (hex) e.g. 0xDEADF00D: "));
     break;
   case 3:
     Serial.println(F("Set RF power (0-7): "));
     break;
   case 4:
-    Serial.println(F("Set channel spacing: "));
+    Serial.println(F("Set channel spacing (x10kHz): "));
     break;
   case 5:
-    Serial.println(F("Set Hop channels (separated by coma) [MAX 8]: "));
+    Serial.println(F("Set Hop channels (separated by commas) [MAX 8]: "));
     break;
   case 6:
     Serial.println(F("Set Baudrate (0-2): "));
@@ -156,11 +156,11 @@ void RX_menu_headers(void)
   switch (CLI_menu) {
   case -1:
     Serial.write(0x0c); // form feed
-    Serial.println(F("\nopenLRSng v2.2 - receiver confifurator"));
+    Serial.println(F("\nopenLRSng v3.0 - receiver configurator"));
     Serial.println(F("Use numbers [1-9] to edit outputs A-F for settings"));
     Serial.println(F("[I] revert RX settings to defaults"));
     Serial.println(F("[S] save settings to RX"));
-    Serial.println(F("[X] aboty changes and exit RX config"));
+    Serial.println(F("[X] revert changes and exit RX config"));
     Serial.println();
     rxPrint();
     break;
@@ -564,7 +564,7 @@ void handleCLImenu(char c)
     case 'I':
       // restore factory settings
       bindInitDefaults();
-      Serial.println("Loaded factory defautls\n");
+      Serial.println("Loaded factory defaults\n");
 
       CLI_menu_headers();
       break;
