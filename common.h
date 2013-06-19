@@ -550,7 +550,6 @@ void rx_reset(void)
 
 void tx_packet(uint8_t* pkt, uint8_t size)
 {
-
   spiWriteRegister(0x3e, size);   // total tx size
 
   for (uint8_t i = 0; i < size; i++) {
@@ -560,12 +559,13 @@ void tx_packet(uint8_t* pkt, uint8_t size)
   spiWriteRegister(0x05, RF22B_PACKET_SENT_INTERRUPT);
   ItStatus1 = spiReadRegister(0x03);      //read the Interrupt Status1 register
   ItStatus2 = spiReadRegister(0x04);
-#ifdef TX_TIMING
   uint32_t tx_start = micros();
-#endif
   spiWriteRegister(0x07, RF22B_PWRSTATE_TX);    // to tx mode
 
-  while (nIRQ_1);
+  while ((nIRQ_1) && ((micros()-tx_start)<100000));
+  if (nIRQ_1) {
+    Serial.print("TX timeout!");
+  }
 
 #ifdef TX_TIMING
   Serial.print("TX took:");

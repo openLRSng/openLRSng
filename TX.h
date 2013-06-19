@@ -26,7 +26,9 @@ volatile uint8_t  ppmCounter = PPM_CHANNELS; // ignore data until first sync pul
 #define TIMER1_PRESCALER    8
 #define TIMER1_PERIOD       (F_CPU/TIMER1_PRESCALER/TIMER1_FREQUENCY_HZ)
 
+#ifndef BZ_FREQ 
 #define BZ_FREQ 2000
+#endif
 
 #ifdef USE_ICP1 // Use ICP1 in input capture mode
 /****************************************************
@@ -393,7 +395,7 @@ void loop(void)
 #ifdef FRSKY_EMULATION
   if ((micros()-lastFrSky) > FRSKY_INTERVAL) {
     lastFrSky=micros();
-    FrSkySendFrame(0,0,RSSI_rx,RSSI_tx);
+    FrSkySendFrame(0x30,0x50,RSSI_rx,RSSI_tx);
   }
 #endif
 

@@ -338,7 +338,8 @@ void setup()
   Serial.print("Entering normal mode with PPM ");
   Serial.print((rx_config.pinMapping[PPM_OUTPUT] == PINMAP_PPM)?"Enabled":"Disabled");
   Serial.print(" CHs=");
-  Serial.print(ppmChannels);
+  Serial.println(ppmChannels);
+  Serial.println(bind_data.flags,16);
   init_rfm(0);   // Configure the RFM22B's registers for normal operation
   RF_channel = 0;
   rfmSetChannel(bind_data.hopchannel[RF_channel]);
@@ -434,9 +435,9 @@ void loop()
       if ((tx_buf[0] ^ rx_buf[0]) & 0x40) {
         // resend last message
       } else {
+        tx_buf[0] &= 0xc0;
+        tx_buf[0] ^= 0x40; // swap sequence as we have new data
         if (serial_head!=serial_tail) {
-          tx_buf[0] &= 0xc0;
-          tx_buf[0] ^= 0x40; // swap sequence as we have new data
           uint8_t bytes=0;
           while ((bytes<8) && (serial_head!=serial_tail)) {
             bytes++;
@@ -445,8 +446,7 @@ void loop()
           }
           tx_buf[0] |= (0x37 + bytes);
         } else {
-          // dont swap sequence for rssi
-          tx_buf[0] |= 0x00;
+          // tx_buf[0] lowest 6 bits left at 0 
           tx_buf[1] = last_rssi_value;
           tx_buf[2] = (last_afcc_value >> 8);
           tx_buf[3] = last_afcc_value & 0xff;
@@ -538,7 +538,6 @@ void loop()
     if (RF_channel >= bind_data.hopcount) {
       RF_channel = 0;
     }
-
     rfmSetChannel(bind_data.hopchannel[RF_channel]);
     willhop = 0;
   }
