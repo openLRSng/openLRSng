@@ -30,7 +30,7 @@ void FrSkyUserData(uint8_t c)
 void FrSkySendStuffed(uint8_t frame[])
 {
   Serial.write(0x7e);
-  for (i=0; i<9; i++) {
+  for (uint8_t i=0; i<9; i++) {
     if ((frame[i]==0x7e) || (frame[i]==0x7d)) {
       Serial.write(0x7d);
       frame[i]^=0x20;
