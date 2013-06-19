@@ -10,8 +10,14 @@ uint32_t lastSent = 0;
 
 uint32_t lastTelemetry = 0;
 
-volatile uint8_t ppmAge = 0; // age of PPM data
+#ifdef FRSKY_EMULATION
+uint32_t lastFrSky = 0;
+#endif
 
+uint8_t RSSI_rx = 0;
+uint8_t RSSI_tx = 0;
+
+volatile uint8_t ppmAge = 0; // age of PPM data
 
 volatile uint16_t startPulse = 0;
 volatile uint8_t  ppmCounter = PPM_CHANNELS; // ignore data until first sync pulse
@@ -272,6 +278,11 @@ void setup(void)
   ppmAge = 255;
   rx_reset();
 
+#ifdef FRSKY_EMULATION
+  FrSkyInit();
+  lastFrSky = micros();
+#endif
+
 }
 
 uint8_t tx_buf[21];
@@ -296,7 +307,7 @@ void loop(void)
     for (int16_t i = 0; i < 9; i++) {
       rx_buf[i] = spiReadData();
     }
-    
+
     if ((tx_buf[0] ^ rx_buf[0]) & 0x40) {
       tx_buf[0]^=0x40; // swap sequence to ack
       if ((rx_buf[0] & 0x38) == 0x38) {
@@ -306,9 +317,10 @@ void loop(void)
           i++;
           Serial.write(rx_buf[i]);
         }
+      } else if ((rx_buf[0] & 0x3F)==0) {
+        RSSI_rx=rx_buf[1];
       }
-    }    
-    // Serial.println(rx_buf[0]); // print rssi value
+    }
   }
 
   uint32_t time = micros();
@@ -320,7 +332,8 @@ void loop(void)
       ppmAge++;
 
       if (lastTelemetry) {
-        if ((time - lastTelemetry) > getInterval(&bind_data)) {
+        // note: allow a little jitter here (+1000)
+        if ((time - lastTelemetry) > (getInterval(&bind_data) + 1000)) {
           // telemetry lost
           buzzerOn(BZ_FREQ);
           lastTelemetry=0;
@@ -376,6 +389,14 @@ void loop(void)
     }
 
   }
+
+#ifdef FRSKY_EMULATION
+  if ((micros()-lastFrSky) > FRSKY_INTERVAL) {
+    lastFrSky=micros();
+    FrSkySendFrame(0,0,RSSI_rx,RSSI_tx);
+  }
+#endif
+
 
   //Green LED will be OFF
   Green_LED_OFF;

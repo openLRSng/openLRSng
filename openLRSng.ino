@@ -77,6 +77,8 @@
 //### Use legacy scanner interface (compatible with old scanner GUI)
 //#define LEGACY_SCANNER_INTERFACE
 
+#define FRSKY_EMULATION
+
 //####################
 //### CODE SECTION ###
 //####################
@@ -90,6 +92,9 @@
 
 #ifdef COMPILE_TX
 #include "dialog.h"
+#ifdef FRSKY_EMULATION
+#include "frskytx.h"
+#endif
 #include "TX.h"
 #else // COMPILE_RX
 #include "RX.h"

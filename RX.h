@@ -63,7 +63,9 @@ ISR(TIMER1_OVF_vect)
 
     while (TCNT1<32);
     outputDownAll();
-    if (!disablePWM) outputUp(ppmCountter);
+    if (!disablePWM) {
+      outputUp(ppmCountter);
+    }
 
     ppmCountter++;
   }
@@ -194,7 +196,7 @@ uint8_t bindReceive(uint32_t timeout)
           tx_packet(&rxb,1); // ACK that we got bound
           Green_LED_ON; //signal we got bound on LED:s
 //          if (timeout) {
-            return 1;
+          return 1;
 //          }
         }
       } else if ((rxb=='p') || (rxb=='i')) {
@@ -208,7 +210,7 @@ uint8_t bindReceive(uint32_t timeout)
           rxInitDefaults();
           rxWriteEeprom();
           rxc_buf[0]='I';
-        }      
+        }
         memcpy(rxc_buf+1, &rx_config, sizeof(rx_config));
         tx_packet(rxc_buf,sizeof(rx_config)+1);
       } else if (rxb=='u') {
