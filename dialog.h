@@ -58,10 +58,10 @@ void rxPrint(void)
   uint8_t i,pins;
   Serial.print(F("RX type: "));
   if (rx_config.rx_type == RX_FLYTRON8CH) {
-    pins=9;
+    pins=13;
     Serial.println(F("Flytron/OrangeRX UHF 8ch"));
   } else if (rx_config.rx_type == RX_OLRSNG4CH) {
-    pins=4;
+    pins=6;
     Serial.println(F("OpenLRSngRX mini 4ch"));
   }
   for (i=0; i<pins; i++) {
@@ -72,26 +72,22 @@ void rxPrint(void)
     if (rx_config.pinMapping[i]<16) {
       Serial.print(F("PWM channel "));
       Serial.println(rx_config.pinMapping[i]+1);
-    } else if (rx_config.pinMapping[i]==PINMAP_PPM) {
-      Serial.println(F("PPM output"));
-    } else if (rx_config.pinMapping[i]==PINMAP_RSSI) {
-      Serial.println(F("RSSI (8kHz PWM) output"));
     } else {
-      Serial.println(F("unknown-BUG"));
+      Serial.println(SPECIALSTR(rx_config.pinMapping[i]));
     }
   }
-  Serial.print(F("A) Stop PPM on failsafe : O"));
+  Serial.print(F("F) Stop PPM on failsafe : O"));
   Serial.println((rx_config.flags & FAILSAFE_NOPPM)?"N":"FF");
-  Serial.print(F("B) Stop PWM on failsafe : O"));
+  Serial.print(F("G) Stop PWM on failsafe : O"));
   Serial.println((rx_config.flags & FAILSAFE_NOPWM)?"N":"FF");
-  Serial.print(F("C) Failsafe speed       : "));
+  Serial.print(F("H) Failsafe speed       : "));
   Serial.println((rx_config.flags & FAILSAFE_FAST)?"FAST":"SLOW");
-  Serial.print(F("D) Failsafe beacon frq. : "));
+  Serial.print(F("I) Failsafe beacon frq. : "));
   if (rx_config.beacon_frequency) {
     Serial.println(rx_config.beacon_frequency);
-    Serial.print(F("E) Failsafe beacon delay: "));
+    Serial.print(F("J) Failsafe beacon delay: "));
     Serial.println(rx_config.beacon_deadtime);
-    Serial.print(F("F) Failsafe beacon intv.: "));
+    Serial.print(F("K) Failsafe beacon intv.: "));
     Serial.println(rx_config.beacon_interval);
   } else {
     Serial.println(F("DISABLED"));
@@ -158,63 +154,57 @@ void RX_menu_headers(void)
     Serial.write(0x0c); // form feed
     Serial.println(F("\nopenLRSng v3.0 - receiver configurator"));
     Serial.println(F("Use numbers [1-9] to edit outputs A-F for settings"));
-    Serial.println(F("[I] revert RX settings to defaults"));
+    Serial.println(F("[R] revert RX settings to defaults"));
     Serial.println(F("[S] save settings to RX"));
-    Serial.println(F("[X] revert changes and exit RX config"));
+    Serial.println(F("[X] abort changes and exit RX config"));
     Serial.println();
     rxPrint();
     break;
+  case 13:
+  case 12:
+  case 11:
+  case 10:
+  case 9:
   case 8:
   case 7:
   case 6:
   case 5:
-  case 4:
     if (rx_config.rx_type != RX_FLYTRON8CH) {
       break;
     }
     // Fallthru
+  case 4:
   case 3:
   case 2:
   case 1:
-  case 0:
     Serial.print(F("Set output for output "));
     Serial.println(CLI_menu);
     Serial.print(F("Valid choices are: [1]-[16] (channel 1-16)"));
-    if (rx_config.rx_type==RX_FLYTRON8CH) {
-      if (CLI_menu == 0) {
-        Serial.print(F(", [0] (RSSI)"));
-      }
-      if (CLI_menu == 5) {
-        Serial.print(F(", [0] (PPM)"));
-      }
-    } else if (rx_config.rx_type == RX_OLRSNG4CH) {
-      switch (CLI_menu) {
-      case 0:
-        Serial.print(F(", [0] (PPM)"));
-        break;
-      case 2:
-        Serial.print(F(", [0] (RSSI)"));
-        break;
-      }
+    for (char ch=A, struct rxSpecialPinMap pm = rxSpecialPins; pm->rxtype; pm++,ch++) {
+      if ((pm->rxtype!=rx_config.rx_type) || (pm->output!=(CLI_menu-1))) continue;
+      Serial.print(", [");
+      Serial.print(ch);
+      Serial.print("] ");
+      Serial.print(SPECIALSTR(pm->type));
     }
     Serial.println();
     break;
-  case 10:
+  case 20:
     Serial.println(F("Toggled 'stop PPM'"));
     break;
-  case 11:
+  case 21:
     Serial.println(F("Toggled 'stop PWM'"));
     break;
-  case 12:
+  case 22:
     Serial.println(F("Toggled failsafe speed"));
     break;
-  case 13:
+  case 23:
     Serial.println(F("Set beacon frequency in Hz: 0=disable, Px=PMR channel x, Fx=FRS channel x"));
     break;
-  case 14:
+  case 24:
     Serial.println(F("Set beacon delay"));
     break;
-  case 15:
+  case 25:
     Serial.println(F("Set beacon interval"));
     break;
   }
@@ -309,8 +299,8 @@ void handleRXmenu(char c)
       }
     }
     break;
-    case 'i':
-    case 'I': {
+    case 'r':
+    case 'R': {
       Serial.println("Resetting settings on RX\n");
       uint8_t tx_buf[1+sizeof(rx_config)];
       tx_buf[0]='i';
@@ -341,59 +331,69 @@ void handleRXmenu(char c)
       // leave CLI
       CLI_menu = -2;
       break;
+    case 'e':
+    case 'd':
+    case 'c':
+    case 'b': c -= 'a'-'A';
+    // Fallthru
+    case 'A':
+    case 'B':
+    case 'C':
+    case 'D': c -= 'A' - 10 - '0';
+    // Fallthru
+    case '9':
     case '8':
     case '7':
     case '6':
     case '5':
-    case '4':
       if (rx_config.rx_type != RX_FLYTRON8CH) {
         Serial.println("invalid selection");
         break;
       }
       // Fallthru
+    case '4':
     case '3':
     case '2':
     case '1':
-    case '0':
       CLI_menu = c - '0';
       RX_menu_headers();
       break;
-    case 'a':
-    case 'A':
+    case 'f':
+    case 'F':
       CLI_menu = 10;
       RX_menu_headers();
       rx_config.flags ^= FAILSAFE_NOPPM;
       CLI_menu = -1;
       RX_menu_headers();
       break;
-    case 'b':
-    case 'B':
+    case 'g':
+    case 'G':
       CLI_menu = 11;
       RX_menu_headers();
       rx_config.flags ^= FAILSAFE_NOPWM;
       CLI_menu = -1;
       RX_menu_headers();
       break;
-    case 'c':
-    case 'C':
+    case 'h':
+    case 'H':
       CLI_menu = 12;
       RX_menu_headers();
       rx_config.flags ^= FAILSAFE_FAST;
       CLI_menu = -1;
       RX_menu_headers();
       break;
-    case 'd':
-    case 'D':
+    case 'i':
+    case 'I':
       CLI_menu = 13;
       RX_menu_headers();
       break;
-    case 'e':
-    case 'E':
+    case 'j':
+    case 'J':
       CLI_menu = 14;
       RX_menu_headers();
       break;
-    case 'f':
-    case 'F':
+    case 'k':
+    case 'K':
       CLI_menu = 15;
       RX_menu_headers();
       break;

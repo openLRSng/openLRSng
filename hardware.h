@@ -240,15 +240,17 @@ void buzzerOn(uint16_t freq)
 #define PPM_OUT 9 // OCP1A
 #define RSSI_OUT 3 // PD3 OC2B
 
-#define OUTPUTS 9 // outputs available
+#define OUTPUTS 13 // outputs available
 
 const pinMask_t OUTPUT_MASKS[OUTPUTS] = {
-  {0x00,0x00,0x08},{0x00,0x00,0x20},{0x00,0x00,0x40},
-  {0x00,0x00,0x80},{0x01,0x00,0x00},{0x02,0x00,0x00},
-  {0x04,0x00,0x00},{0x08,0x00,0x00},{0x10,0x00,0x00}
+  {0x00,0x00,0x08},{0x00,0x00,0x20},{0x00,0x00,0x40}, // RSSI, CH1, CH2
+  {0x00,0x00,0x80},{0x01,0x00,0x00},{0x02,0x00,0x00}, // CH2, CH3, CH4
+  {0x04,0x00,0x00},{0x08,0x00,0x00},{0x10,0x00,0x00}, // CH5, CH6, CH7
+  {0x00,0x10,0x00},{0x00,0x20,0x00},{0x00,0x00,0x01}, // SDA, SCL, RXD
+  {0x00,0x00,0x02},                                   // TXD
 };
 
-const uint8_t OUTPUT_PIN[OUTPUTS] = { 3, 5, 6, 7, 8, 9, 10, 11, 12 };
+const uint8_t OUTPUT_PIN[OUTPUTS] = { 3, 5, 6, 7, 8, 9, 10, 11, 12 , A4, A5, 0, 1};
 
 #define PPM_OUTPUT  5
 #define RSSI_OUTPUT 0
@@ -409,16 +411,19 @@ void buzzerOn(uint16_t freq)
 #define PWM_3 3 // PD3 - also RSSI
 #define PWM_4 A5 // PC5 - also SCL
 
-#define OUTPUTS 4 // outputs available
+#define OUTPUTS 6 // outputs available
 
 const pinMask_t OUTPUT_MASKS[OUTPUTS] = {
-  {0x02,0x00,0x00}, {0x00,0x10,0x00}, {0x00,0x00,0x08}, {0x00,0x20,0x00}
+  {0x02,0x00,0x00}, {0x00,0x10,0x00}, {0x00,0x00,0x08},// CH1/PPM, CH2/SDA, CH3/RSSI 
+  {0x00,0x20,0x00}, {0x00,0x00,0x01}, {0x00,0x00,0x02},// CH4/SCL, RXD/CH5, TXD/CH6
+  
+
 };
 
 #define PPM_OUTPUT 0
 #define RSSI_OUTPUT 2
 
-const uint8_t OUTPUT_PIN[OUTPUTS] = { 9, A4, 3, A5 };
+const uint8_t OUTPUT_PIN[OUTPUTS] = { 9, A4, 3, A5 ,0 ,1};
 
 #endif
 
@@ -456,5 +461,53 @@ const uint8_t OUTPUT_PIN[OUTPUTS] = { 9, A4, 3, A5 };
 #define nSel_pin 4
 
 #define IRQ_interrupt 0
+
+#endif
+
+// Generic defines needed by pinmapping on RX:s
+#define RX_FLYTRON8CH 0x01
+#define RX_OLRSNG4CH  0x02
+#define RX_OLRSNG12CH 0x03
+
+#define PINMAP_PPM  0x20
+#define PINMAP_RSSI 0x21
+#define PINMAP_SDA  0x22
+#define PINMAP_SCL  0x23
+#define PINMAP_RXD  0x24
+#define PINMAP_TXD  0x25
+#define PINMAP_ANALOG0 0x26
+#define PINMAP_ANALOG1 0x27
+
+// RX type information used by TX
+#ifdef COMPILE_TX
+
+// Following table is used by the dialog code to 
+// determine possible extra functions for each output.
+
+struct rxSpecialPinMap {
+  unsigned char rxtype;
+  unsigned char output;
+  unsigned char type;
+} rxSpecialPins[] = {
+  {RX_FLYTRON8CH,  0, PINMAP_RSSI},
+  {RX_FLYTRON8CH,  5, PINMAP_PPM},
+  {RX_FLYTRON8CH,  9, PINMAP_SDA},
+  {RX_FLYTRON8CH, 10, PINMAP_SCL},
+  {RX_FLYTRON8CH,  9, PINMAP_ANALOG0},
+  {RX_FLYTRON8CH, 10, PINMAP_ANALOG1},
+  {RX_FLYTRON8CH, 11, PINMAP_RXD},
+  {RX_FLYTRON8CH, 12, PINMAP_TXD},
+  {RX_OLRSNG4CH,   0, PINMAP_PPM},
+  {RX_OLRSNG4CH,   1, PINMAP_SDA},
+  {RX_OLRSNG4CH,   1, PINMAP_ANALOG0},
+  {RX_OLRSNG4CH,   2, PINMAP_RSSI},
+  {RX_OLRSNG4CH,   3, PINMAP_SCL},
+  {RX_OLRSNG4CH,   4, PINMAP_ANALOG1},
+  {0,0,0},
+};
+
+static const char *specialStrs[] = { "PPM","RSSI","SDA","SCL","RXD","TXD","AIN0","AIN1"};
+
+#define SPECIALSTR(x) (specialStrs[(x)&7]) // note must be changed if not 8 strings
 
 #endif
