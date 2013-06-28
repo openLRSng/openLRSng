@@ -52,7 +52,7 @@
 #define MAX_INTERVAL 255
 
 #define BINDING_POWER     0x00 // 1 mW
-#define BINDING_VERSION   4
+#define BINDING_VERSION   5
 
 #define EEPROM_OFFSET     0x00
 #define EEPROM_RX_OFFSET  0x40 // RX specific config struct
@@ -201,6 +201,7 @@ struct RX_config {
   uint32_t beacon_frequency;
   uint8_t  beacon_deadtime;
   uint8_t  beacon_interval;
+  uint16_t minsync;
 } rx_config;
 
 #ifndef COMPILE_TX
@@ -234,6 +235,7 @@ void rxInitDefaults()
   rx_config.beacon_frequency = DEFAULT_BEACON_FREQUENCY;
   rx_config.beacon_deadtime = DEFAULT_BEACON_DEADTIME;
   rx_config.beacon_interval = DEFAULT_BEACON_INTERVAL;
+  rx_config.minsync = 2700;
 }
 
 void rxWriteEeprom()

@@ -92,6 +92,8 @@ void rxPrint(void)
   } else {
     Serial.println(F("DISABLED"));
   }
+  Serial.print(F("L) PPM minimum sync (us)  : "));
+  Serial.println(rx_config.minsync);
 }
 
 void CLI_menu_headers(void)
@@ -209,6 +211,9 @@ void RX_menu_headers(void)
     break;
   case 25:
     Serial.println(F("Set beacon interval"));
+    break;
+  case 26:
+    Serial.println(F("Set PPM minimum sync"));
     break;
   }
 
@@ -401,6 +406,11 @@ void handleRXmenu(char c)
       CLI_menu = 25;
       RX_menu_headers();
       break;
+    case 'l':
+    case 'L':
+      CLI_menu = 26;
+      RX_menu_headers();
+      break;
     }
   } else { // we are inside the menu
     if (CLI_inline_edit(c)) {
@@ -472,6 +482,12 @@ void handleRXmenu(char c)
         case 25:
           if ((value >= MIN_INTERVAL) && (value <= MAX_INTERVAL)) {
             rx_config.beacon_interval = value;
+            valid_input = 1;
+          }
+          break;
+        case 26:
+          if ((value >= 2500) && (value <= 10000)) {
+            rx_config.minsync = value;
             valid_input = 1;
           }
           break;

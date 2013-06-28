@@ -64,8 +64,8 @@ ISR(TIMER1_OVF_vect)
   } else {
     uint16_t ppmOut = servoBits2Us(PPM[ppmCountter]) * 2;
     ppmSync -= ppmOut;
-    if (ppmSync < (PPM_MINSYNC_US * 2)) {
-      ppmSync=PPM_MINSYNC_US * 2;
+    if (ppmSync < (rx_config.minsync * 2)) {
+      ppmSync = rx_config.minsync * 2;
     }
     ICR1 = ppmOut;
 

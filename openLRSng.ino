@@ -63,21 +63,11 @@
 //###### If disabled a jumpper must be placed on RX ch1-ch2 to allow it to bind
 #define RX_ALWAYS_BIND
 
-//### Forced PPM enablingthis will put RX into combined PPM/PWM mode
-//### having channels 1-7 available in PWM on slots CH1-CH4,CH6-CH8
-//#define FORCED_PPM_OUTPUT
-
-//### minimum sync period generated to PPM (us)
-#define PPM_MINSYNC_US 2700
-
 //### Module type selection (only for modified HW)
 //#define RFMXX_868
 //#define RFMXX_915
 
-//### Use legacy scanner interface (compatible with old scanner GUI)
-//#define LEGACY_SCANNER_INTERFACE
-
-//#define FRSKY_EMULATION
+#define FRSKY_EMULATION
 
 //####################
 //### CODE SECTION ###
