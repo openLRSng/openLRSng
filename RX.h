@@ -21,6 +21,7 @@ uint16_t ppmSync = 40000;
 uint8_t  ppmChannels = 8;
 
 volatile uint8_t disablePWM = 0;
+volatile uint8_t disablePPM = 0;
 
 uint8_t firstpack = 0;
 uint8_t lostpack = 0;
@@ -53,6 +54,13 @@ ISR(TIMER1_OVF_vect)
 
     while (TCNT1<32);
     outputDownAll();
+    if (rx_config.pinMapping[PPM_OUTPUT] == PINMAP_PPM) {
+      if (disablePPM) {
+        TCCR1A &= ~((1 << COM1A1) | (1 << COM1A0));
+      } else {
+        TCCR1A |= ((1 << COM1A1) | (1 << COM1A0));
+      }
+    }
   } else {
     uint16_t ppmOut = servoBits2Us(PPM[ppmCountter]) * 2;
     ppmSync -= ppmOut;
@@ -76,11 +84,11 @@ void set_RSSI_output( uint8_t val )
 {
   if (rx_config.pinMapping[RSSI_OUTPUT] == PINMAP_RSSI) {
     if ((val == 0) || (val == 255)) {
-      TCCR2A &= ~(1<<COM2B1); // disable PWM output
+      TCCR2A &= ~(1<<COM2B1); // disable RSSI PWM output
       digitalWrite(OUTPUT_PIN[RSSI_OUTPUT], (val == 0) ? LOW : HIGH);
     } else {
       OCR2B = val;
-      TCCR2A |= (1<<COM2B1);
+      TCCR2A |= (1<<COM2B1); // enable RSSI PWM output
     }
   }
 }
@@ -118,7 +126,10 @@ void setupOutputs()
   } else {
     TCCR1A = (1 << WGM11);
   }
+
   disablePWM = 0;
+  disablePPM = 0;
+
   if (rx_config.pinMapping[RSSI_OUTPUT] == PINMAP_RSSI) {
     pinMode(OUTPUT_PIN[RSSI_OUTPUT], OUTPUT);
     digitalWrite(OUTPUT_PIN[RSSI_OUTPUT], LOW);
@@ -426,9 +437,7 @@ void loop()
       setupOutputs();
     } else {
       disablePWM = 0;
-      if (rx_config.pinMapping[PPM_OUTPUT] == PINMAP_PPM) {
-        TCCR1A |= ((1 << COM1A1) | (1 << COM1A0));
-      }
+      disablePPM = 0;
     }
 
     if (bind_data.flags & TELEMETRY_ENABLED) {
@@ -504,12 +513,11 @@ void loop()
         lostpack = 11;
         // Serious trouble, apply failsafe
         load_failsafe_values();
-        if (rx_config.flags & FAILSAFE_NOPPM) {
+        if (rx_config.flags & FAILSAFE_NOPWM) {
           disablePWM = 1;
         }
-        if ((rx_config.pinMapping[RSSI_OUTPUT] == PINMAP_RSSI) &&
-            (rx_config.flags & FAILSAFE_NOPPM)) {
-          TCCR1A &= ~((1 << COM1A1) | (1 << COM1A0));
+        if (rx_config.flags & FAILSAFE_NOPPM) {
+	  disablePPM = 1;
         }
         fs_time = time;
       } else if (rx_config.beacon_interval) {
