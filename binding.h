@@ -108,6 +108,13 @@ struct rfm22_modem_regs {
 struct rfm22_modem_regs bind_params =
 { 9600, 0x05, 0x40, 0x0a, 0xa1, 0x20, 0x4e, 0xa5, 0x00, 0x20, 0x24, 0x4e, 0xa5, 0x2c, 0x23, 0x30 };
 
+// Save EEPROM by writing just changed data
+void myEEPROMwrite(int16_t addr, uint8_t data) {
+  if (data != EEPROM.read(addr)) {
+    EEPROM.write(addr,data);
+  }
+}
+
 int16_t bindReadEeprom()
 {
   uint32_t temp = 0;
@@ -132,11 +139,11 @@ int16_t bindReadEeprom()
 void bindWriteEeprom(void)
 {
   for (uint8_t i = 0; i < 4; i++) {
-    EEPROM.write(EEPROM_OFFSET + i, (BIND_MAGIC >> ((3-i) * 8))& 0xff);
+    myEEPROMwrite(EEPROM_OFFSET + i, (BIND_MAGIC >> ((3-i) * 8))& 0xff);
   }
 
   for (uint8_t i = 0; i < sizeof(bind_data); i++) {
-    EEPROM.write(EEPROM_OFFSET + 4 + i, *((uint8_t*)&bind_data + i));
+    myEEPROMwrite(EEPROM_OFFSET + 4 + i, *((uint8_t*)&bind_data + i));
   }
 }
 
@@ -232,11 +239,11 @@ void rxInitDefaults()
 void rxWriteEeprom()
 {
   for (uint8_t i = 0; i < 4; i++) {
-    EEPROM.write(EEPROM_RX_OFFSET + i, (BIND_MAGIC >> ((3-i) * 8))& 0xff);
+    myEEPROMwrite(EEPROM_RX_OFFSET + i, (BIND_MAGIC >> ((3-i) * 8))& 0xff);
   }
 
   for (uint8_t i = 0; i < sizeof(rx_config); i++) {
-    EEPROM.write(EEPROM_RX_OFFSET + 4 + i, *((uint8_t*)&rx_config + i));
+    myEEPROMwrite(EEPROM_RX_OFFSET + 4 + i, *((uint8_t*)&rx_config + i));
   }
 }
 

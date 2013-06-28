@@ -348,13 +348,13 @@ void handleRXmenu(char c)
     case '9':
     case '8':
     case '7':
-    case '6':
-    case '5':
       if (rx_config.rx_type != RX_FLYTRON8CH) {
         Serial.println("invalid selection");
         break;
       }
       // Fallthru
+    case '6':
+    case '5':
     case '4':
     case '3':
     case '2':

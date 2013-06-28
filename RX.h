@@ -118,17 +118,23 @@ void setupOutputs()
 
   for (i = 0; i < OUTPUTS; i++) {
     switch (rx_config.pinMapping[i]) {
-        case PINMAP_ANALOG:
-        case PINMAP_RXD:
-          pinMode(OUTPUT_PIN[i], INPUT);
-          break;
-        case PINMAP_SDA:
-        case PINMAP_SCL:
-          break; //ignore for now
-        //case PINMAP_TXD:
-        default:          
-          pinMode(OUTPUT_PIN[i], OUTPUT);
-          break;
+    case PINMAP_ANALOG:
+      pinMode(OUTPUT_PIN[i], INPUT);
+      break;
+    case PINMAP_TXD:
+    case PINMAP_RXD:
+    case PINMAP_SDA:
+    case PINMAP_SCL:
+      break; //ignore serial/I2C for now
+    default:
+      if (i == RXD_OUTPUT) {
+        UCSR0B &= 0xEF; //disable serial RXD
+      }
+      if (i == TXD_OUTPUT) {
+        UCSR0B &= 0xF7; //disable serial TXD
+      }
+      pinMode(OUTPUT_PIN[i], OUTPUT); //PPM,PWM,RSSI
+      break;
     }
   }
 
