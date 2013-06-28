@@ -226,6 +226,16 @@ void checkFS(void)
   }
 }
 
+uint8_t tx_buf[21];
+uint8_t rx_buf[9];
+
+#define SERIAL_BUFSIZE 32
+uint8_t serial_buffer[SERIAL_BUFSIZE];
+uint8_t serial_resend[9];
+uint8_t serial_head;
+uint8_t serial_tail;
+uint8_t serial_okToSend; // 2 if it is ok to send serial instead of servo
+
 void setup(void)
 {
 
@@ -283,6 +293,10 @@ void setup(void)
   Serial.begin(TELEMETRY_BAUD_RATE);
   ppmAge = 255;
   rx_reset();
+  
+  serial_head=0;
+  serial_tail=0;
+  serial_okToSend=0;
 
 #ifdef FRSKY_EMULATION
   FrSkyInit();
@@ -291,9 +305,6 @@ void setup(void)
 #endif
 
 }
-
-uint8_t tx_buf[21];
-uint8_t rx_buf[9];
 
 void loop(void)
 {
@@ -306,6 +317,11 @@ void loop(void)
     Red_LED_OFF;
   }
 
+  while (Serial.available() && (((serial_tail + 1) % SERIAL_BUFSIZE) != serial_head)) {
+    serial_buffer[serial_tail] = Serial.read();
+    serial_tail = (serial_tail + 1) % SERIAL_BUFSIZE;
+  }
+  
   if (RF_Mode == Received) {
     // got telemetry packet
     lastTelemetry = micros();
@@ -335,6 +351,8 @@ void loop(void)
         RX_ain1 = rx_buf[3];
       }
     }
+    if (serial_okToSend==1) serial_okToSend=2;
+    if (serial_okToSend==3) serial_okToSend=0;
   }
 
   uint32_t time = micros();
@@ -363,18 +381,45 @@ void loop(void)
 
       // Construct packet to be sent
       tx_buf[0] &= 0xc0; //preserve seq. bits
-      if (FSstate == 2) {
-        tx_buf[0] |= 0x01; // save failsafe
-        Red_LED_ON
+      if ((serial_tail!=serial_head) && (serial_okToSend == 2)) {
+        tx_buf[0] ^= 0x80; // signal new data on line
+        uint8_t bytes=0;
+        uint8_t maxbytes = 8;
+        if (getPacketSize(&bind_data) < 9) {
+          maxbytes = getPacketSize(&bind_data)-1;
+        }
+        while ((bytes<maxbytes) && (serial_head!=serial_tail)) {
+          bytes++;
+          tx_buf[bytes]=serial_buffer[serial_head];
+          serial_resend[bytes]=serial_buffer[serial_head];
+          serial_head=(serial_head + 1) % SERIAL_BUFSIZE;
+        }
+        tx_buf[0] |= (0x37 + bytes);
+        serial_resend[0]= bytes;
+        serial_okToSend = 3; // sent but not acked
+      } else if (serial_okToSend == 4) {
+        uint8_t i;
+        for (i = 0; i < serial_resend[0]; i++) {
+          tx_buf[i+1] = serial_resend[i+1];
+        }
+        tx_buf[0] |= (0x37 + serial_resend[0]);
+        serial_okToSend = 3; // sent but not acked        
       } else {
-        tx_buf[0] |= 0x00; // servo positions
-        Red_LED_OFF
+        if (FSstate == 2) {
+          tx_buf[0] |= 0x01; // save failsafe
+          Red_LED_ON
+        } else {
+          tx_buf[0] |= 0x00; // servo positions
+          Red_LED_OFF
+          if (serial_okToSend==0) serial_okToSend = 1;
+          if (serial_okToSend==3) serial_okToSend = 4; // resend
+        }
+         
+        cli(); // disable interrupts when copying servo positions, to avoid race on 2 byte variable
+        packChannels(bind_data.flags & 7, PPM, tx_buf + 1);
+        sei();
 
       }
-
-      cli(); // disable interrupts when copying servo positions, to avoid race on 2 byte variable
-      packChannels(bind_data.flags & 7, PPM, tx_buf + 1);
-      sei();
 
       //Green LED will be on during transmission
       Green_LED_ON ;
