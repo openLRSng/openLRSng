@@ -113,7 +113,7 @@ void bindMode(void)
       buzzerOn(BZ_FREQ);
       tx_buf[0]='b';
       memcpy(tx_buf+1,&bind_data, sizeof(bind_data));
-      tx_packet(tx_buf, sizeof(bind_data)+1);
+      //tx_packet(tx_buf, sizeof(bind_data)+1);
       Green_LED_OFF;
       buzzerOff();
     }
@@ -141,15 +141,16 @@ void checkButton(void)
   uint32_t time, loop_time;
 
   if (digitalRead(BTN) == 0) {     // Check the button
-    delay(200);   // wait for 200mS when buzzer ON
+    delay(200);   // wait for 200mS with buzzer ON
     buzzerOff();
 
     time = millis();  //set the current time
     loop_time = time;
 
-    while ((digitalRead(BTN) == 0) && (loop_time < time + 4800)) {
-      // wait for button reelase if it is already pressed.
-      loop_time = millis();
+    while (millis() < time + 4800) {
+      if (digitalRead(BTN)) {
+        goto just_bind;
+      }
     }
 
     // Check the button again, If it is still down reinitialize
@@ -182,7 +183,7 @@ void checkButton(void)
       bindWriteEeprom();
       bindPrint();
     }
-
+just_bind:
     // Enter binding mode, automatically after recoding or when pressed for shorter time.
     Serial.println("Entering binding mode\n");
     bindMode();

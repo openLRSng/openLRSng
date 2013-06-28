@@ -65,9 +65,9 @@ void rxPrint(void)
     Serial.println(F("OpenLRSngRX mini 4ch"));
   }
   for (i=0; i<pins; i++) {
-    Serial.print(i);
+    Serial.print((char)(((i+1)>9)?(i+'A'-10):(i+'1')));
     Serial.print(F(") pin CH"));
-    Serial.print(i);
+    Serial.print(i+1);
     Serial.print(F("function: "));
     if (rx_config.pinMapping[i]<16) {
       Serial.print(F("PWM channel "));
@@ -148,7 +148,7 @@ void CLI_menu_headers(void)
 
 void RX_menu_headers(void)
 {
-
+  unsigned char ch;
   switch (CLI_menu) {
   case -1:
     Serial.write(0x0c); // form feed
@@ -167,12 +167,12 @@ void RX_menu_headers(void)
   case 9:
   case 8:
   case 7:
-  case 6:
-  case 5:
     if (rx_config.rx_type != RX_FLYTRON8CH) {
       break;
     }
     // Fallthru
+  case 6:
+  case 5:
   case 4:
   case 3:
   case 2:
@@ -180,12 +180,15 @@ void RX_menu_headers(void)
     Serial.print(F("Set output for output "));
     Serial.println(CLI_menu);
     Serial.print(F("Valid choices are: [1]-[16] (channel 1-16)"));
-    for (char ch=A, struct rxSpecialPinMap pm = rxSpecialPins; pm->rxtype; pm++,ch++) {
+    ch=20;
+    for (struct rxSpecialPinMap *pm = rxSpecialPins; pm->rxtype; pm++) {
       if ((pm->rxtype!=rx_config.rx_type) || (pm->output!=(CLI_menu-1))) continue;
       Serial.print(", [");
       Serial.print(ch);
-      Serial.print("] ");
+      Serial.print("] (");
       Serial.print(SPECIALSTR(pm->type));
+      Serial.print(")");
+      ch++;
     }
     Serial.println();
     break;
@@ -272,6 +275,7 @@ uint8_t CLI_inline_edit(char c)
 
 void handleRXmenu(char c)
 {
+  unsigned char ch;
   if (CLI_menu == -1) {
     switch (c) {
     case '\n':
@@ -311,7 +315,7 @@ void handleRXmenu(char c)
       if (RF_Mode == Received) {
         spiSendAddress(0x7f);   // Send the package read command
         tx_buf[0]=spiReadData();
-        for (int i=0; i<sizeof(rx_config); i++) {
+        for (unsigned int i=0; i<sizeof(rx_config); i++) {
           tx_buf[i+1]=spiReadData();
         }
         memcpy(&rx_config,tx_buf+1,sizeof(rx_config));
@@ -360,7 +364,7 @@ void handleRXmenu(char c)
       break;
     case 'f':
     case 'F':
-      CLI_menu = 10;
+      CLI_menu = 20;
       RX_menu_headers();
       rx_config.flags ^= FAILSAFE_NOPPM;
       CLI_menu = -1;
@@ -368,7 +372,7 @@ void handleRXmenu(char c)
       break;
     case 'g':
     case 'G':
-      CLI_menu = 11;
+      CLI_menu = 21;
       RX_menu_headers();
       rx_config.flags ^= FAILSAFE_NOPWM;
       CLI_menu = -1;
@@ -376,7 +380,7 @@ void handleRXmenu(char c)
       break;
     case 'h':
     case 'H':
-      CLI_menu = 12;
+      CLI_menu = 22;
       RX_menu_headers();
       rx_config.flags ^= FAILSAFE_FAST;
       CLI_menu = -1;
@@ -384,17 +388,17 @@ void handleRXmenu(char c)
       break;
     case 'i':
     case 'I':
-      CLI_menu = 13;
+      CLI_menu = 23;
       RX_menu_headers();
       break;
     case 'j':
     case 'J':
-      CLI_menu = 14;
+      CLI_menu = 24;
       RX_menu_headers();
       break;
     case 'k':
     case 'K':
-      CLI_menu = 15;
+      CLI_menu = 25;
       RX_menu_headers();
       break;
     }
@@ -407,43 +411,38 @@ void handleRXmenu(char c)
         uint32_t value = strtoul(CLI_buffer, NULL, 0);
         bool valid_input = 0;
         switch (CLI_menu) {
+        case 13:
+        case 12:
+        case 11:
+        case 10:
+        case 9:
         case 8:
         case 7:
-        case 6:
-        case 5:
-        case 4:
           if (rx_config.rx_type != RX_FLYTRON8CH) {
             break;
           }
           // Fallthru
+        case 6:
+        case 5:
+        case 4:
         case 3:
         case 2:
         case 1:
-        case 0:
-          if (value==0) {
-            if (rx_config.rx_type==RX_FLYTRON8CH) {
-              if (CLI_menu == 0) {
-                rx_config.pinMapping[CLI_menu] = PINMAP_RSSI;
-                valid_input = 1;
-              } else if (CLI_menu == 5) {
-                rx_config.pinMapping[CLI_menu] = PINMAP_PPM;
-                valid_input = 1;
-              }
-            } else if (rx_config.rx_type == RX_OLRSNG4CH) {
-              if (CLI_menu == 0) {
-                rx_config.pinMapping[CLI_menu] = PINMAP_PPM;
-                valid_input = 1;
-              } else if (CLI_menu == 2) {
-                rx_config.pinMapping[CLI_menu] = PINMAP_RSSI;
-                valid_input = 1;
-              }
-            }
-          } else if ((value > 0) && (value<=16)) {
-            rx_config.pinMapping[CLI_menu] = value-1;
+          if ((value > 0) && (value<=16)) {
+            rx_config.pinMapping[CLI_menu-1] = value-1;
             valid_input = 1;
-          }
+          } else {
+            ch=20;
+            for (struct rxSpecialPinMap *pm = rxSpecialPins; pm->rxtype; pm++) {
+              if ((pm->rxtype!=rx_config.rx_type) || (pm->output!=(CLI_menu-1))) continue;
+              if (ch==value) {
+                rx_config.pinMapping[CLI_menu-1] = pm->type;
+              }
+              ch++;
+            }
+          }            
           break;
-        case 13:
+        case 23:
           if ((CLI_buffer[0]|0x20)=='p') {
             value = strtoul(CLI_buffer+1, NULL, 0);
             if ((value>=1) && (value<=8)) {
@@ -464,13 +463,13 @@ void handleRXmenu(char c)
             valid_input = 1;
           }
           break;
-        case 14:
+        case 24:
           if ((value >= MIN_DEADTIME) && (value <= MAX_DEADTIME)) {
             rx_config.beacon_deadtime = value;
             valid_input = 1;
           }
           break;
-        case 15:
+        case 25:
           if ((value >= MIN_INTERVAL) && (value <= MAX_INTERVAL)) {
             rx_config.beacon_interval = value;
             valid_input = 1;
