@@ -37,7 +37,7 @@
 
 //####### COMPILATION TARGET #######
 // Enable to compile transmitter code, default is RX
-#define COMPILE_TX
+//#define COMPILE_TX
 
 //####### TX BOARD TYPE #######
 // 0 = Original Flytron M1 Tx Board (not verified)
@@ -46,18 +46,18 @@
 // 3 = OpenLRS Rx v2 Board works as TX
 // 4 = OpenLRSngTX
 // 5 = OpenLRSngRX-4ch (DTF UHF) as TX
-#define TX_BOARD_TYPE 4
+#define TX_BOARD_TYPE 2
 
 //####### RX BOARD TYPE #######
 // 3 = OpenLRS Rx v2 Board or OrangeRx UHF RX
 // 5 = OpenLRSngRX-4ch (DTF UHF)
-#define RX_BOARD_TYPE 3
+#define RX_BOARD_TYPE 5
 
 //###### SERIAL PORT SPEED - during configuration #######
 #define SERIAL_BAUD_RATE 115200 //115.200 baud serial port speed
 
 //###### TELEMETRY BAUD RATE - serial datarate when link is up ######
-#define TELEMETRY_BAUD_RATE 9600
+#define TELEMETRY_BAUD_RATE 115200
 
 //###### Should receiver always bind on bootup for 0.5s ######
 //###### If disabled a jumpper must be placed on RX ch1-ch2 to allow it to bind
@@ -77,7 +77,7 @@
 //### Use legacy scanner interface (compatible with old scanner GUI)
 //#define LEGACY_SCANNER_INTERFACE
 
-#define FRSKY_EMULATION
+//#define FRSKY_EMULATION
 
 //####################
 //### CODE SECTION ###

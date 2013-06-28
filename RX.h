@@ -117,7 +117,19 @@ void setupOutputs()
   }
 
   for (i = 0; i < OUTPUTS; i++) {
-    pinMode(OUTPUT_PIN[i], OUTPUT);
+    switch (rx_config.pinMapping[i]) {
+        case PINMAP_ANALOG:
+        case PINMAP_RXD:
+          pinMode(OUTPUT_PIN[i], INPUT);
+          break;
+        case PINMAP_SDA:
+        case PINMAP_SCL:
+          break; //ignore for now
+        //case PINMAP_TXD:
+        default:          
+          pinMode(OUTPUT_PIN[i], OUTPUT);
+          break;
+    }
   }
 
   if (rx_config.pinMapping[PPM_OUTPUT] == PINMAP_PPM) {
@@ -383,8 +395,8 @@ void loop()
   }
 
   while (Serial.available() && (((serial_tail + 1) % SERIAL_BUFSIZE) != serial_head)) {
-    serial_tail = (serial_tail + 1) % SERIAL_BUFSIZE;
     serial_buffer[serial_tail] = Serial.read();
+    serial_tail = (serial_tail + 1) % SERIAL_BUFSIZE;
   }
 
   time = micros();
@@ -457,8 +469,18 @@ void loop()
         } else {
           // tx_buf[0] lowest 6 bits left at 0
           tx_buf[1] = last_rssi_value;
-          tx_buf[2] = (last_afcc_value >> 8);
-          tx_buf[3] = last_afcc_value & 0xff;
+          if (rx_config.pinMapping[ANALOG0_OUTPUT] == PINMAP_ANALOG) {
+            tx_buf[2] = analogRead(OUTPUT_PIN[ANALOG0_OUTPUT])>>2;
+          } else {
+            tx_buf[2] = 0;
+          }
+          if (rx_config.pinMapping[ANALOG1_OUTPUT] == PINMAP_ANALOG) {
+            tx_buf[3] = analogRead(OUTPUT_PIN[ANALOG1_OUTPUT])>>2;
+          } else {
+            tx_buf[3] = 0;
+          }
+          tx_buf[4] = (last_afcc_value >> 8);
+          tx_buf[5] = last_afcc_value & 0xff;
         }
       }
       tx_packet(tx_buf, 9);

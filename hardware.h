@@ -477,8 +477,7 @@ const uint8_t OUTPUT_PIN[OUTPUTS] = { 9, A4, 3, A5 ,0 ,1};
 #define PINMAP_SCL  0x23
 #define PINMAP_RXD  0x24
 #define PINMAP_TXD  0x25
-#define PINMAP_ANALOG0 0x26
-#define PINMAP_ANALOG1 0x27
+#define PINMAP_ANALOG 0x26
 
 // RX type information used by TX
 #ifdef COMPILE_TX
@@ -494,23 +493,23 @@ struct rxSpecialPinMap {
   {RX_FLYTRON8CH,  0, PINMAP_RSSI},
   {RX_FLYTRON8CH,  5, PINMAP_PPM},
   {RX_FLYTRON8CH,  9, PINMAP_SDA},
-  {RX_FLYTRON8CH,  9, PINMAP_ANALOG0},
+  {RX_FLYTRON8CH,  9, PINMAP_ANALOG}, // AIN0
   {RX_FLYTRON8CH, 10, PINMAP_SCL},
-  {RX_FLYTRON8CH, 10, PINMAP_ANALOG1},
+  {RX_FLYTRON8CH, 10, PINMAP_ANALOG}, // AIN1
   {RX_FLYTRON8CH, 11, PINMAP_RXD},
   {RX_FLYTRON8CH, 12, PINMAP_TXD},
   {RX_OLRSNG4CH,   0, PINMAP_PPM},
   {RX_OLRSNG4CH,   1, PINMAP_SDA},
-  {RX_OLRSNG4CH,   1, PINMAP_ANALOG0},
+  {RX_OLRSNG4CH,   1, PINMAP_ANALOG}, // AIN0
   {RX_OLRSNG4CH,   2, PINMAP_RSSI},
   {RX_OLRSNG4CH,   3, PINMAP_SCL},
-  {RX_OLRSNG4CH,   3, PINMAP_ANALOG1},
+  {RX_OLRSNG4CH,   3, PINMAP_ANALOG}, // AIN1
   {RX_OLRSNG4CH,   4, PINMAP_RXD},
   {RX_OLRSNG4CH,   5, PINMAP_TXD},
   {0,0,0},
 };
 
-static const char *specialStrs[] = { "PPM","RSSI","SDA","SCL","RXD","TXD","AIN0","AIN1"};
+static const char *specialStrs[] = { "PPM","RSSI","SDA","SCL","RXD","TXD","AIN","xxx"};
 
 #define SPECIALSTR(x) (specialStrs[(x)&7]) // note must be changed if not 8 strings
 

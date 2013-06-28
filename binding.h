@@ -21,7 +21,7 @@
 //  0 -- 4800bps, best range
 //  1 -- 9600bps, medium range
 //  2 -- 19200bps, medium range
-#define DEFAULT_DATARATE 0
+#define DEFAULT_DATARATE 2
 
 // FLAGS: 8bits
 #define TELEMETRY_ENABLED 0x08
@@ -33,7 +33,7 @@
 #define CHANNELS_16   6
 
 
-#define DEFAULT_FLAGS CHANNELS_8
+#define DEFAULT_FLAGS (CHANNELS_8 | TELEMETRY_ENABLED)
 
 // helpper macro for European PMR channels
 #define EU_PMR_CH(x) (445993750L + 12500L * (x)) // valid for ch1-ch8

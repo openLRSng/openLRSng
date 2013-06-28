@@ -16,6 +16,8 @@ uint32_t lastFrSky = 0;
 
 uint8_t RSSI_rx = 0;
 uint8_t RSSI_tx = 0;
+uint8_t RX_ain0 = 0;
+uint8_t RX_ain1 = 0;
 uint32_t sampleRSSI = 0;
 
 volatile uint8_t ppmAge = 0; // age of PPM data
@@ -113,7 +115,7 @@ void bindMode(void)
       buzzerOn(BZ_FREQ);
       tx_buf[0]='b';
       memcpy(tx_buf+1,&bind_data, sizeof(bind_data));
-      //tx_packet(tx_buf, sizeof(bind_data)+1);
+      tx_packet(tx_buf, sizeof(bind_data)+1);
       Green_LED_OFF;
       buzzerOff();
     }
@@ -285,6 +287,7 @@ void setup(void)
 #ifdef FRSKY_EMULATION
   FrSkyInit();
   lastFrSky = micros();
+  Serial.begin(9600);
 #endif
 
 }
@@ -320,10 +323,16 @@ void loop(void)
         // transparent serial data...
         for (i=0; i<=(rx_buf[0]&7);) {
           i++;
+#ifdef FRSKY_EMULATION
+          FrSkyUserData(rx_buf[i]);
+#else
           Serial.write(rx_buf[i]);
+#endif
         }
       } else if ((rx_buf[0] & 0x3F)==0) {
-        RSSI_rx=rx_buf[1];
+        RSSI_rx = rx_buf[1];
+        RX_ain0 = rx_buf[2];
+        RX_ain1 = rx_buf[3];
       }
     }
   }
@@ -405,7 +414,7 @@ void loop(void)
 #ifdef FRSKY_EMULATION
   if ((micros()-lastFrSky) > FRSKY_INTERVAL) {
     lastFrSky=micros();
-    FrSkySendFrame(0x30,0x50,lastTelemetry?RSSI_rx:0,lastTelemetry?RSSI_tx:0);
+    FrSkySendFrame(RX_ain0,RX_ain1,lastTelemetry?RSSI_rx:0,lastTelemetry?RSSI_tx:0);
   }
 #endif
 
