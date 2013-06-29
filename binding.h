@@ -235,7 +235,7 @@ void rxInitDefaults()
   rx_config.beacon_frequency = DEFAULT_BEACON_FREQUENCY;
   rx_config.beacon_deadtime = DEFAULT_BEACON_DEADTIME;
   rx_config.beacon_interval = DEFAULT_BEACON_INTERVAL;
-  rx_config.minsync = 2700;
+  rx_config.minsync = 3000;
 }
 
 void rxWriteEeprom()

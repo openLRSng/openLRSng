@@ -340,10 +340,10 @@ void handleRXmenu(char c)
       // leave CLI
       CLI_menu = -2;
       break;
-    case 'e':
-    case 'd':
+    case 'a':
+    case 'b':
     case 'c':
-    case 'b': c -= 'a'-'A';
+    case 'd': c -= 'a'-'A';
     // Fallthru
     case 'A':
     case 'B':
