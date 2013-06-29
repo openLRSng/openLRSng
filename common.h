@@ -48,10 +48,12 @@ uint32_t getInterval(struct bind_data *bd)
   // round up to ms
   ret= ((ret+999) / 1000) * 1000;
 
-  // not faster than 50Hz
+  // enable following to limit packet rate to 50Hz at most
+#ifdef LIMIT_RATE_TO_50HZ
   if (ret < 20000) {
     ret = 20000;
   }
+#endif
 
   return ret;
 }

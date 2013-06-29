@@ -65,7 +65,7 @@ void rxPrint(void)
     Serial.println(F("OpenLRSngRX mini 4ch"));
   }
   for (i=0; i<pins; i++) {
-    Serial.print((char)(((i+1)>9)?(i+'A'-10):(i+'1')));
+    Serial.print((char)(((i+1)>9)?(i+'A'-9):(i+'1')));
     Serial.print(F(") pin CH"));
     Serial.print(i+1);
     Serial.print(F("function: "));

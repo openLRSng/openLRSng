@@ -216,8 +216,8 @@ void rxInitDefaults()
   for (i=1; i < 9; i++) {
     rx_config.pinMapping[i] = i-1; // default to PWM out
   }
-  rx_config.pinMapping[9] = PINMAP_ANALOG0; 
-  rx_config.pinMapping[10] = PINMAP_ANALOG1;
+  rx_config.pinMapping[9] = PINMAP_ANALOG; 
+  rx_config.pinMapping[10] = PINMAP_ANALOG;
   rx_config.pinMapping[11] = PINMAP_RXD;
   rx_config.pinMapping[12] = PINMAP_TXD;
 #elif (BOARD_TYPE == 5)
