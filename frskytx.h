@@ -5,7 +5,7 @@
 // FrSky frame is maximally 20bytes (all bytes stuffed)
 // at 9600 baud we can send 960 bytes in second ->
 // 20/960 == 20.8ms
-#define FRSKY_INTERVAL 21000 // 21ms between frames 
+#define FRSKY_INTERVAL 30000 // 30ms between frames 
 
 void FrSkyInit()
 {
@@ -22,8 +22,8 @@ uint8_t FrSkySchedule = 0;
 void FrSkyUserData(uint8_t c)
 {
   if ((FRSKY_WRI+1) != FRSKY_RDI) {
+    FrSkyUserBuf[FRSKY_WRI]=c;
     FrSkyUserIdx = (FrSkyUserIdx & 0xf0) | ((FrSkyUserIdx + 1) & 0x0f);
-    FrSkyUserBuf[FrSkyUserIdx]=c;
   }
 }
 
@@ -56,13 +56,16 @@ void FrSkySendFrame(uint8_t a1, uint8_t a2, uint8_t rx, uint8_t tx)
     FrSkySendStuffed(frame);
   } else {
     if (FRSKY_RDI!=FRSKY_WRI) {
+      uint8_t bytes = 0;
       frame[0] = 0xfd;
       frame[1] = 0;
-      while ((frame[1]<6) && (FRSKY_RDI!=FRSKY_WRI)) {
-        frame[frame[1]+3] = FrSkyUserBuf[FRSKY_RDI];
+      frame[2] = 0; // unused
+      while ((bytes < 6) && (FRSKY_RDI!=FRSKY_WRI)) {
+        frame[bytes + 3] = FrSkyUserBuf[FRSKY_RDI];
         FrSkyUserIdx+=0x10;
-        frame[1]++;
+        bytes++;
       }
+      frame[1] = bytes;
       FrSkySendStuffed(frame);
     }
   }
