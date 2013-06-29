@@ -101,6 +101,7 @@ void bindMode(void)
 {
   uint32_t prevsend = millis();
   uint8_t  tx_buf[sizeof(bind_data)+1];
+  boolean  sendBinds = 1;
 
   init_rfm(1);
 
@@ -109,7 +110,7 @@ void bindMode(void)
   }
 
   while (1) {
-    if (millis() - prevsend > 200) {
+    if (sendBinds & (millis() - prevsend > 200)) {
       prevsend = millis();
       Green_LED_ON;
       buzzerOn(BZ_FREQ);
@@ -118,6 +119,20 @@ void bindMode(void)
       tx_packet(tx_buf, sizeof(bind_data)+1);
       Green_LED_OFF;
       buzzerOff();
+      RF_Mode = Receive;
+      rx_reset();
+      delay(50);
+      if (RF_Mode == Received) {
+        RF_Mode = Receive;
+        spiSendAddress(0x7f);   // Send the package read command
+        if ('B' == spiReadData()) {
+          sendBinds=0;
+        }
+      }
+    }
+
+    if (!digitalRead(BTN)) {
+      sendBinds=1;
     }
 
     while (Serial.available()) {
