@@ -389,7 +389,7 @@ void setup()
 
 void checkSerial()
 {
- while (Serial.available() && (((serial_tail + 1) % SERIAL_BUFSIZE) != serial_head)) {
+  while (Serial.available() && (((serial_tail + 1) % SERIAL_BUFSIZE) != serial_head)) {
     serial_buffer[serial_tail] = Serial.read();
     serial_tail = (serial_tail + 1) % SERIAL_BUFSIZE;
   }
@@ -552,7 +552,7 @@ void loop()
           disablePWM = 1;
         }
         if (rx_config.flags & FAILSAFE_NOPPM) {
-	  disablePPM = 1;
+          disablePPM = 1;
         }
         fs_time = time;
       } else if (rx_config.beacon_interval) {

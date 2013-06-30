@@ -109,7 +109,8 @@ struct rfm22_modem_regs bind_params =
 { 9600, 0x05, 0x40, 0x0a, 0xa1, 0x20, 0x4e, 0xa5, 0x00, 0x20, 0x24, 0x4e, 0xa5, 0x2c, 0x23, 0x30 };
 
 // Save EEPROM by writing just changed data
-void myEEPROMwrite(int16_t addr, uint8_t data) {
+void myEEPROMwrite(int16_t addr, uint8_t data)
+{
   if (data != EEPROM.read(addr)) {
     EEPROM.write(addr,data);
   }
@@ -216,7 +217,7 @@ void rxInitDefaults()
   for (i=1; i < 9; i++) {
     rx_config.pinMapping[i] = i-1; // default to PWM out
   }
-  rx_config.pinMapping[9] = PINMAP_ANALOG; 
+  rx_config.pinMapping[9] = PINMAP_ANALOG;
   rx_config.pinMapping[10] = PINMAP_ANALOG;
   rx_config.pinMapping[11] = PINMAP_RXD;
   rx_config.pinMapping[12] = PINMAP_TXD;
@@ -225,8 +226,8 @@ void rxInitDefaults()
   for (i=0; i<4; i++) {
     rx_config.pinMapping[i]=i; // default to PWM out
   }
-  rx_config.pinMapping[4] = PINMAP_RXD; 
-  rx_config.pinMapping[5] = PINMAP_TXD; 
+  rx_config.pinMapping[4] = PINMAP_RXD;
+  rx_config.pinMapping[5] = PINMAP_TXD;
 #else
 #error INVALID RX BOARD
 #endif

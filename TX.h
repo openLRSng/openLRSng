@@ -308,7 +308,7 @@ void setup(void)
   Serial.begin(TELEMETRY_BAUD_RATE);
   ppmAge = 255;
   rx_reset();
-  
+
   serial_head=0;
   serial_tail=0;
   serial_okToSend=0;
@@ -336,11 +336,13 @@ void loop(void)
     serial_buffer[serial_tail] = Serial.read();
     serial_tail = (serial_tail + 1) % SERIAL_BUFSIZE;
   }
-  
+
   if (RF_Mode == Received) {
     // got telemetry packet
     lastTelemetry = micros();
-    if (!lastTelemetry) lastTelemetry=1; //fixup rare case of zero
+    if (!lastTelemetry) {
+      lastTelemetry=1;  //fixup rare case of zero
+    }
     RF_Mode = Receive;
     spiSendAddress(0x7f);   // Send the package read command
     for (int16_t i = 0; i < 9; i++) {
@@ -366,8 +368,12 @@ void loop(void)
         RX_ain1 = rx_buf[3];
       }
     }
-    if (serial_okToSend==1) serial_okToSend=2;
-    if (serial_okToSend==3) serial_okToSend=0;
+    if (serial_okToSend==1) {
+      serial_okToSend=2;
+    }
+    if (serial_okToSend==3) {
+      serial_okToSend=0;
+    }
   }
 
   uint32_t time = micros();
@@ -418,7 +424,7 @@ void loop(void)
           tx_buf[i+1] = serial_resend[i+1];
         }
         tx_buf[0] |= (0x37 + serial_resend[0]);
-        serial_okToSend = 3; // sent but not acked        
+        serial_okToSend = 3; // sent but not acked
       } else {
         if (FSstate == 2) {
           tx_buf[0] |= 0x01; // save failsafe
@@ -426,10 +432,14 @@ void loop(void)
         } else {
           tx_buf[0] |= 0x00; // servo positions
           Red_LED_OFF
-          if (serial_okToSend==0) serial_okToSend = 1;
-          if (serial_okToSend==3) serial_okToSend = 4; // resend
+          if (serial_okToSend==0) {
+            serial_okToSend = 1;
+          }
+          if (serial_okToSend==3) {
+            serial_okToSend = 4;  // resend
+          }
         }
-         
+
         cli(); // disable interrupts when copying servo positions, to avoid race on 2 byte variable
         packChannels(bind_data.flags & 7, PPM, tx_buf + 1);
         sei();
@@ -443,7 +453,7 @@ void loop(void)
       rfmSetChannel(bind_data.hopchannel[RF_channel]);
 
       tx_packet(tx_buf, getPacketSize(&bind_data));
- 
+
       //Hop to the next frequency
       RF_channel++;
 
@@ -457,7 +467,9 @@ void loop(void)
         rx_reset();
         // tell loop to sample downlink RSSI
         sampleRSSI=micros();
-        if (sampleRSSI==0) sampleRSSI=1;
+        if (sampleRSSI==0) {
+          sampleRSSI=1;
+        }
       }
 
     } else {

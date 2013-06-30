@@ -184,7 +184,9 @@ void RX_menu_headers(void)
     Serial.print(F("Valid choices are: [1]-[16] (channel 1-16)"));
     ch=20;
     for (struct rxSpecialPinMap *pm = rxSpecialPins; pm->rxtype; pm++) {
-      if ((pm->rxtype!=rx_config.rx_type) || (pm->output!=(CLI_menu-1))) continue;
+      if ((pm->rxtype!=rx_config.rx_type) || (pm->output!=(CLI_menu-1))) {
+        continue;
+      }
       Serial.print(", [");
       Serial.print(ch);
       Serial.print("] (");
@@ -343,13 +345,15 @@ void handleRXmenu(char c)
     case 'a':
     case 'b':
     case 'c':
-    case 'd': c -= 'a'-'A';
-    // Fallthru
+    case 'd':
+      c -= 'a'-'A';
+      // Fallthru
     case 'A':
     case 'B':
     case 'C':
-    case 'D': c -= 'A' - 10 - '0';
-    // Fallthru
+    case 'D':
+      c -= 'A' - 10 - '0';
+      // Fallthru
     case '9':
     case '8':
     case '7':
@@ -444,13 +448,15 @@ void handleRXmenu(char c)
           } else {
             ch=20;
             for (struct rxSpecialPinMap *pm = rxSpecialPins; pm->rxtype; pm++) {
-              if ((pm->rxtype!=rx_config.rx_type) || (pm->output!=(CLI_menu-1))) continue;
+              if ((pm->rxtype!=rx_config.rx_type) || (pm->output!=(CLI_menu-1))) {
+                continue;
+              }
               if (ch==value) {
                 rx_config.pinMapping[CLI_menu-1] = pm->type;
               }
               ch++;
             }
-          }            
+          }
           break;
         case 23:
           if ((CLI_buffer[0]|0x20)=='p') {

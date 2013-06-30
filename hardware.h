@@ -418,9 +418,9 @@ void buzzerOn(uint16_t freq)
 #define OUTPUTS 6 // outputs available
 
 const pinMask_t OUTPUT_MASKS[OUTPUTS] = {
-  {0x02,0x00,0x00}, {0x00,0x10,0x00}, {0x00,0x00,0x08},// CH1/PPM, CH2/SDA, CH3/RSSI 
+  {0x02,0x00,0x00}, {0x00,0x10,0x00}, {0x00,0x00,0x08},// CH1/PPM, CH2/SDA, CH3/RSSI
   {0x00,0x20,0x00}, {0x00,0x00,0x01}, {0x00,0x00,0x02},// CH4/SCL, RXD/CH5, TXD/CH6
-  
+
 
 };
 
@@ -488,7 +488,7 @@ const uint8_t OUTPUT_PIN[OUTPUTS] = { 9, A4, 3, A5 ,0 ,1};
 // RX type information used by TX
 #ifdef COMPILE_TX
 
-// Following table is used by the dialog code to 
+// Following table is used by the dialog code to
 // determine possible extra functions for each output.
 
 struct rxSpecialPinMap {
