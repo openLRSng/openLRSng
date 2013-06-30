@@ -539,7 +539,7 @@ void rx_reset(void)
   ItStatus2 = spiReadRegister(0x04);
 }
 
-uint32_t tx_start = micros();
+uint32_t tx_start = 0;
 
 void tx_packet_async(uint8_t* pkt, uint8_t size)
 {
@@ -552,7 +552,7 @@ void tx_packet_async(uint8_t* pkt, uint8_t size)
   spiWriteRegister(0x05, RF22B_PACKET_SENT_INTERRUPT);
   ItStatus1 = spiReadRegister(0x03);      //read the Interrupt Status1 register
   ItStatus2 = spiReadRegister(0x04);
-  uint32_t tx_start = micros();
+  tx_start = micros();
   spiWriteRegister(0x07, RF22B_PWRSTATE_TX);    // to tx mode
 
   RF_Mode = Transmit;
