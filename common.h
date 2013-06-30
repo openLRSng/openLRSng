@@ -189,17 +189,10 @@ void scannerMode(void)
 
         if (nextIndex == 4) {
           nextIndex = 0;
-#ifdef LEGACY_SCANNER_INTERFACE
-          startFreq = nextConfig[0] * 1000000UL; // MHz -> Hz
-          endFreq   = nextConfig[1] * 1000000UL; // MHz -> Hz
-          nrSamples = nextConfig[2]; // count
-          stepSize  = nextConfig[3] * 10000UL;   // 10kHz -> Hz
-#else
           startFreq = nextConfig[0] * 1000UL; // kHz -> Hz
           endFreq   = nextConfig[1] * 1000UL; // kHz -> Hz
           nrSamples = nextConfig[2]; // count
           stepSize  = nextConfig[3] * 1000UL;   // kHz -> Hz
-#endif
           currentFrequency = startFreq;
           currentSamples = 0;
 
@@ -256,11 +249,7 @@ void scannerMode(void)
 
       currentSamples++;
     } else {
-#ifdef LEGACY_SCANNER_INTERFACE
-      Serial.print(currentFrequency / 10000UL);
-#else
       Serial.print(currentFrequency / 1000UL);
-#endif
       Serial.print(',');
       Serial.print(rssiMax);
       Serial.print(',');
@@ -550,7 +539,9 @@ void rx_reset(void)
   ItStatus2 = spiReadRegister(0x04);
 }
 
-void tx_packet(uint8_t* pkt, uint8_t size)
+uint32_t tx_start = micros();
+
+void tx_packet_async(uint8_t* pkt, uint8_t size)
 {
   spiWriteRegister(0x3e, size);   // total tx size
 
@@ -564,15 +555,36 @@ void tx_packet(uint8_t* pkt, uint8_t size)
   uint32_t tx_start = micros();
   spiWriteRegister(0x07, RF22B_PWRSTATE_TX);    // to tx mode
 
-  while ((nIRQ_1) && ((micros()-tx_start)<100000));
-  if (nIRQ_1) {
-    Serial.print("TX timeout!");
+  RF_Mode = Transmit;
+}
+
+void tx_packet(uint8_t* pkt, uint8_t size)
+{
+  tx_packet_async(pkt, size);
+  while ((RF_Mode == Transmit) && ((micros()-tx_start)<100000));
+  if (RF_Mode == Transmit) {
+    Serial.println("TX timeout!");
   }
 
 #ifdef TX_TIMING
   Serial.print("TX took:");
   Serial.println(micros() - tx_start);
 #endif
+}
+
+uint8_t tx_done()
+{
+  if (RF_Mode != Transmit) {
+#ifdef TX_TIMING
+    Serial.print("TX took:");
+    Serial.println(micros() - tx_start);
+#endif
+    return 1; // success
+  }
+  if ((micros() - tx_start) > 100000) {
+    return 2; // timeout
+  }
+  return 0;
 }
 
 void beacon_tone(int16_t hz, int16_t len)

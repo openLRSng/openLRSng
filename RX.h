@@ -387,7 +387,13 @@ void setup()
 
 }
 
-
+void checkSerial()
+{
+ while (Serial.available() && (((serial_tail + 1) % SERIAL_BUFSIZE) != serial_head)) {
+    serial_buffer[serial_tail] = Serial.read();
+    serial_tail = (serial_tail + 1) % SERIAL_BUFSIZE;
+  }
+}
 
 //############ MAIN LOOP ##############
 void loop()
@@ -400,10 +406,7 @@ void loop()
     to_rx_mode();
   }
 
-  while (Serial.available() && (((serial_tail + 1) % SERIAL_BUFSIZE) != serial_head)) {
-    serial_buffer[serial_tail] = Serial.read();
-    serial_tail = (serial_tail + 1) % SERIAL_BUFSIZE;
-  }
+  checkSerial();
 
   time = micros();
 
@@ -489,7 +492,11 @@ void loop()
           tx_buf[5] = last_afcc_value & 0xff;
         }
       }
-      tx_packet(tx_buf, 9);
+      tx_packet_async(tx_buf, 9);
+
+      while(!tx_done()) {
+        checkSerial();
+      }
     }
 
     RF_Mode = Receive;
