@@ -31,7 +31,7 @@ void hexDump(void *in, uint16_t bytes)
   }
   Serial.print("T:");
   Serial.print(check,16);
-  Serial.print(":");
+  Serial.println(":");
 }
 
 void hexGet(void *out, uint16_t expected)
