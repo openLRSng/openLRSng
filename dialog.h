@@ -9,6 +9,28 @@ char    CLI_buffer[EDIT_BUFFER_SIZE+1];
 uint8_t CLI_buffer_position = 0;
 bool    CLI_magic_set = 0;
 
+
+void hexDump(uint8_t *p, uint16_t bytes)
+{
+  uint16_t check=0;
+  Serial.print("S:");
+  Serial.println(bytes);
+  if (bytes) {
+    Serial.print("H:");
+    while (bytes) {
+      Serial.print(*(p),16);
+      Serial.print(',');
+      check = ((check << 1) + ((check & 0x8000) ? 1 : 0));
+      check ^= *p;
+      p++;
+      bytes--;
+    }
+  }
+  Serial.println();
+  Serial.print("T:");
+  Serial.println(check,16);
+}
+
 void bindPrint(void)
 {
 
@@ -285,6 +307,9 @@ void handleRXmenu(char c)
   unsigned char ch;
   if (CLI_menu == -1) {
     switch (c) {
+    case '!':
+      hexDump(&rx_config,sizeof(rx_config));
+      // Fallthru
     case '\n':
     case '\r':
       RX_menu_headers();
@@ -560,6 +585,9 @@ void handleCLImenu(char c)
 {
   if (CLI_menu == -1) {
     switch (c) {
+    case '!':
+      hexDump(&bind_data,sizeof(bind_data));
+      // Fallthru
     case '\n':
     case '\r':
       CLI_menu_headers();
