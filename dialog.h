@@ -13,7 +13,7 @@ bool    CLI_magic_set = 0;
 void hexDump(void *in, uint16_t bytes)
 {
   uint16_t check=0;
-  uint8_t  p = (uint8_t*)in;
+  uint8_t  *p = (uint8_t*)in;
   Serial.print("S:");
   Serial.println(bytes);
   if (bytes) {
