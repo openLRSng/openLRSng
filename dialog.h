@@ -10,18 +10,19 @@ uint8_t CLI_buffer_position = 0;
 bool    CLI_magic_set = 0;
 
 
-void hexDump(void *p, uint16_t bytes)
+void hexDump(void *in, uint16_t bytes)
 {
   uint16_t check=0;
+  uint8t_t p = (uint8_t*)in;
   Serial.print("S:");
   Serial.println(bytes);
   if (bytes) {
     Serial.print("H:");
     while (bytes) {
-      Serial.print(*((uint8_t*)p),16);
+      Serial.print(*(p),16);
       Serial.print(',');
       check = ((check << 1) + ((check & 0x8000) ? 1 : 0));
-      check ^= *(uint8_t *)p;
+      check ^= *p;
       p++;
       bytes--;
     }
