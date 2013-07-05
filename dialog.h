@@ -16,7 +16,7 @@ void hexDump(void *in, uint16_t bytes)
   uint16_t check=0;
   uint8_t  *p = (uint8_t*)in;
   Serial.print("@S:");
-  Serial.println(bytes);
+  Serial.print(bytes);
   if (bytes) {
     Serial.print("H:");
     while (bytes) {
@@ -29,9 +29,9 @@ void hexDump(void *in, uint16_t bytes)
       bytes--;
     }
   }
-  Serial.println();
   Serial.print("T:");
-  Serial.println(check,16);
+  Serial.print(check,16);
+  Serial.print(":");
 }
 
 void hexGet(void *out, uint16_t expected)
@@ -46,9 +46,6 @@ void hexGet(void *out, uint16_t expected)
   while ((millis()-start)<2000) {
     if (Serial.available()) {
       ch=Serial.read();
-      if (ch=='\r') {
-        continue;
-      }
       switch (state) {
       case 0: // wait for S
         if (ch=='S') {
@@ -58,8 +55,8 @@ void hexGet(void *out, uint16_t expected)
         }
         break;
       case 1: // wait for ':'
-      case 4: // -"-
-      case 8: // -"-
+      case 3: // -"-
+      case 6: // -"-
         if (ch==':') {
           state++;
         } else {
@@ -69,9 +66,12 @@ void hexGet(void *out, uint16_t expected)
       case 2: // bytecount receving (decimal number)
         if ((ch >= '0') && (ch <= '9')) {
           bytes = bytes * 10 + (ch-'0');
-        } else if (ch == '\n') {
+        } else if (ch == 'H') {
           if (bytes == expected) {
             state = 3;
+            numin=0;
+            bytes=0;
+            check=0;
           } else {
             goto fail;
           }
@@ -79,60 +79,42 @@ void hexGet(void *out, uint16_t expected)
           goto fail;
         }
         break;
-      case 3: // wait for 'H'
-        if (ch=='H') {
-          state=4;
-          numin=0;
-          bytes=0;
-          check=0;
-        } else {
-          goto fail;
-        }
-        break;
-      case 5: // reading bytes (hex)
-        if ((ch>='0') && (ch <= 9)) {
+      case 4: // reading bytes (hex)
+        if ((ch>='0') && (ch <= '9')) {
           numin = numin * 16 + (ch - '0');
         } else if ((ch >= 'A') && (ch <= 'F')) {
-          numin = numin + 16 + (ch - 'A' + 10);
+          numin = numin * 16 + (ch - 'A' + 10);
         } else if (ch == ',') {
           buffer[bytes++] = numin;
           check = ((check << 1) + ((check & 0x8000) ? 1 : 0));
           check ^= (numin & 0xff);
           numin = 0;
           if (bytes == expected) {
-            state = 6;
+            state = 5;
           }
         } else {
           goto fail;
         }
         break;
-      case 6:
-        if (ch=='\n') {
-          state=7;
-        } else {
-          goto fail;
-        }
-        break;
-      case 7:
+      case 5:
         if (ch=='T') {
-          state=8;
+          state=6;
           numin = 0;
         } else {
           goto fail;
         }
         break;
-      case 9:
-        if ((ch>='0') && (ch <= 9)) {
+      case 7:
+        if ((ch>='0') && (ch <= '9')) {
           numin = numin * 16 + (ch - '0');
         } else if ((ch >= 'A') && (ch <= 'F')) {
-          numin = numin + 16 + (ch - 'A' + 10);
-        } else if (ch == '\n') {
+          numin = numin * 16 + (ch - 'A' + 10);
+        } else if (ch == ':') {
           if (check == numin) {
-            Serial.println("OK");
+            Serial.println("BINARY LOAD OK");
             memcpy(out,buffer,expected);
             return;
           }
-          Serial.println("CHECKSUM");
           goto fail;
         }
       }
@@ -712,8 +694,8 @@ void handleCLImenu(char c)
       CLI_menu_headers();
       break;
     case '@':
-      hexGet(&bind_data,sizeof(bind_date));
-      RX_menu_headers();
+      hexGet(&bind_data,sizeof(bind_data));
+      CLI_menu_headers();
       break;
     case 's':
     case 'S':
