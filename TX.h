@@ -44,7 +44,7 @@ static inline void processPulse(uint16_t pulse)
       } else {
         ppmMicroPPM=0;
       }
-      Serial.println(ppmMicroPPM?"Futaba micro mode":"Normal PPM mode");
+      // Serial.println(ppmMicroPPM?"Futaba micro mode":"Normal PPM mode");
     } else {
       if (pulse<1500) {
         ppmMicroPPM++;
