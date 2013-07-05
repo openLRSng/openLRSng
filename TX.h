@@ -22,76 +22,91 @@ uint32_t sampleRSSI = 0;
 
 volatile uint8_t ppmAge = 0; // age of PPM data
 
-volatile uint16_t startPulse = 0;
-volatile uint8_t  ppmCounter = PPM_CHANNELS; // ignore data until first sync pulse
-
-#define TIMER1_FREQUENCY_HZ 50
-#define TIMER1_PRESCALER    8
-#define TIMER1_PERIOD       (F_CPU/TIMER1_PRESCALER/TIMER1_FREQUENCY_HZ)
+volatile uint8_t ppmCounter = PPM_CHANNELS; // ignore data until first sync pulse
+volatile uint8_t ppmDetecting = 1; // countter for microPPM detection
+volatile uint8_t ppmMicroPPM = 0;  // status flag for 'Futaba microPPM mode'
 
 #ifndef BZ_FREQ
 #define BZ_FREQ 2000
 #endif
 
-#ifdef USE_ICP1 // Use ICP1 in input capture mode
 /****************************************************
  * Interrupt Vector
  ****************************************************/
-ISR(TIMER1_CAPT_vect)
+
+static inline void processPulse(uint16_t pulse)
 {
-  uint16_t stopPulse = ICR1;
-
-  // Compensate for timer overflow if needed
-  uint16_t pulseWidth = ((startPulse > stopPulse) ? TIMER1_PERIOD : 0) + stopPulse - startPulse;
-
-  if (pulseWidth > 5000) {      // Verify if this is the sync pulse (2.5ms)
-    ppmCounter = 0;             // -> restart the channel counter
-    ppmAge = 0;                 // brand new PPM data received
-  } else if ((pulseWidth > 1400) && (ppmCounter < PPM_CHANNELS)) {       // extra channels will get ignored here
-    PPM[ppmCounter] = servoUs2Bits(pulseWidth / 2);   // Store measured pulse length (converted)
-    ppmCounter++;                     // Advance to next channel
+  if (ppmDetecting) {
+    if (ppmDetecting>50) {
+      ppmDetecting=0;
+      if (ppmMicroPPM>10) {
+        ppmMicroPPM=1;
+      } else {
+        ppmMicroPPM=0;
+      }
+      Serial.println(ppmMicroPPM?"Futaba micro mode":"Normal PPM mode");
+    } else {
+      if (pulse<1500) {
+        ppmMicroPPM++;
+      }
+      ppmDetecting++;
+    }
   } else {
-    ppmCounter = PPM_CHANNELS; // glitch ignore rest of data
-  }
 
-  startPulse = stopPulse;         // Save time at pulse start
-}
+    if (!ppmMicroPPM) {
+      pulse>>=1; // divide by 2 to get servo value on normal PPM
+    }
 
-void setupPPMinput()
-{
-  // Setup timer1 for input capture (PSC=8 -> 0.5ms precision, top at 20ms)
-  TCCR1A = ((1 << WGM10) | (1 << WGM11));
-  TCCR1B = ((1 << WGM12) | (1 << WGM13) | (1 << CS11) | (1 << ICES1));
-  OCR1A = TIMER1_PERIOD;
-  TIMSK1 |= (1 << ICIE1);   // Enable timer1 input capture interrupt
-}
-#else // sample PPM using pinchange interrupt
-ISR(PPM_Signal_Interrupt)
-{
-  uint16_t time_temp;
-
-  if (PPM_Signal_Edge_Check) {   // Only works with rising edge of the signal
-    time_temp = TCNT1; // read the timer1 value
-    TCNT1 = 0; // reset the timer1 value for next
-
-    if (time_temp > 5000) {   // new frame detection (>2.5ms)
+    if (pulse > 2500) {      // Verify if this is the sync pulse (2.5ms)
       ppmCounter = 0;             // -> restart the channel counter
       ppmAge = 0;                 // brand new PPM data received
-    } else if ((time_temp > 1400) && (ppmCounter < PPM_CHANNELS)) {
-      PPM[ppmCounter] = servoUs2Bits(time_temp / 2);   // Store measured pulse length (converted)
-      ppmCounter++;                     // Advance to next channel
+    } else if ((pulse > 700) && (ppmCounter < PPM_CHANNELS)) { // extra channels will get ignored here
+      PPM[ppmCounter++] = servoUs2Bits(pulse);   // Store measured pulse length (converted)
     } else {
       ppmCounter = PPM_CHANNELS; // glitch ignore rest of data
     }
   }
 }
 
+#ifdef USE_ICP1 // Use ICP1 in input capture mode
+volatile uint16_t startPulse = 0;
+ISR(TIMER1_CAPT_vect)
+{
+  uint16_t stopPulse = ICR1;
+  processPulse(stopPulse - startPulse); // as top is 65535 uint16 math will take care of rollover
+  startPulse = stopPulse;         // Save time at pulse start
+}
+
+void setupPPMinput()
+{
+  ppmDetecting = 1;
+  ppmMicroPPM = 0;
+  // Setup timer1 for input capture (PSC=8 -> 0.5ms precision, falling edge)
+  TCCR1A = ((1 << WGM10) | (1 << WGM11));
+  TCCR1B = ((1 << WGM12) | (1 << WGM13) | (1 << CS11));
+  OCR1A = 65535;
+  TIMSK1 |= (1 << ICIE1);   // Enable timer1 input capture interrupt
+}
+
+#else // sample PPM using pinchange interrupt
+ISR(PPM_Signal_Interrupt)
+{
+  uint16_t pulseWidth;
+  if (!PPM_Signal_Edge_Check) {   // Falling edge detected
+    pulseWidth = TCNT1; // read the timer1 value
+    TCNT1 = 0; // reset the timer1 value for next
+    processPulse(pulseWidth);
+  }
+}
+
 void setupPPMinput(void)
 {
+  ppmDetecting = 1;
+  ppmMicroPPM = 0;
   // Setup timer1 for input capture (PSC=8 -> 0.5ms precision, top at 20ms)
   TCCR1A = ((1 << WGM10) | (1 << WGM11));
   TCCR1B = ((1 << WGM12) | (1 << WGM13) | (1 << CS11));
-  OCR1A = TIMER1_PERIOD;
+  OCR1A = 65535;
   TIMSK1 = 0;
   PPM_Pin_Interrupt_Setup
 }
