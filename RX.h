@@ -14,6 +14,7 @@ uint32_t last_beacon;
 uint8_t  RSSI_count = 0;
 uint16_t RSSI_sum = 0;
 uint8_t  last_rssi_value = 0;
+uint8_t  smoothRSSI = 0;
 uint16_t last_afcc_value = 0;
 
 uint8_t  ppmCountter = 0;
@@ -82,6 +83,11 @@ ISR(TIMER1_OVF_vect)
 
 void set_RSSI_output( uint8_t val )
 {
+  if (rx_config.RSSIpwm < 16) {
+    cli();
+    PPM[rx_config.RSSIpwm] = 990 + smoothRSSI * 4;
+    sei();
+  }
   if (rx_config.pinMapping[RSSI_OUTPUT] == PINMAP_RSSI) {
     if ((val == 0) || (val == 255)) {
       TCCR2A &= ~(1<<COM2B1); // disable RSSI PWM output
@@ -429,6 +435,9 @@ void loop()
     if ((rx_buf[0]&0x3e) == 0x00) {
       cli();
       unpackChannels(bind_data.flags & 7, PPM, rx_buf + 1);
+      if (rx_config.RSSIpwm < 16) {
+        PPM[rx_config.RSSIpwm] = 990 + smoothRSSI * 4;
+      }
       sei();
       if (rx_buf[0] & 0x01) {
         if (!fs_saved) {
@@ -519,7 +528,9 @@ void loop()
 
     if (RSSI_count > 20) {
       RSSI_sum /= RSSI_count;
-      set_RSSI_output(map(constrain(RSSI_sum, 45, 200), 40, 200, 0, 255));
+      RSSI_sum = map(constrain(RSSI_sum, 45, 200), 40, 200, 0, 255);
+      smoothRSSI = (uint8_t)(((uint16_t)smoothRSSI * 6 + (uint16_t)RSSI_sum * 2)/8);
+      set_RSSI_output(smoothRSSI);
       RSSI_sum = 0;
       RSSI_count = 0;
     }
@@ -534,9 +545,16 @@ void loop()
       last_pack_time += getInterval(&bind_data);
       willhop = 1;
       Red_LED_ON;
-      set_RSSI_output(0);
+      if (smoothRSSI>30) {
+        smoothRSSI-=30;
+      } else {
+        smoothRSSI=0;
+      }
+      set_RSSI_output(smoothRSSI);
     } else if ((time - last_pack_time) > (getInterval(&bind_data) * bind_data.hopcount)) {
       // hop slowly to allow resync with TX
+      smoothRSSI=0;
+      set_RSSI_output(smoothRSSI);
       last_pack_time = time;
 
       if (lostpack < 10) {

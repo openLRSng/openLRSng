@@ -80,6 +80,7 @@ static uint8_t default_hop_list[] = {DEFAULT_HOPLIST};
 #  define BINDING_FREQUENCY 435000000 // Hz
 #endif
 
+#define MAXHOPS 24
 
 struct bind_data {
   uint8_t version;
@@ -88,7 +89,7 @@ struct bind_data {
   uint8_t rf_power;
   uint8_t hopcount;
   uint8_t rf_channel_spacing;
-  uint8_t hopchannel[8];
+  uint8_t hopchannel[MAXHOPS];
   uint8_t modem_params;
   uint8_t flags;
 } bind_data;
@@ -199,6 +200,7 @@ struct RX_config {
   uint8_t  rx_type; // RX type fillled in by RX, do not change
   uint8_t  pinMapping[13];
   uint8_t  flags;
+  uint8_t  RSSIpwm;
   uint32_t beacon_frequency;
   uint8_t  beacon_deadtime;
   uint8_t  beacon_interval;
@@ -233,6 +235,7 @@ void rxInitDefaults()
 #endif
 
   rx_config.flags = 0;
+  rx_config.RSSIpwm = 255; // off
   rx_config.beacon_frequency = DEFAULT_BEACON_FREQUENCY;
   rx_config.beacon_deadtime = DEFAULT_BEACON_DEADTIME;
   rx_config.beacon_interval = DEFAULT_BEACON_INTERVAL;

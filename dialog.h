@@ -2,7 +2,7 @@
   Simple CLI dialog
 */
 
-#define EDIT_BUFFER_SIZE 31
+#define EDIT_BUFFER_SIZE 63
 
 int8_t  CLI_menu = 0;
 char    CLI_buffer[EDIT_BUFFER_SIZE+1];
@@ -213,6 +213,12 @@ void rxPrint(void)
   }
   Serial.print(F("L) PPM minimum sync (us)  : "));
   Serial.println(rx_config.minsync);
+  Serial.print(F("M) PPM RSSI to channel    : "));
+  if (rx_config.RSSIpwm<16) {
+    Serial.println(rx_config.RSSIpwm + 1);
+  }else{
+    Serial.println(F("DISABLED"));
+  }
 }
 
 void CLI_menu_headers(void)
@@ -335,6 +341,9 @@ void RX_menu_headers(void)
     break;
   case 26:
     Serial.println(F("Set PPM minimum sync"));
+    break;
+  case 27:
+    Serial.println(F("Set RSSI injecction channel (0==disable)"));
     break;
   }
 
@@ -541,6 +550,11 @@ void handleRXmenu(char c)
       CLI_menu = 26;
       RX_menu_headers();
       break;
+    case 'm':
+    case 'M':
+      CLI_menu = 27;
+      RX_menu_headers();
+      break;
     }
   } else { // we are inside the menu
     if (CLI_inline_edit(c)) {
@@ -620,6 +634,14 @@ void handleRXmenu(char c)
         case 26:
           if ((value >= 2500) && (value <= 10000)) {
             rx_config.minsync = value;
+            valid_input = 1;
+          }
+        case 27:
+          if (value == 0) {
+            rx_config.minsync = 255;
+            valid_input = 1;
+          } else if (value <= 16) {
+            rx_config.minsync = value - 1;
             valid_input = 1;
           }
           break;
@@ -795,7 +817,7 @@ void handleCLImenu(char c)
           char* slice = strtok(CLI_buffer, ",");
           uint8_t channel = 0;
           while (slice != NULL) {
-            if (channel < 8) {
+            if (channel < MAXHOPS) {
               bind_data.hopchannel[channel++] = atoi(slice);
             }
             slice = strtok(NULL, ",");
