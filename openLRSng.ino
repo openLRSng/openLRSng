@@ -51,13 +51,13 @@
 //####### RX BOARD TYPE #######
 // 3 = OpenLRS Rx v2 Board or OrangeRx UHF RX
 // 5 = OpenLRSngRX-4ch (DTF UHF)
-#define RX_BOARD_TYPE 3
+#define RX_BOARD_TYPE 5
 
 //###### SERIAL PORT SPEED - during configuration #######
 #define SERIAL_BAUD_RATE 115200 //115.200 baud serial port speed
 
 //###### TELEMETRY BAUD RATE - serial datarate when link is up ######
-#define TELEMETRY_BAUD_RATE 9600
+//#define TELEMETRY_BAUD_RATE 9600
 
 //###### Should receiver always bind on bootup for 0.5s ######
 //###### If disabled a jumpper must be placed on RX ch1-ch2 to allow it to bind

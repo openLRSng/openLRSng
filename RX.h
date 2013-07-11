@@ -70,6 +70,10 @@ ISR(TIMER1_OVF_vect)
     }
     ICR1 = ppmOut;
 
+    if ((rx_config.flags & PPM_MAX_8CH) && (ppmCountter == 8)) {
+      TCCR1A &= ~((1 << COM1A1) | (1 << COM1A0));
+    }
+
     while (TCNT1<32);
     outputDownAll();
     if (!disablePWM) {

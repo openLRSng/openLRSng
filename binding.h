@@ -194,6 +194,7 @@ again:
 
 #define FAILSAFE_NOPPM    0x01
 #define FAILSAFE_NOPWM    0x02
+#define PPM_MAX_8CH       0x04
 
 #define FAILSAFE_TIME(rxc) (((uint32_t)rxc.failsafe_delay) * 100000UL)
 

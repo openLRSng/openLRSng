@@ -220,6 +220,8 @@ void rxPrint(void)
   } else {
     Serial.println(F("DISABLED"));
   }
+  Serial.print(F("N) PPM output limited     : "));
+  Serial.println((rx_config.flags & PPM_MAX_8CH)?"8ch":"N/A");
 }
 
 void CLI_menu_headers(void)
@@ -345,6 +347,9 @@ void RX_menu_headers(void)
     break;
   case 27:
     Serial.println(F("Set RSSI injecction channel (0==disable)"));
+    break;
+  case 28:
+    Serial.println(F("Toggled PPM channel limit"));
     break;
   }
 
@@ -551,6 +556,14 @@ void handleRXmenu(char c)
     case 'm':
     case 'M':
       CLI_menu = 27;
+      RX_menu_headers();
+      break;
+    case 'n':
+    case 'N':
+      CLI_menu = 28;
+      RX_menu_headers();
+      rx_config.flags ^= PPM_MAX_8CH;
+      CLI_menu = -1;
       RX_menu_headers();
       break;
     }
