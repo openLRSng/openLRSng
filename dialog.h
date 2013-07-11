@@ -591,6 +591,7 @@ void handleRXmenu(char c)
               }
               if (ch==value) {
                 rx_config.pinMapping[CLI_menu-1] = pm->type;
+                valid_input = 1;
               }
               ch++;
             }
