@@ -50,8 +50,8 @@ void FrSkySendFrame(uint8_t a1, uint8_t a2, uint8_t rx, uint8_t tx)
     frame[0]=0xfe;
     frame[1]=a1;
     frame[2]=a2;
-    frame[3]=rx;
-    frame[4]=tx;
+    frame[3]=(rx>>1); // this needs to be 0-127
+    frame[4]=tx;      // this needs to be 0-255
     frame[5]=frame[6]=frame[7]=frame[8]=0;
     FrSkySendStuffed(frame);
   } else {
