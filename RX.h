@@ -365,6 +365,9 @@ void setup()
   }
 
   ppmChannels = getChannelCount(&bind_data);
+  if (rx_config.RSSIpwm == ppmChannels) {
+    ppmChannels+=1;
+  }
 
   Serial.print("Entering normal mode with PPM ");
   Serial.print((rx_config.pinMapping[PPM_OUTPUT] == PINMAP_PPM)?"Enabled":"Disabled");
