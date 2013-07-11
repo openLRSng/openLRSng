@@ -33,7 +33,7 @@ typedef struct pinMask {
 
 #define PPM_Pin_Interrupt_Setup  PCMSK1 = 0x20;PCICR|=(1<<PCIE1);
 #define PPM_Signal_Interrupt PCINT1_vect
-#define PPM_Signal_Edge_Check (PINC & 0x20)==0x20
+#define PPM_Signal_Edge_Check ((PINC & 0x20)==0x20)
 
 void buzzerInit()
 {
@@ -97,7 +97,7 @@ void buzzerOn(uint16_t freq)
 
 #define PPM_Pin_Interrupt_Setup  PCMSK2 = 0x20;PCICR|=(1<<PCIE2);
 #define PPM_Signal_Interrupt PCINT2_vect
-#define PPM_Signal_Edge_Check (PIND & 0x20)==0x20
+#define PPM_Signal_Edge_Check ((PIND & 0x20)==0x20)
 
 void buzzerInit()
 {
@@ -161,7 +161,7 @@ void buzzerOn(uint16_t freq)
 
 #define PPM_Pin_Interrupt_Setup  PCMSK2 = 0x08;PCICR|=(1<<PCIE2);
 #define PPM_Signal_Interrupt PCINT2_vect
-#define PPM_Signal_Edge_Check (PIND & 0x08)==0x08
+#define PPM_Signal_Edge_Check ((PIND & 0x08)==0x08)
 
 void buzzerInit()
 {
@@ -216,7 +216,7 @@ void buzzerOn(uint16_t freq)
 #define PPM_IN 3
 #define PPM_Pin_Interrupt_Setup  PCMSK2 = 0x08;PCICR|=(1<<PCIE2);
 #define PPM_Signal_Interrupt PCINT2_vect
-#define PPM_Signal_Edge_Check (PIND & 0x08)==0x08
+#define PPM_Signal_Edge_Check ((PIND & 0x08)==0x08)
 #endif
 #define BUZZER 6
 #define BTN 7
