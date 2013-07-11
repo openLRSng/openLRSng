@@ -440,7 +440,7 @@ void handleRXmenu(char c)
         tx_buf[0]=spiReadData();
         if (tx_buf[0]=='U') {
           Serial.println(F("*****************************"));
-          Serial.println(F("RX Acked - update succesfull!"));
+          Serial.println(F("RX Acked - update successful!"));
           Serial.println(F("*****************************"));
         }
       }
@@ -464,7 +464,7 @@ void handleRXmenu(char c)
         memcpy(&rx_config,tx_buf+1,sizeof(rx_config));
         if (tx_buf[0]=='I') {
           Serial.println(F("*****************************"));
-          Serial.println(F("RX Acked - revert succesfull!"));
+          Serial.println(F("RX Acked - revert successful!"));
           Serial.println(F("*****************************"));
         }
       }
