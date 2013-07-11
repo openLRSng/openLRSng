@@ -217,7 +217,7 @@ void rxPrint(void)
   Serial.print(F("M) PPM RSSI to channel    : "));
   if (rx_config.RSSIpwm<16) {
     Serial.println(rx_config.RSSIpwm + 1);
-  }else{
+  } else {
     Serial.println(F("DISABLED"));
   }
 }

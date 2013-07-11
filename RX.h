@@ -559,7 +559,7 @@ void loop()
       set_RSSI_output(smoothRSSI);
       last_pack_time = time;
     }
-    
+
     if (lostpack) {
       if ((fs_time) && ((time - fs_time) > FAILSAFE_TIME(rx_config))) {
         load_failsafe_values();
@@ -572,10 +572,10 @@ void loop()
         fs_time=0;
         last_beacon = (time + ((uint32_t)rx_config.beacon_deadtime * 1000000UL)) | 1; //beacon activating...
       }
-      
+
       if ((rx_config.beacon_frequency) && (last_beacon)) {
-          if (((time - last_beacon) < 0x80000000) && // last beacon is future during deadtime
-              (time - last_beacon) > ((uint32_t)rx_config.beacon_interval * 1000000UL)) {
+        if (((time - last_beacon) < 0x80000000) && // last beacon is future during deadtime
+            (time - last_beacon) > ((uint32_t)rx_config.beacon_interval * 1000000UL)) {
           beacon_send();
           init_rfm(0);   // go back to normal RX
           rx_reset();
