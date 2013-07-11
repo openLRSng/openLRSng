@@ -52,7 +52,7 @@
 #define MAX_INTERVAL 255
 
 #define BINDING_POWER     0x00 // 1 mW
-#define BINDING_VERSION   5
+#define BINDING_VERSION   6
 
 #define EEPROM_OFFSET     0x00
 #define EEPROM_RX_OFFSET  0x40 // RX specific config struct
@@ -192,9 +192,10 @@ again:
   }
 }
 
-#define FAILSAFE_FAST     0x01
-#define FAILSAFE_NOPPM    0x02
-#define FAILSAFE_NOPWM    0x04
+#define FAILSAFE_NOPPM    0x01
+#define FAILSAFE_NOPWM    0x02
+
+#define FAILSAFE_TIME(rxc) (((uint32_t)rxc.failsafe_delay) * 100000UL)
 
 struct RX_config {
   uint8_t  rx_type; // RX type fillled in by RX, do not change
@@ -205,6 +206,7 @@ struct RX_config {
   uint8_t  beacon_deadtime;
   uint8_t  beacon_interval;
   uint16_t minsync;
+  uint8_t  failsafe_delay;
 } rx_config;
 
 #ifndef COMPILE_TX
@@ -236,6 +238,7 @@ void rxInitDefaults()
 
   rx_config.flags = 0;
   rx_config.RSSIpwm = 255; // off
+  rx_config.failsafe_delay = 10; //1s
   rx_config.beacon_frequency = DEFAULT_BEACON_FREQUENCY;
   rx_config.beacon_deadtime = DEFAULT_BEACON_DEADTIME;
   rx_config.beacon_interval = DEFAULT_BEACON_INTERVAL;
@@ -271,25 +274,6 @@ void rxReadEeprom()
     }
     Serial.println("RXconf loaded");
   }
-}
-
-void printRXconf()
-{
-  uint8_t i;
-  Serial.print("Type: ");
-  Serial.println(rx_config.rx_type);
-  for (i=0; i<9; i++) {
-    Serial.print("pmap: ");
-    Serial.println(rx_config.pinMapping[i]);
-  }
-  Serial.print("Flag: ");
-  Serial.println(rx_config.flags);
-  Serial.print("Bfre: ");
-  Serial.println(rx_config.beacon_frequency);
-  Serial.print("Bdea: ");
-  Serial.println(rx_config.beacon_deadtime);
-  Serial.print("Bint: ");
-  Serial.println(rx_config.beacon_interval);
 }
 
 #endif

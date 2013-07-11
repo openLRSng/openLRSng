@@ -230,9 +230,7 @@ uint8_t bindReceive(uint32_t timeout)
           rxb='B';
           tx_packet(&rxb,1); // ACK that we got bound
           Green_LED_ON; //signal we got bound on LED:s
-//          if (timeout) {
           return 1;
-//          }
         }
       } else if ((rxb=='p') || (rxb=='i')) {
         uint8_t rxc_buf[sizeof(rx_config)+1];
@@ -253,7 +251,6 @@ uint8_t bindReceive(uint32_t timeout)
           *(((uint8_t*)&rx_config) + i) = spiReadData();
         }
         rxWriteEeprom();
-        printRXconf();
         rxb='U';
         tx_packet(&rxb,1); // ACK that we updated settings
       }
@@ -340,7 +337,6 @@ void setup()
 
   Serial.begin(SERIAL_BAUD_RATE);   //Serial Transmission
   rxReadEeprom();
-  printRXconf();
   attachInterrupt(IRQ_interrupt, RFM22B_Int, FALLING);
 
   sei();
@@ -382,14 +378,16 @@ void setup()
   //################### RX SYNC AT STARTUP #################
   RF_Mode = Receive;
   to_rx_mode();
-
+#ifdef TELEMETRY_BAUD_RATE
   Serial.begin(TELEMETRY_BAUD_RATE);
+#endif
   while (Serial.available()) {
     Serial.read();
   }
   serial_head=0;
   serial_tail=0;
   firstpack = 0;
+  last_pack_time = micros();
 
 }
 
@@ -536,11 +534,14 @@ void loop()
     }
   }
 
-  time = micros();
-
   if (firstpack) {
-    if ((lostpack < 5) && (time - last_pack_time) > (getInterval(&bind_data) + 1000)) {
-      // we packet, hop to next channel
+    if ((lostpack < bind_data.hopcount) && ((time - last_pack_time) > (getInterval(&bind_data) + 1000))) {
+      // we lost packet, hop to next channel
+      willhop = 1;
+      if (lostpack==0) {
+        fs_time = time;
+        last_beacon = 0;
+      }
       lostpack++;
       last_pack_time += getInterval(&bind_data);
       willhop = 1;
@@ -551,20 +552,16 @@ void loop()
         smoothRSSI=0;
       }
       set_RSSI_output(smoothRSSI);
-    } else if ((time - last_pack_time) > (getInterval(&bind_data) * bind_data.hopcount)) {
+    } else if ((lostpack == bind_data.hopcount) && ((time - last_pack_time) > (getInterval(&bind_data) * bind_data.hopcount))) {
       // hop slowly to allow resync with TX
+      willhop = 1;
       smoothRSSI=0;
       set_RSSI_output(smoothRSSI);
       last_pack_time = time;
-
-      if (lostpack < 10) {
-        lostpack++;
-        if ((rx_config.flags & FAILSAFE_FAST) && (lostpack > 6)) {
-          lostpack=10; // go to failsafe faster
-        }
-      } else if (lostpack == 10) {
-        lostpack = 11;
-        // Serious trouble, apply failsafe
+    }
+    
+    if (lostpack) {
+      if ((fs_time) && ((time - fs_time) > FAILSAFE_TIME(rx_config))) {
         load_failsafe_values();
         if (rx_config.flags & FAILSAFE_NOPWM) {
           disablePWM = 1;
@@ -572,23 +569,24 @@ void loop()
         if (rx_config.flags & FAILSAFE_NOPPM) {
           disablePPM = 1;
         }
-        fs_time = time;
-      } else if (rx_config.beacon_interval) {
-        if (lostpack == 11) {   // failsafes set....
-          if ((time - fs_time) > (rx_config.beacon_deadtime * 1000000UL)) {
-            lostpack = 12;
-            last_beacon = time;
-          }
-        } else if (lostpack == 12) {   // beacon mode active
-          if ((time - last_beacon) > (rx_config.beacon_interval * 1000000UL)) {
-            beacon_send();
-            init_rfm(0);   // go back to normal RX
-            rx_reset();
-            last_beacon = time;
-          }
+        fs_time=0;
+        last_beacon = (time + ((uint32_t)rx_config.beacon_deadtime * 1000000UL)) | 1; //beacon activating...
+      }
+      
+      if ((rx_config.beacon_frequency) && (last_beacon)) {
+          if (((time - last_beacon) < 0x80000000) && // last beacon is future during deadtime
+              (time - last_beacon) > ((uint32_t)rx_config.beacon_interval * 1000000UL)) {
+          beacon_send();
+          init_rfm(0);   // go back to normal RX
+          rx_reset();
+          last_beacon = micros() | 1; // avoid 0 in time
         }
       }
-
+    }
+  } else {
+    // Waiting for first packet, hop slowly
+    if ((time - last_pack_time) > (getInterval(&bind_data) * bind_data.hopcount)) {
+      last_pack_time = time;
       willhop = 1;
     }
   }

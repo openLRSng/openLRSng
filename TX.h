@@ -320,7 +320,9 @@ void setup(void)
 
   Red_LED_OFF;
   buzzerOff();
+#ifdef TELEMETRY_BAUD_RATE
   Serial.begin(TELEMETRY_BAUD_RATE);
+#endif
   ppmAge = 255;
   rx_reset();
 

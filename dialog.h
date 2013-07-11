@@ -200,7 +200,8 @@ void rxPrint(void)
   Serial.print(F("G) Stop PWM on failsafe : O"));
   Serial.println((rx_config.flags & FAILSAFE_NOPWM)?"N":"FF");
   Serial.print(F("H) Failsafe speed       : "));
-  Serial.println((rx_config.flags & FAILSAFE_FAST)?"FAST":"SLOW");
+  Serial.print(rx_config.failsafe_delay);
+  Serial.println(F(" x 0.1s"));
   Serial.print(F("I) Failsafe beacon frq. : "));
   if (rx_config.beacon_frequency) {
     Serial.println(rx_config.beacon_frequency);
@@ -328,7 +329,7 @@ void RX_menu_headers(void)
     Serial.println(F("Toggled 'stop PWM'"));
     break;
   case 22:
-    Serial.println(F("Toggled failsafe speed"));
+    Serial.println(F("Set failsafe delay (x 0.1s)"));
     break;
   case 23:
     Serial.println(F("Set beacon frequency in Hz: 0=disable, Px=PMR channel x, Fx=FRS channel x"));
@@ -526,9 +527,6 @@ void handleRXmenu(char c)
     case 'H':
       CLI_menu = 22;
       RX_menu_headers();
-      rx_config.flags ^= FAILSAFE_FAST;
-      CLI_menu = -1;
-      RX_menu_headers();
       break;
     case 'i':
     case 'I':
@@ -596,6 +594,12 @@ void handleRXmenu(char c)
               }
               ch++;
             }
+          }
+          break;
+        case 22:
+          if ((value >= 1) && (value <= 255)) {
+            rx_config.failsafe_delay = value;
+            valid_input = 1;
           }
           break;
         case 23:
@@ -672,8 +676,8 @@ void CLI_RX_config()
   do {
     tx_buf[0]='p';
     tx_packet(tx_buf,1);
-    rx_reset();
     RF_Mode = Receive;
+    rx_reset();
     delay(200);
     Serial.print(".");
   } while ((RF_Mode==Receive) && ((micros()-last_time)<10000000));
