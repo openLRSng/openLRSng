@@ -643,10 +643,10 @@ void handleRXmenu(char c)
           }
         case 27:
           if (value == 0) {
-            rx_config.minsync = 255;
+            rx_config.RSSIpwm = 255;
             valid_input = 1;
           } else if (value <= 16) {
-            rx_config.minsync = value - 1;
+            rx_config.RSSIpwm = value - 1;
             valid_input = 1;
           }
           break;
