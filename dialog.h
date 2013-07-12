@@ -892,3 +892,15 @@ void handleCLI()
     Serial.read();
   }
 }
+
+void binaryMode()
+{
+  // Just entered binary mode, flip the bool
+  binary_mode_active = true;
+  
+  while (binary_mode_active == true) { // LOCK user here until exit command is received
+    if (Serial.available()) {
+        binary_com.read_packet();
+    }
+  }
+}

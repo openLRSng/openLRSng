@@ -160,6 +160,9 @@ void bindMode(void)
       case '#':
         scannerMode();
         break;
+      case 'B':
+        binaryMode();
+        break; 
       default:
         break;
       }

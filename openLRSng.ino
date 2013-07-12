@@ -83,6 +83,7 @@
 #include "common.h"
 
 #ifdef COMPILE_TX
+#include "binary_com.h"
 #include "dialog.h"
 #ifdef FRSKY_EMULATION
 #include "frskytx.h"
