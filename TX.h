@@ -162,7 +162,7 @@ void bindMode(void)
         break;
       case 'B':
         binaryMode();
-        break; 
+        break;
       default:
         break;
       }
