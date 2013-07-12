@@ -89,7 +89,7 @@ void set_RSSI_output( uint8_t val )
 {
   if (rx_config.RSSIpwm < 16) {
     cli();
-    PPM[rx_config.RSSIpwm] = 990 + smoothRSSI * 4;
+    PPM[rx_config.RSSIpwm] = smoothRSSI << 2;
     sei();
   }
   if (rx_config.pinMapping[RSSI_OUTPUT] == PINMAP_RSSI) {
