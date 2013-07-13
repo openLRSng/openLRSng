@@ -421,7 +421,7 @@ void handleRXmenu(char c)
     switch (c) {
     case '!':
       hexDump(&rx_config,sizeof(rx_config));
-      // Fallthru
+      break;
     case '\n':
     case '\r':
       RX_menu_headers();
@@ -728,7 +728,7 @@ void handleCLImenu(char c)
     switch (c) {
     case '!':
       hexDump(&bind_data,sizeof(bind_data));
-      // Fallthru
+      break;
     case '\n':
     case '\r':
       CLI_menu_headers();
