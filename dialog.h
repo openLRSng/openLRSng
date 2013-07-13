@@ -40,7 +40,7 @@ void hexGet(void *out, uint16_t expected)
   uint16_t bytes = 0;
   uint8_t  state=0;
   uint16_t numin;
-  uint8_t  buffer[32];
+  uint8_t  buffer[expected];
   uint16_t check;
   char     ch;
   while ((millis()-start)<2000) {
