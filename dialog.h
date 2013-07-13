@@ -40,7 +40,7 @@ void hexGet(void *out, uint16_t expected)
   uint16_t bytes = 0;
   uint8_t  state=0;
   uint16_t numin;
-  uint8_t  buffer[32];
+  uint8_t  buffer[expected];
   uint16_t check;
   char     ch;
   while ((millis()-start)<2000) {
@@ -421,7 +421,7 @@ void handleRXmenu(char c)
     switch (c) {
     case '!':
       hexDump(&rx_config,sizeof(rx_config));
-      // Fallthru
+      break;
     case '\n':
     case '\r':
       RX_menu_headers();
@@ -728,7 +728,7 @@ void handleCLImenu(char c)
     switch (c) {
     case '!':
       hexDump(&bind_data,sizeof(bind_data));
-      // Fallthru
+      break;
     case '\n':
     case '\r':
       CLI_menu_headers();
