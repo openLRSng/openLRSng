@@ -20,17 +20,18 @@ RECEIVER HW:
 ============
   - Flytron openLRS RX 
   - OrangeRX UHF RX (NOTE both LEDs are RED!!)
+  - DTF UHF 4ch RX
   
-  RSSI output at 'first' connector (marked as RSSI on OrangeRX) 32kHz PWM signal. To make this analog you can use a simple RC filter (R=10kOhm C=100nF).
+  Flytron/OrangeRX default settings:
+    RSSI output at 'first' connector (marked as RSSI on OrangeRX) 32kHz PWM signal. To make this analog you can use a simple RC filter (R=10kOhm C=100nF).
+    CH1-CH8 are parallel PWM outputs for channels 1-8 (50Hz).
   
-  CH1-CH8 are parallel PWM outputs for channel1-8 (50Hz)
-  
-  To enable PPM (combined) mode connect a jumper between CH7-CH8. PPM will be available at CH5. PWM channels 1-6 are available at CH1-CH4,CH6,CH7(which is jumppered to CH8)
-  NOTE: you can make the connection in the AVRISP header (MISO-MOSI) to have servo at CH7 (=channel6)
-  NOTE: it is also possible to force the PPM mode in the .ino and thus get PWM output for channels 1-7 (CH1-CH4,Ch6-CH8).
+  DTF UHF 4ch default settings:
+    CH1-CH4 outputted as PWM (50Hz).
 
-  See https://www.dropbox.com/s/2x3rc83ovkwoy2z/RX_pinning.pdf
-  
+  Receiver pin functiontions can be changed by using the TX CLI system and powering up RX when asked (so it enters config mode).  
+
+
 SOFTWARE CONFIGURATION:
 =======================
   Only hardware related selections are done in the openLRSng.ino.
@@ -70,14 +71,15 @@ TX:
   - LEDs
     - Green(or blue) LED is lit when module is transmitting
     - Red LED indicates setting of failsafe, or problem with radio module.
+  - Link/RX settings are changed via menu, connect using serial terminal while the TX is in binding mode.
 
 RX:
   - Binding
     - If enabled in the .ino RX always binds at boot (and times out after 0.5s) so it is enough to put TX to bind mode and power up RX.
       On successful bind both red and blue (or a second red on OrangeRX RX) leds light up (and remain lit until TX is put on normal mode)
-    - RX will also enter bind mode forcibly (without timeout) if EEPROM data is incorrect or a jumpper is placed between CH1 and CH2
+    - RX will also enter bind mode forcibly (without timeout) if EEPROM data is incorrect or a jumpper is placed between two first outputs (RSSI&CH1 on orange/flytron)
   - Failsafe:
-    - Failsafe activates after 0.4s / ~2s of no input data
+    - Failsafe activates after 1s of no link by default, can be changed via menu (0.1 - 25s)
   - LEDs
     - Blue LED lights when packet is received (losing a single packet shows as no pulse on LED)
     - Red LED indicates trouble, it blinks when two consequent packets are lost, and lights up when more than 2 packets are lost
@@ -91,4 +93,4 @@ Both TX and RX can be used as spectrum analysers with the "openLRS spectrum anal
 
 TX: Put TX into binding mode and connect with GUI (may need to press update once). 
 
-RX: put jumper on CH3-CH4. This will force the RX to act as spectrum scanner.
+RX: put jumper on output pins 3 and 4 (CH2&3 by default). This will force the RX to act as spectrum scanner, both LEDs will be off in this mode.
