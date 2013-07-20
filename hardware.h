@@ -598,7 +598,7 @@ void setupRfmInterrupt()
 
 #if (BOARD_TYPE == 6) // DTF UHF DeluxeTX
 #if (__AVR_ATmega32U4__ != 1)
-#error Wrong board selected, select Arduino Pro/Pro Mini 5V/16MHz w/ ATMega328
+#error Wrong board selected, select Arduino Leonardo
 #endif
 
 #ifndef COMPILE_TX
