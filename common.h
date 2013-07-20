@@ -1,11 +1,4 @@
 //####### COMMON FUNCTIONS #########
-volatile uint8_t RF_Mode = 0;
-
-#define Available 0
-#define Transmit 1
-#define Transmitted 2
-#define Receive 3
-#define Received 4
 
 void rfmSetCarrierFrequency(uint32_t f);
 uint8_t rfmGetRSSI(void);
@@ -268,18 +261,6 @@ void scannerMode(void)
   }
 
   //never exit!!
-}
-
-
-void RFM22B_Int()
-{
-  if (RF_Mode == Transmit) {
-    RF_Mode = Transmitted;
-  }
-
-  if (RF_Mode == Receive) {
-    RF_Mode = Received;
-  }
 }
 
 #define NOP() __asm__ __volatile__("nop")

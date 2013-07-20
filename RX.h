@@ -329,19 +329,15 @@ void setup()
   pinMode(Green_LED, OUTPUT);
   pinMode(Red_LED, OUTPUT);
 
-  //RF module pins
-  pinMode(SDO_pin, INPUT);   //SDO
-  pinMode(SDI_pin, OUTPUT);   //SDI
-  pinMode(SCLK_pin, OUTPUT);   //SCLK
-  pinMode(IRQ_pin, INPUT);   //IRQ
-  pinMode(nSel_pin, OUTPUT);   //nSEL
+  setupSPI();
 
   pinMode(0, INPUT);   // Serial Rx
   pinMode(1, OUTPUT);   // Serial Tx
 
   Serial.begin(SERIAL_BAUD_RATE);   //Serial Transmission
   rxReadEeprom();
-  attachInterrupt(IRQ_interrupt, RFM22B_Int, FALLING);
+
+  setupRfmInterrupt();
 
   sei();
   Red_LED_ON;

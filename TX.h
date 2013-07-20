@@ -271,13 +271,7 @@ uint8_t serial_okToSend; // 2 if it is ok to send serial instead of servo
 
 void setup(void)
 {
-
-  //RF module pins
-  pinMode(SDO_pin, INPUT);   //SDO
-  pinMode(SDI_pin, OUTPUT);   //SDI
-  pinMode(SCLK_pin, OUTPUT);   //SCLK
-  pinMode(IRQ_pin, INPUT);   //IRQ
-  pinMode(nSel_pin, OUTPUT);   //nSEL
+  setupSPI();
 
   //LED and other interfaces
   pinMode(Red_LED, OUTPUT);   //RED LED
@@ -307,7 +301,7 @@ void setup(void)
 
   setupPPMinput();
 
-  attachInterrupt(IRQ_interrupt, RFM22B_Int, FALLING);
+  setupRfmInterrupt();
 
   init_rfm(0);
   rfmSetChannel(bind_data.hopchannel[RF_channel]);

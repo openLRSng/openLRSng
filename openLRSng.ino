@@ -46,6 +46,7 @@
 // 3 = OpenLRS Rx v2 Board works as TX
 // 4 = OpenLRSngTX
 // 5 = OpenLRSngRX-4ch (DTF UHF) as TX
+// 6 = DTF UHF DeluxeTX (Atmega32u4)
 #define TX_BOARD_TYPE 2
 
 //####### RX BOARD TYPE #######
