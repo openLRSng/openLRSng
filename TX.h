@@ -274,10 +274,14 @@ void setup(void)
 
   //RF module pins
   pinMode(SDO_pin, INPUT);   //SDO
-  pinMode(SDI_pin, OUTPUT);   //SDI
-  pinMode(SCLK_pin, OUTPUT);   //SCLK
+  pinMode(SDI_pin, OUTPUT);  //SDI
+  pinMode(SCLK_pin, OUTPUT); //SCLK
   pinMode(IRQ_pin, INPUT);   //IRQ
-  pinMode(nSel_pin, OUTPUT);   //nSEL
+  pinMode(nSel_pin, OUTPUT); //nSEL
+#ifdef SDN_pin
+  pinMode(SDN_pin, OUTPUT);  //SDN
+  digitalWrite(SDN_pin, 0);
+#endif  
 
   //LED and other interfaces
   pinMode(Red_LED, OUTPUT);   //RED LED

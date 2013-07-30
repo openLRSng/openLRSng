@@ -331,13 +331,17 @@ void setup()
 
   //RF module pins
   pinMode(SDO_pin, INPUT);   //SDO
-  pinMode(SDI_pin, OUTPUT);   //SDI
-  pinMode(SCLK_pin, OUTPUT);   //SCLK
+  pinMode(SDI_pin, OUTPUT);  //SDI
+  pinMode(SCLK_pin, OUTPUT); //SCLK
   pinMode(IRQ_pin, INPUT);   //IRQ
-  pinMode(nSel_pin, OUTPUT);   //nSEL
+  pinMode(nSel_pin, OUTPUT); //nSEL
+#ifdef SDN_pin
+  pinMode(SDN_pin, OUTPUT);  //SDN
+  digitalWrite(SDN_pin, 0);
+#endif
 
   pinMode(0, INPUT);   // Serial Rx
-  pinMode(1, OUTPUT);   // Serial Tx
+  pinMode(1, OUTPUT);  // Serial Tx
 
   Serial.begin(SERIAL_BAUD_RATE);   //Serial Transmission
   rxReadEeprom();

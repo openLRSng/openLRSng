@@ -296,7 +296,7 @@ const uint8_t OUTPUT_PIN[OUTPUTS] = { 3, 5, 6, 7, 8, 9, 10, 11, 12 , A4, A5, 0, 
 
 #endif
 
-#if (BOARD_TYPE == 4) // kha openLRSngTX
+#if (BOARD_TYPE == 4) // kha:s openLRSngTX & clones
 #ifndef COMPILE_TX
 #error TX module cannot be used as RX
 #endif
@@ -308,6 +308,8 @@ const uint8_t OUTPUT_PIN[OUTPUTS] = { 3, 5, 6, 7, 8, 9, 10, 11, 12 , A4, A5, 0, 
 #define BTN A0
 #define Red_LED 6
 #define Green_LED 5
+
+#define RF_OUT_INDICATOR A3 // only used for Futaba
 
 void buzzerInit()
 {
@@ -363,6 +365,7 @@ void buzzerOn(uint16_t freq)
 #define SCLK_pin 13
 #define IRQ_pin 2
 #define nSel_pin 4
+#define SDN_pin 9
 
 #define IRQ_interrupt 0
 
