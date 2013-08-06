@@ -69,5 +69,5 @@ void FrSkySendFrame(uint8_t a1, uint8_t a2, uint8_t rx, uint8_t tx)
       FrSkySendStuffed(frame);
     }
   }
-  FrSkySchedule=(FrSkySchedule+1) & 7;
+  FrSkySchedule=(FrSkySchedule+1) % 6;
 }
