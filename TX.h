@@ -481,7 +481,7 @@ void loop(void)
       //Hop to the next frequency
       RF_channel++;
 
-      if (RF_channel >= bind_data.hopcount) {
+      if ((RF_channel == MAXHOPS) || (bind_data.hopchannel[RF_channel] == 0)) {
         RF_channel = 0;
       }
 

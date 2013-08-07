@@ -23,8 +23,11 @@
 //  2 -- 19200bps, medium range
 #define DEFAULT_DATARATE 2
 
+#define DEFAULT_BAUDRATE 115200
+
 // FLAGS: 8bits
 #define TELEMETRY_ENABLED 0x08
+#define FRSKY_ENABLED     0x10
 #define CHANNELS_4_4  1
 #define CHANNELS_8    2
 #define CHANNELS_8_4  3
@@ -52,7 +55,7 @@
 #define MAX_INTERVAL 255
 
 #define BINDING_POWER     0x00 // 1 mW
-#define BINDING_VERSION   6
+#define BINDING_VERSION   7
 
 #define EEPROM_OFFSET     0x00
 #define EEPROM_RX_OFFSET  0x40 // RX specific config struct
@@ -84,10 +87,10 @@ static uint8_t default_hop_list[] = {DEFAULT_HOPLIST};
 
 struct bind_data {
   uint8_t version;
+  uint32_t serial_baudrate;
   uint32_t rf_frequency;
   uint32_t rf_magic;
   uint8_t rf_power;
-  uint8_t hopcount;
   uint8_t rf_channel_spacing;
   uint8_t hopchannel[MAXHOPS];
   uint8_t modem_params;
@@ -152,16 +155,15 @@ void bindWriteEeprom(void)
 void bindInitDefaults(void)
 {
   bind_data.version = BINDING_VERSION;
+  bind_data.serial_baudrate = DEFAULT_BAUDRATE;
   bind_data.rf_power = DEFAULT_RF_POWER;
   bind_data.rf_frequency = DEFAULT_CARRIER_FREQUENCY;
   bind_data.rf_channel_spacing = DEFAULT_CHANNEL_SPACING;
 
   bind_data.rf_magic = DEFAULT_RF_MAGIC;
 
-  bind_data.hopcount = sizeof(default_hop_list) / sizeof(default_hop_list[0]);
-
-  for (uint8_t c = 0; c < 8; c++) {
-    bind_data.hopchannel[c] = (c < bind_data.hopcount) ? default_hop_list[c] : 0;
+  for (uint8_t c = 0; c < MAXHOPS; c++) {
+    bind_data.hopchannel[c] = (c < sizeof(default_hop_list)) ? default_hop_list[c] : 0;
   }
 
   bind_data.modem_params = DEFAULT_DATARATE;
@@ -172,14 +174,16 @@ void bindRandomize(void)
 {
   uint8_t c;
 
+  randomSeed(micros());
+
   bind_data.rf_magic = 0;
   for (c = 0; c < 4; c++) {
     bind_data.rf_magic = (bind_data.rf_magic << 8) + random(255);
   }
 
-  for (c = 0; c < bind_data.hopcount; c++) {
+  for (c = 0; bind_data.hopchannel[c] != 0; c++) {
 again:
-    uint8_t ch = random(50);
+    uint8_t ch = random(50) + 1;
 
     // don't allow same channel twice
     for (uint8_t i = 0; i < c; i++) {

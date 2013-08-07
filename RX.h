@@ -323,6 +323,8 @@ uint8_t serial_buffer[SERIAL_BUFSIZE];
 uint8_t serial_head;
 uint8_t serial_tail;
 
+uint8_t hopcount;
+
 void setup()
 {
   //LEDs
@@ -385,6 +387,13 @@ void setup()
   init_rfm(0);   // Configure the RFM22B's registers for normal operation
   RF_channel = 0;
   rfmSetChannel(bind_data.hopchannel[RF_channel]);
+
+  // Count hopchannels as we need it later
+  hopcount=0;
+  while ((hopcount < MAXHOPS) && (bind_data.hopchannel[hopcount] != 0)) {
+    hopcount++;
+  }
+   
 
   //################### RX SYNC AT STARTUP #################
   RF_Mode = Receive;
@@ -546,7 +555,7 @@ void loop()
   }
 
   if (firstpack) {
-    if ((lostpack < bind_data.hopcount) && ((time - last_pack_time) > (getInterval(&bind_data) + 1000))) {
+    if ((lostpack < hopcount) && ((time - last_pack_time) > (getInterval(&bind_data) + 1000))) {
       // we lost packet, hop to next channel
       willhop = 1;
       if (lostpack==0) {
@@ -563,7 +572,7 @@ void loop()
         smoothRSSI=0;
       }
       set_RSSI_output(smoothRSSI);
-    } else if ((lostpack == bind_data.hopcount) && ((time - last_pack_time) > (getInterval(&bind_data) * bind_data.hopcount))) {
+    } else if ((lostpack == hopcount) && ((time - last_pack_time) > (getInterval(&bind_data) * hopcount))) {
       // hop slowly to allow resync with TX
       willhop = 1;
       smoothRSSI=0;
@@ -596,7 +605,7 @@ void loop()
     }
   } else {
     // Waiting for first packet, hop slowly
-    if ((time - last_pack_time) > (getInterval(&bind_data) * bind_data.hopcount)) {
+    if ((time - last_pack_time) > (getInterval(&bind_data) * hopcount)) {
       last_pack_time = time;
       willhop = 1;
     }
@@ -605,7 +614,7 @@ void loop()
   if (willhop == 1) {
     RF_channel++;
 
-    if (RF_channel >= bind_data.hopcount) {
+    if ((RF_channel == MAXHOPS) || (bind_data.hochannel[RF_channel] == 0)) {
       RF_channel = 0;
     }
     rfmSetChannel(bind_data.hopchannel[RF_channel]);

@@ -143,18 +143,15 @@ void bindPrint(void)
   Serial.print(F("4) Channel spacing:  "));
   Serial.println(bind_data.rf_channel_spacing);
 
-  Serial.print(F("5) Hop channels ("));
-  Serial.print(bind_data.hopcount);
-  Serial.print("): ");
-  for (uint8_t c = 0; c < bind_data.hopcount;) {
-    Serial.print(bind_data.hopchannel[c++]);   // max 8 channels
-    if (c != bind_data.hopcount) {
+  Serial.print(F("5) Hop channels:     "));
+  for (uint8_t c = 0; (c < MAXHOPS) && (bind_data.hopchannel[c]!=0); c++) {
+    if (c) {
       Serial.print(",");
-    } else {
-      Serial.println();
     }
+    Serial.print(bind_data.hopchannel[c]);
   }
-
+  Serial.println();
+  
   Serial.print(F("6) Baudrate (0-2):   "));
   Serial.println(bind_data.modem_params);
 
@@ -258,7 +255,7 @@ void CLI_menu_headers(void)
     Serial.println(F("Set Hop channels (separated by commas) [MAX 8]: "));
     break;
   case 6:
-    Serial.println(F("Set Baudrate (0-2): "));
+    Serial.println(F("Set Datarate (0-2): "));
     break;
   case 7:
     Serial.println(F("Set Channel config: "));
@@ -283,7 +280,7 @@ void RX_menu_headers(void)
   case -1:
     Serial.write(0x0c); // form feed
     Serial.println(F("\nopenLRSng v3.0 - receiver configurator"));
-    Serial.println(F("Use numbers [1-9] to edit outputs A-F for settings"));
+    Serial.println(F("Use numbers [1-D] to edit ports [E-N] for settings"));
     Serial.println(F("[R] revert RX settings to defaults"));
     Serial.println(F("[S] save settings to RX"));
     Serial.println(F("[X] abort changes and exit RX config"));
@@ -307,7 +304,7 @@ void RX_menu_headers(void)
   case 3:
   case 2:
   case 1:
-    Serial.print(F("Set output for output "));
+    Serial.print(F("Set output for port "));
     Serial.println(CLI_menu);
     Serial.print(F("Valid choices are: [1]-[16] (channel 1-16)"));
     ch=20;
@@ -362,7 +359,7 @@ void RX_menu_headers(void)
 
 void showFrequencies()
 {
-  for (uint8_t ch=0; ch < bind_data.hopcount ; ch++ ) {
+  for (uint8_t ch=0; (ch < MAXHOPS) && (binda_data.hopchannel[ch]!=0) ; ch++ ) {
     Serial.print("Hop channel ");
     Serial.print(ch);
     Serial.print(" @ ");
@@ -834,14 +831,16 @@ void handleCLImenu(char c)
         case 5: {
           char* slice = strtok(CLI_buffer, ",");
           uint8_t channel = 0;
-          while (slice != NULL) {
+          while ((slice != NULL) && (atoi(slice) != 0)) {
             if (channel < MAXHOPS) {
               bind_data.hopchannel[channel++] = atoi(slice);
             }
             slice = strtok(NULL, ",");
           }
           valid_input = 1;
-          bind_data.hopcount = channel;
+	  while (channel < MAXHOPS) {
+	    bind_data.hopchannel[channel++] = 0;
+	  }
         }
         break;
         case 6:

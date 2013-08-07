@@ -56,9 +56,6 @@
 //###### SERIAL PORT SPEED - during configuration #######
 #define SERIAL_BAUD_RATE 115200 //115.200 baud serial port speed
 
-//###### TELEMETRY BAUD RATE - serial datarate when link is up ######
-//#define TELEMETRY_BAUD_RATE 9600
-
 //###### Should receiver always bind on bootup for 0.5s ######
 //###### If disabled a jumpper must be placed on RX ch1-ch2 to allow it to bind
 #define RX_ALWAYS_BIND
@@ -66,10 +63,6 @@
 //### Module type selection (only for modified HW)
 //#define RFMXX_868
 //#define RFMXX_915
-
-//###### Enable FRSKY telemetry emulation on TX side
-//# This will force TX side baudrate to 9600 and enables hubdata framing
-#define FRSKY_EMULATION
 
 //####################
 //### CODE SECTION ###
@@ -85,9 +78,7 @@
 #ifdef COMPILE_TX
 #include "binary_com.h"
 #include "dialog.h"
-#ifdef FRSKY_EMULATION
 #include "frskytx.h"
-#endif
 #include "TX.h"
 #else // COMPILE_RX
 #include "RX.h"
