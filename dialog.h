@@ -152,7 +152,7 @@ void bindPrint(void)
   }
   Serial.println();
 
-  Serial.print(F("6) Baudrate (0-2):   "));
+  Serial.print(F("6) Datarate (0-2):   "));
   Serial.println(bind_data.modem_params);
 
   Serial.print(F("7) Channel config:  "));
@@ -691,9 +691,9 @@ void CLI_RX_config()
     tx_packet(tx_buf,1);
     RF_Mode = Receive;
     rx_reset();
-    delay(200);
+    delay(250);
     Serial.print(".");
-  } while ((RF_Mode==Receive) && ((micros()-last_time)<10000000));
+  } while ((RF_Mode==Receive) && ((micros()-last_time)<20000000));
 
   if (RF_Mode == Receive) {
     Serial.println("TIMEOUT");
@@ -713,7 +713,7 @@ void CLI_RX_config()
   CLI_menu = -1;
   CLI_magic_set = 0;
   RX_menu_headers();
-  while (CLI_menu != -2) { // LOCK user here until settings are saved
+  while (CLI_menu != -2) { // LOCK user here until settings are saved or abandonded
     if (Serial.available()) {
       handleRXmenu(Serial.read());
     }
