@@ -46,44 +46,49 @@ void outputDownAll()
   PORTD &= clearMask.D;
 }
 
+volatile uint16_t nextICR1;
+
 ISR(TIMER1_OVF_vect)
 {
-  if (ppmCountter >= ppmChannels) {
-    ICR1 = ppmSync;
-    ppmCountter = 0;
+  if (ppmCountter < ppmChannels) {
+    ICR1 = nextICR1;
+    nextICR1 = servoBits2Us(PPM[ppmCountter]) * 2;
+    ppmSync -= nextICR1;
+    if (ppmSync < (rx_config.minsync * 2)) {
+      ppmSync = rx_config.minsync * 2;
+    }
+    if ((disablePPM) || ((rx_config.flags & PPM_MAX_8CH) && (ppmCountter >= 8))) {
+      OCR1A = 65535; //do not generate a pulse
+    } else {
+      OCR1A = nextICR1 - 600;
+    }
+
+    while (TCNT1<32);
+    outputDownAll();
+    if ((!disablePWM) && (ppmCountter>0)) {
+      outputUp(ppmCountter-1);
+    }
+
+    ppmCountter++;
+  } else {
+    ICR1 = nextICR1;
+    nextICR1 = ppmSync;
+    if (disablePPM) {
+      OCR1A = 65535; //do not generate a pulse
+    } else {
+      OCR1A = nextICR1 - 600;
+    }
     ppmSync = 40000;
 
     while (TCNT1<32);
     outputDownAll();
-    if (rx_config.pinMapping[PPM_OUTPUT] == PINMAP_PPM) {
-      if (disablePPM) {
-        TCCR1A &= ~((1 << COM1A1) | (1 << COM1A0));
-      } else {
-        TCCR1A |= ((1 << COM1A1) | (1 << COM1A0));
-      }
-    }
-  } else {
-    uint16_t ppmOut = servoBits2Us(PPM[ppmCountter]) * 2;
-    ppmSync -= ppmOut;
-    if (ppmSync < (rx_config.minsync * 2)) {
-      ppmSync = rx_config.minsync * 2;
-    }
-    ICR1 = ppmOut;
-
-    if ((rx_config.flags & PPM_MAX_8CH) && (ppmCountter == 8)) {
-      TCCR1A &= ~((1 << COM1A1) | (1 << COM1A0));
-    }
-
-    while (TCNT1<32);
-    outputDownAll();
     if (!disablePWM) {
-      outputUp(ppmCountter);
+      outputUp(ppmChannels-1);
     }
 
-    ppmCountter++;
+    ppmCountter = 0 ;
   }
 }
-
 
 void set_RSSI_output( uint8_t val )
 {
@@ -150,7 +155,7 @@ void setupOutputs()
 
   if (rx_config.pinMapping[PPM_OUTPUT] == PINMAP_PPM) {
     digitalWrite(OUTPUT_PIN[PPM_OUTPUT], HIGH);
-    TCCR1A = (1 << WGM11) | (1 << COM1A1) | (1 << COM1A0);
+    TCCR1A = (1 << WGM11) | (1 << COM1A1); // | (1 << COM1A0);
   } else {
     TCCR1A = (1 << WGM11);
   }
@@ -166,8 +171,11 @@ void setupOutputs()
   }
 
   TCCR1B = (1 << WGM13) | (1 << WGM12) | (1 << CS11);
-  ICR1 = 40000; // just initial value, will be constantly updated
-  OCR1A = 600;  // 0.3ms pulse
+  OCR1A = 65535;  // no pulse =)
+  ICR1 = 2000; // just initial value, will be constantly updated
+  ppmSync = 40000;
+  nextICR1 = 40000;
+  ppmCountter = 0;
   TIMSK1 |= (1 << TOIE1);
 
 }
