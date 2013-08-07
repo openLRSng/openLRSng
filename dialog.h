@@ -378,7 +378,7 @@ void RX_menu_headers(void)
 
 void showFrequencies()
 {
-  for (uint8_t ch=0; (ch < MAXHOPS) && (binda_data.hopchannel[ch]!=0) ; ch++ ) {
+  for (uint8_t ch=0; (ch < MAXHOPS) && (bind_data.hopchannel[ch]!=0) ; ch++ ) {
     Serial.print("Hop channel ");
     Serial.print(ch);
     Serial.print(" @ ");
