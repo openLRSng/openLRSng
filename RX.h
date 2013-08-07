@@ -331,8 +331,13 @@ void setup()
 
   setupSPI();
 
+#ifdef SDN_pin
+  pinMode(SDN_pin, OUTPUT);  //SDN
+  digitalWrite(SDN_pin, 0);
+#endif
+
   pinMode(0, INPUT);   // Serial Rx
-  pinMode(1, OUTPUT);   // Serial Tx
+  pinMode(1, OUTPUT);  // Serial Tx
 
   Serial.begin(SERIAL_BAUD_RATE);   //Serial Transmission
   rxReadEeprom();

@@ -436,6 +436,8 @@ void buzzerOn(uint16_t freq)
 #define Green_LED_ON   PORTD |= _BV(5);
 #define Green_LED_OFF  PORTD &= ~_BV(5);
 
+#define RF_OUT_INDICATOR A3 // only used for Futaba
+
 //## RFM22B Pinouts for Public Edition (M2)
 #define  nIRQ_1 (PIND & 0x04)==0x04 //D2
 #define  nIRQ_0 (PIND & 0x04)==0x00 //D2
@@ -457,6 +459,7 @@ void buzzerOn(uint16_t freq)
 #define SCLK_pin 13
 #define IRQ_pin 2
 #define nSel_pin 4
+#define SDN_pin 9
 
 void setupSPI()
 {

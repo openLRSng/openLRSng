@@ -273,6 +273,11 @@ void setup(void)
 {
   setupSPI();
 
+#ifdef SDN_pin
+  pinMode(SDN_pin, OUTPUT);  //SDN
+  digitalWrite(SDN_pin, 0);
+#endif
+
   //LED and other interfaces
   pinMode(Red_LED, OUTPUT);   //RED LED
   pinMode(Green_LED, OUTPUT);   //GREEN LED
