@@ -403,7 +403,7 @@ void setup()
   //################### RX SYNC AT STARTUP #################
   RF_Mode = Receive;
   to_rx_mode();
-  
+
   if (bind_data.flags & TELEMETRY_ENABLED) {
     Serial.begin((bind_data.flags & FRSKY_ENABLED)? 9600 : bind_data.serial_baudrate);
     while (Serial.available()) {

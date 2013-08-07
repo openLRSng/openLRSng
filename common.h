@@ -643,7 +643,7 @@ void beacon_send(void)
   spiWriteRegister(0x6d, 0x00);   // 0 set min power 1.3mW
   delay(10);
   beacon_tone(261, 2);
-  
+
 
   spiWriteRegister(0x07, RF22B_PWRSTATE_READY);
   Green_LED_OFF
