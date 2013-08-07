@@ -568,21 +568,21 @@ uint8_t tx_done()
   return 0;
 }
 
-void beacon_tone(int16_t hz, int16_t len)
+void beacon_tone(int16_t hz, int16_t len) //duration is now in half seconds.
 {
-  int16_t d = 500 / hz; // somewhat limited resolution ;)
+  int16_t d = 500000 / hz; // better resolution
 
   if (d < 1) {
     d = 1;
   }
 
-  int16_t cycles = (len * 1000 / d);
+  int16_t cycles = (len * 500000 / d);
 
   for (int16_t i = 0; i < cycles; i++) {
     SDI_on;
-    delay(d);
+    delayMicroseconds(d);
     SDI_off;
-    delay(d);
+    delayMicroseconds(d);
   }
 }
 
@@ -621,15 +621,29 @@ void beacon_send(void)
   delay(10);
   spiWriteRegister(0x07, RF22B_PWRSTATE_TX);    // to tx mode
   delay(10);
-  beacon_tone(500, 1);
 
-  spiWriteRegister(0x6d, 0x04);   // 4 set mid power 15mW
-  delay(10);
-  beacon_tone(250, 1);
+  //close encounters tune
+  //  G, A, F, F(lower octave), C
+  //octave 3:  392  440  349  175   261
 
-  spiWriteRegister(0x6d, 0x00);   // 0 set min power 1mW
+  beacon_tone(392, 1);
+
+  spiWriteRegister(0x6d, 0x05);   // 5 set mid power 25mW
   delay(10);
-  beacon_tone(160, 1);
+  beacon_tone(440,1);
+
+  spiWriteRegister(0x6d, 0x04);   // 4 set mid power 13mW
+  delay(10);
+  beacon_tone(349, 1);
+
+  spiWriteRegister(0x6d, 0x02);   // 2 set min power 3mW
+  delay(10);
+  beacon_tone(175,1);
+
+  spiWriteRegister(0x6d, 0x00);   // 0 set min power 1.3mW
+  delay(10);
+  beacon_tone(261, 2);
+  
 
   spiWriteRegister(0x07, RF22B_PWRSTATE_READY);
   Green_LED_OFF
