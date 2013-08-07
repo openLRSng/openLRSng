@@ -155,7 +155,7 @@ void setupOutputs()
 
   if (rx_config.pinMapping[PPM_OUTPUT] == PINMAP_PPM) {
     digitalWrite(OUTPUT_PIN[PPM_OUTPUT], HIGH);
-    TCCR1A = (1 << WGM11) | (1 << COM1A1); // | (1 << COM1A0);
+    TCCR1A = (1 << WGM11) | (1 << COM1A1);
   } else {
     TCCR1A = (1 << WGM11);
   }
