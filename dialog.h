@@ -182,6 +182,9 @@ void rxPrint(void)
   } else if (rx_config.rx_type == RX_OLRSNG4CH) {
     pins=6;
     Serial.println(F("OpenLRSngRX mini 4ch"));
+  } else if (rx_config.rx_type == RX_DTFUHF10CH) {
+    pins=10;
+    Serial.println(F("DTF UHF 32-bit 10ch"));
   }
   for (i=0; i<pins; i++) {
     Serial.print((char)(((i+1)>9)?(i+'A'-9):(i+'1')));
@@ -293,11 +296,15 @@ void RX_menu_headers(void)
   case 13:
   case 12:
   case 11:
+    if (rx_config.rx_type == RX_DTFUHF10CH) {
+      break;
+    }
+    // Fallthru
   case 10:
   case 9:
   case 8:
   case 7:
-    if (rx_config.rx_type != RX_FLYTRON8CH) {
+    if (rx_config.rx_type == RX_OLRSNG4CH) {
       break;
     }
     // Fallthru
@@ -498,18 +505,19 @@ void handleRXmenu(char c)
     case '9':
     case '8':
     case '7':
-      if (rx_config.rx_type != RX_FLYTRON8CH) {
-        Serial.println("invalid selection");
-        break;
-      }
-      // Fallthru
     case '6':
     case '5':
     case '4':
     case '3':
     case '2':
     case '1':
-      CLI_menu = c - '0';
+	  c -= '0';
+	  if ( ((c > 6) & (rx_config.rx_type == RX_OLRSNG4CH)) || ((c > 10) & (rx_config.rx_type == RX_DTFUHF10CH)) )
+	  {
+		Serial.println("invalid selection");
+		break;
+	  }
+      CLI_menu = c;
       RX_menu_headers();
       break;
     case 'f':
@@ -579,11 +587,15 @@ void handleRXmenu(char c)
         case 13:
         case 12:
         case 11:
+		if (rx_config.rx_type == RX_DTFUHF10CH) {
+			break;
+		}
+		// Fallthru
         case 10:
         case 9:
         case 8:
         case 7:
-          if (rx_config.rx_type != RX_FLYTRON8CH) {
+          if (rx_config.rx_type == RX_OLRSNG4CH) {
             break;
           }
           // Fallthru
