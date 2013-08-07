@@ -2,16 +2,15 @@
 // ************************ openLRSng ***********************
 // **********************************************************
 // ** by Kari Hautio - kha @ AeroQuad/RCGroups/IRC(Freenode)
+// ** other commits by cTn-dev, rlboyd, DTFUHF, pwarren 
+//
+// Developer chat at IRC: #openLRS @ freenode
 //
 // This code is based on original OpenLRS and thUndeadMod
 //
-// This code
-// - extend resolution to 10bits (1024 positions)
-// - use HW timer in input capture mode for PPM input
-// - use HW timer for PPM generation (completely jitterless)
-//
 // Donations for development tools and utilities (beer) here
 // https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=DSWGKGKPRX5CS
+
 
 // **********************************************************
 // ************ based on: OpenLRS thUndeadMod ***************
@@ -25,7 +24,7 @@
 // **********************************************************
 
 // **********************************************************
-// ******************** OpenLRS DEVELOPERS ******************
+// **************** original OpenLRS DEVELOPERS *************
 // Mihai Andrian - thUndead http://www.fpvuk.org/forum/index.php?topic=3642.0
 // Melih Karakelle (http://www.flytron.com) (forum nick name: Flytron)
 // Jan-Dirk Schuitemaker (http://www.schuitemaker.org/) (forum nick name: CrashingDutchman)
@@ -46,6 +45,7 @@
 // 3 = OpenLRS Rx v2 Board works as TX
 // 4 = OpenLRSngTX
 // 5 = OpenLRSngRX-4ch (DTF UHF) as TX
+// 6 = DTF UHF DeluxeTX (Atmega32u4)
 #define TX_BOARD_TYPE 2
 
 //####### RX BOARD TYPE #######

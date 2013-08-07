@@ -2,7 +2,7 @@
   Simple CLI dialog
 */
 
-#define EDIT_BUFFER_SIZE 63
+#define EDIT_BUFFER_SIZE 100
 
 int8_t  CLI_menu = 0;
 char    CLI_buffer[EDIT_BUFFER_SIZE+1];
@@ -151,7 +151,7 @@ void bindPrint(void)
     Serial.print(bind_data.hopchannel[c]);
   }
   Serial.println();
-  
+
   Serial.print(F("6) Baudrate (0-2):   "));
   Serial.println(bind_data.modem_params);
 
@@ -160,6 +160,12 @@ void bindPrint(void)
 
   Serial.print(F("8) Telemetry:       "));
   Serial.println((bind_data.flags&TELEMETRY_ENABLED)?"Enabled":"Disabled");
+
+  Serial.print(F("9) FrSky emulation: "));
+  Serial.println((bind_data.flags&FRSKY_ENABLED)?"Enabled":"Disabled");
+
+  Serial.print(F("0) Serial baudrate:"));
+  Serial.println(bind_data.serial_baudrate);
 
   Serial.print(F("Calculated packet interval: "));
   Serial.print(getInterval(&bind_data));
@@ -179,6 +185,9 @@ void rxPrint(void)
   } else if (rx_config.rx_type == RX_OLRSNG4CH) {
     pins=6;
     Serial.println(F("OpenLRSngRX mini 4ch"));
+  } else if (rx_config.rx_type == RX_DTFUHF10CH) {
+    pins=10;
+    Serial.println(F("DTF UHF 32-bit 10ch"));
   }
   for (i=0; i<pins; i++) {
     Serial.print((char)(((i+1)>9)?(i+'A'-9):(i+'1')));
@@ -227,7 +236,7 @@ void CLI_menu_headers(void)
   switch (CLI_menu) {
   case -1:
     Serial.write(0x0c); // form feed
-    Serial.println(F("\nopenLRSng v3.0"));
+    Serial.println(F("\nopenLRSng v3.1"));
     Serial.println(F("Use numbers [0-9] to edit parameters"));
     Serial.println(F("[S] save settings to EEPROM and exit menu"));
     Serial.println(F("[X] revert changes and exit menu"));
@@ -252,7 +261,7 @@ void CLI_menu_headers(void)
     Serial.println(F("Set channel spacing (x10kHz): "));
     break;
   case 5:
-    Serial.println(F("Set Hop channels (separated by commas) [MAX 8]: "));
+    Serial.println(F("Set Hop channels (max 24, separated by commas) valid values 1-255: "));
     break;
   case 6:
     Serial.println(F("Set Datarate (0-2): "));
@@ -263,6 +272,12 @@ void CLI_menu_headers(void)
     break;
   case 8:
     Serial.println(F("Toggled telemetry!"));
+    break;
+  case 9:
+    Serial.println(F("Toggled FrSky emulation!"));
+    break;
+  case 10:
+    Serial.println(F("Set serial baudrate: "));
     break;
   }
 
@@ -290,11 +305,15 @@ void RX_menu_headers(void)
   case 13:
   case 12:
   case 11:
+    if (rx_config.rx_type == RX_DTFUHF10CH) {
+      break;
+    }
+    // Fallthru
   case 10:
   case 9:
   case 8:
   case 7:
-    if (rx_config.rx_type != RX_FLYTRON8CH) {
+    if (rx_config.rx_type == RX_OLRSNG4CH) {
       break;
     }
     // Fallthru
@@ -495,18 +514,18 @@ void handleRXmenu(char c)
     case '9':
     case '8':
     case '7':
-      if (rx_config.rx_type != RX_FLYTRON8CH) {
-        Serial.println("invalid selection");
-        break;
-      }
-      // Fallthru
     case '6':
     case '5':
     case '4':
     case '3':
     case '2':
     case '1':
-      CLI_menu = c - '0';
+      c -= '0';
+      if ( ((c > 6) & (rx_config.rx_type == RX_OLRSNG4CH)) || ((c > 10) & (rx_config.rx_type == RX_DTFUHF10CH)) ) {
+        Serial.println("invalid selection");
+        break;
+      }
+      CLI_menu = c;
       RX_menu_headers();
       break;
     case 'f':
@@ -576,11 +595,15 @@ void handleRXmenu(char c)
         case 13:
         case 12:
         case 11:
+          if (rx_config.rx_type == RX_DTFUHF10CH) {
+            break;
+          }
+          // Fallthru
         case 10:
         case 9:
         case 8:
         case 7:
-          if (rx_config.rx_type != RX_FLYTRON8CH) {
+          if (rx_config.rx_type == RX_OLRSNG4CH) {
             break;
           }
           // Fallthru
@@ -789,6 +812,17 @@ void handleCLImenu(char c)
       CLI_menu = -1;
       CLI_menu_headers();
       break;
+    case '9':
+      CLI_menu = 9;
+      CLI_menu_headers();
+      bind_data.flags ^= FRSKY_ENABLED;
+      CLI_menu = -1;
+      CLI_menu_headers();
+      break;
+    case '0':
+      CLI_menu = 10;
+      CLI_menu_headers();
+      break;
     case 'z':
     case 'Z':
       CLI_RX_config();
@@ -838,9 +872,9 @@ void handleCLImenu(char c)
             slice = strtok(NULL, ",");
           }
           valid_input = 1;
-	  while (channel < MAXHOPS) {
-	    bind_data.hopchannel[channel++] = 0;
-	  }
+          while (channel < MAXHOPS) {
+            bind_data.hopchannel[channel++] = 0;
+          }
         }
         break;
         case 6:
@@ -853,6 +887,12 @@ void handleCLImenu(char c)
           if ((value >= 1) && (value <= 6)) {
             bind_data.flags &= 0xf8;
             bind_data.flags |= value;
+            valid_input = 1;
+          }
+          break;
+        case 10:
+          if ((value >= 1200) && (value <= 115200)) {
+            bind_data.serial_baudrate = value;
             valid_input = 1;
           }
           break;

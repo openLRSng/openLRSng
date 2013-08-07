@@ -4,17 +4,36 @@
 #define BOARD_TYPE RX_BOARD_TYPE
 #endif
 
+#define Available 0
+#define Transmit 1
+#define Transmitted 2
+#define Receive 3
+#define Received 4
+
+volatile uint8_t RF_Mode = 0;
+
+void RFM22B_Int()
+{
+  if (RF_Mode == Transmit) {
+    RF_Mode = Transmitted;
+  }
+
+  if (RF_Mode == Receive) {
+    RF_Mode = Received;
+  }
+}
+
 typedef struct pinMask {
   uint8_t B,C,D;
 } pinMask_t;
 
-#if ((F_CPU != 16000000) || (__AVR_ATmega328P__ != 1))
-#error Wrong board selected, select Arduino Pro/Pro Mini 5V/16MHz w/ ATMega328
-#endif
-
 //####### Board Pinouts #########
 
 #if (BOARD_TYPE == 0) // Flytron M1 TX
+#if (__AVR_ATmega328P__ != 1) || (F_CPU != 16000000)
+#error Wrong board selected, select Arduino Pro/Pro Mini 5V/16MHz w/ ATMega328
+#endif
+
 #ifndef COMPILE_TX
 #error TX module cannot be used as RX
 #endif
@@ -74,10 +93,28 @@ void buzzerOn(uint16_t freq)
 #define IRQ_pin 3
 #define nSel_pin 4
 
+void setupSPI()
+{
+  pinMode(SDO_pin, INPUT);   //SDO
+  pinMode(SDI_pin, OUTPUT);   //SDI
+  pinMode(SCLK_pin, OUTPUT);   //SCLK
+  pinMode(IRQ_pin, INPUT);   //IRQ
+  pinMode(nSel_pin, OUTPUT);   //nSEL
+}
+
 #define IRQ_interrupt 0
+void setupRfmInterrupt()
+{
+  attachInterrupt(IRQ_interrupt, RFM22B_Int, FALLING);
+}
+
 #endif
 
 #if (BOARD_TYPE == 1) // Flytron M1 RX
+#if (__AVR_ATmega328P__ != 1) || (F_CPU != 16000000)
+#error Wrong board selected, select Arduino Pro/Pro Mini 5V/16MHz w/ ATMega328
+#endif
+
 #ifndef COMPILE_TX
 #error M1 RX not verified yet
 #endif
@@ -138,10 +175,28 @@ void buzzerOn(uint16_t freq)
 #define IRQ_pin 3
 #define nSel_pin 4
 
+void setupSPI()
+{
+  pinMode(SDO_pin, INPUT);   //SDO
+  pinMode(SDI_pin, OUTPUT);   //SDI
+  pinMode(SCLK_pin, OUTPUT);   //SCLK
+  pinMode(IRQ_pin, INPUT);   //IRQ
+  pinMode(nSel_pin, OUTPUT);   //nSEL
+}
+
 #define IRQ_interrupt 0
+void setupRfmInterrupt()
+{
+  attachInterrupt(IRQ_interrupt, RFM22B_Int, FALLING);
+}
+
 #endif
 
 #if (BOARD_TYPE == 2)
+#if (__AVR_ATmega328P__ != 1) || (F_CPU != 16000000)
+#error Wrong board selected, select Arduino Pro/Pro Mini 5V/16MHz w/ ATMega328
+#endif
+
 #ifndef COMPILE_TX
 #error TX module cannot be used as RX
 #endif
@@ -202,10 +257,28 @@ void buzzerOn(uint16_t freq)
 #define IRQ_pin 2
 #define nSel_pin 4
 
+void setupSPI()
+{
+  pinMode(SDO_pin, INPUT);   //SDO
+  pinMode(SDI_pin, OUTPUT);   //SDI
+  pinMode(SCLK_pin, OUTPUT);   //SCLK
+  pinMode(IRQ_pin, INPUT);   //IRQ
+  pinMode(nSel_pin, OUTPUT);   //nSEL
+}
+
 #define IRQ_interrupt 0
+void setupRfmInterrupt()
+{
+  attachInterrupt(IRQ_interrupt, RFM22B_Int, FALLING);
+}
+
 #endif
 
 #if (BOARD_TYPE == 3)
+#if (__AVR_ATmega328P__ != 1) || (F_CPU != 16000000)
+#error Wrong board selected, select Arduino Pro/Pro Mini 5V/16MHz w/ ATMega328
+#endif
+
 #ifdef COMPILE_TX
 
 #define USE_ICP1 // use ICP1 for PPM input for less jitter
@@ -292,11 +365,28 @@ const uint8_t OUTPUT_PIN[OUTPUTS] = { 3, 5, 6, 7, 8, 9, 10, 11, 12 , A4, A5, 0, 
 #define IRQ_pin 2
 #define nSel_pin 4
 
+void setupSPI()
+{
+  pinMode(SDO_pin, INPUT);   //SDO
+  pinMode(SDI_pin, OUTPUT);   //SDI
+  pinMode(SCLK_pin, OUTPUT);   //SCLK
+  pinMode(IRQ_pin, INPUT);   //IRQ
+  pinMode(nSel_pin, OUTPUT);   //nSEL
+}
+
 #define IRQ_interrupt 0
+void setupRfmInterrupt()
+{
+  attachInterrupt(IRQ_interrupt, RFM22B_Int, FALLING);
+}
 
 #endif
 
 #if (BOARD_TYPE == 4) // kha:s openLRSngTX & clones
+#if (__AVR_ATmega328P__ != 1) || (F_CPU != 16000000)
+#error Wrong board selected, select Arduino Pro/Pro Mini 5V/16MHz w/ ATMega328
+#endif
+
 #ifndef COMPILE_TX
 #error TX module cannot be used as RX
 #endif
@@ -344,6 +434,8 @@ void buzzerOn(uint16_t freq)
 #define Green_LED_ON   PORTD |= _BV(5);
 #define Green_LED_OFF  PORTD &= ~_BV(5);
 
+#define RF_OUT_INDICATOR A3 // only used for Futaba
+
 //## RFM22B Pinouts for Public Edition (M2)
 #define  nIRQ_1 (PIND & 0x04)==0x04 //D2
 #define  nIRQ_0 (PIND & 0x04)==0x00 //D2
@@ -367,13 +459,30 @@ void buzzerOn(uint16_t freq)
 #define nSel_pin 4
 #define SDN_pin 9
 
+void setupSPI()
+{
+  pinMode(SDO_pin, INPUT);   //SDO
+  pinMode(SDI_pin, OUTPUT);   //SDI
+  pinMode(SCLK_pin, OUTPUT);   //SCLK
+  pinMode(IRQ_pin, INPUT);   //IRQ
+  pinMode(nSel_pin, OUTPUT);   //nSEL
+}
+
 #define IRQ_interrupt 0
+void setupRfmInterrupt()
+{
+  attachInterrupt(IRQ_interrupt, RFM22B_Int, FALLING);
+}
 
 #define SWAP_GPIOS
 
 #endif
 
 #if (BOARD_TYPE == 5) // openLRSngRX-4ch
+#if (__AVR_ATmega328P__ != 1) || (F_CPU != 16000000)
+#error Wrong board selected, select Arduino Pro/Pro Mini 5V/16MHz w/ ATMega328
+#endif
+
 #ifdef COMPILE_TX
 // TX operation
 
@@ -471,7 +580,119 @@ const uint8_t OUTPUT_PIN[OUTPUTS] = { 9, A4, 3, A5 ,0 ,1};
 #define IRQ_pin 2
 #define nSel_pin 4
 
+void setupSPI()
+{
+  pinMode(SDO_pin, INPUT);   //SDO
+  pinMode(SDI_pin, OUTPUT);   //SDI
+  pinMode(SCLK_pin, OUTPUT);   //SCLK
+  pinMode(IRQ_pin, INPUT);   //IRQ
+  pinMode(nSel_pin, OUTPUT);   //nSEL
+}
+
 #define IRQ_interrupt 0
+void setupRfmInterrupt()
+{
+  attachInterrupt(IRQ_interrupt, RFM22B_Int, FALLING);
+}
+
+#endif
+
+#if (BOARD_TYPE == 6) // DTF UHF DeluxeTX
+#if (__AVR_ATmega32U4__ != 1)
+#error Wrong board selected, select Arduino Leonardo
+#endif
+
+#ifndef COMPILE_TX
+#error TX module cannot be used as RX
+#endif
+
+#define USE_ICP1 // use ICP1 for PPM input for less jitter
+#define PPM_IN 4 // ICP1
+
+#define BUZZER 10 // OCR4B
+#define BTN A0
+#define Red_LED 6 //PD7
+#define Green_LED 5 //PC6
+
+void buzzerInit()
+{
+  TCCR4B = (1<<CS43); // prescaler = 128
+  pinMode(BUZZER, OUTPUT);
+  digitalWrite(BUZZER, LOW);
+}
+
+void buzzerOn(uint16_t freq)
+{
+  if (freq) {
+    uint32_t ocr = 125000L / freq;
+    if (ocr>255) {
+      ocr=255;
+    }
+    if (!ocr) {
+      ocr=1;
+    }
+    OCR4C = ocr;
+    TCCR4A |= (1<<COM4B0); // enable output
+  } else {
+    TCCR4A &= ~(1<<COM4B0); // disable output
+  }
+}
+
+#define buzzerOff(foo) buzzerOn(0)
+
+#define Red_LED_ON  PORTD |= (1<<PORTD7);
+#define Red_LED_OFF  PORTD &= ~(1<<PORTD7);
+
+#define Green_LED_ON   PORTC |= (1<<PORTC6);
+#define Green_LED_OFF  PORTC &= ~(1<<PORTC6);
+
+//## RFM22B Pinouts for Public Edition (M2)
+#define  nIRQ_1 (PINB & (1<<PINB7))==(1<<PINB7) //PB7
+#define  nIRQ_0 (PINB & (1<<PINB7))==0x00 //PB7
+
+#define  nSEL_on PORTD |= (1<<PORTD6) //PD6
+#define  nSEL_off PORTD &= ~(1<<PORTD6) //PD6
+
+#define  SCK_on  PORTB |= (1<<PORTB1)  //PB1
+#define  SCK_off PORTB &= ~(1<<PORTB1) //PB1
+
+#define  SDI_on  PORTB |= (1<<PORTB2)  //PB2 MOSI
+#define  SDI_off PORTB &= ~(1<<PORTB2) //PB2 MOSI
+
+#define  SDO_1 (PINB & (1<<PINB3)) == (1<<PINB3) //PB3 MISO
+#define  SDO_0 (PINB & (1<<PINB3)) == 0x00  //PB3 MISO
+
+//can't do this, they are not D-pins on leonardo
+//#define SDO_pin x //PB3
+//#define SDI_pin x //PB2
+//#define SCLK_pin x //PB1
+#define IRQ_pin 11 //PB7
+#define nSel_pin 12
+
+
+void setupSPI()
+{
+  DDRB |= (1<<DDB1); // SCK PB1 output
+  DDRB |= (1<<DDB2); // SDI/MOSI PB2 output
+  DDRB &= ~(1<<DDB3); // SDO/MISO PB3 input
+  pinMode(IRQ_pin, INPUT);   //IRQ
+  pinMode(nSel_pin, OUTPUT);   //nSEL
+}
+
+void setupRfmInterrupt()
+{
+  PCMSK0 |= (1<<PCINT7); //enable pin change interrupt
+  PCICR |= (1<<PCIE0);
+}
+
+ISR(PCINT0_vect)
+{
+  if(nIRQ_0) { //check if pin is low
+    RFM22B_Int();
+  }
+}
+
+#define SWAP_GPIOS
 
 #endif
 
@@ -479,6 +700,7 @@ const uint8_t OUTPUT_PIN[OUTPUTS] = { 9, A4, 3, A5 ,0 ,1};
 #define RX_FLYTRON8CH 0x01
 #define RX_OLRSNG4CH  0x02
 #define RX_OLRSNG12CH 0x03
+#define RX_DTFUHF10CH 0x04
 
 #define PINMAP_PPM  0x20
 #define PINMAP_RSSI 0x21
@@ -515,6 +737,8 @@ struct rxSpecialPinMap {
   {RX_OLRSNG4CH,   3, PINMAP_ANALOG}, // AIN1
   {RX_OLRSNG4CH,   4, PINMAP_RXD},
   {RX_OLRSNG4CH,   5, PINMAP_TXD},
+  {RX_DTFUHF10CH,  8, PINMAP_RSSI},
+  {RX_DTFUHF10CH,  9, PINMAP_PPM},
   {0,0,0},
 };
 

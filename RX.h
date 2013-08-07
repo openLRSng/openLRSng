@@ -331,12 +331,8 @@ void setup()
   pinMode(Green_LED, OUTPUT);
   pinMode(Red_LED, OUTPUT);
 
-  //RF module pins
-  pinMode(SDO_pin, INPUT);   //SDO
-  pinMode(SDI_pin, OUTPUT);  //SDI
-  pinMode(SCLK_pin, OUTPUT); //SCLK
-  pinMode(IRQ_pin, INPUT);   //IRQ
-  pinMode(nSel_pin, OUTPUT); //nSEL
+  setupSPI();
+
 #ifdef SDN_pin
   pinMode(SDN_pin, OUTPUT);  //SDN
   digitalWrite(SDN_pin, 0);
@@ -347,7 +343,8 @@ void setup()
 
   Serial.begin(SERIAL_BAUD_RATE);   //Serial Transmission
   rxReadEeprom();
-  attachInterrupt(IRQ_interrupt, RFM22B_Int, FALLING);
+
+  setupRfmInterrupt();
 
   sei();
   Red_LED_ON;
@@ -393,7 +390,7 @@ void setup()
   while ((hopcount < MAXHOPS) && (bind_data.hopchannel[hopcount] != 0)) {
     hopcount++;
   }
-   
+
 
   //################### RX SYNC AT STARTUP #################
   RF_Mode = Receive;
