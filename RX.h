@@ -395,11 +395,12 @@ void setup()
   //################### RX SYNC AT STARTUP #################
   RF_Mode = Receive;
   to_rx_mode();
-#ifdef TELEMETRY_BAUD_RATE
-  Serial.begin(TELEMETRY_BAUD_RATE);
-#endif
-  while (Serial.available()) {
-    Serial.read();
+  
+  if (bind_data.flags & TELEMETRY_ENABLED) {
+    Serial.begin((bind_data.flags & FRSKY_ENABLED)? 9600 : bind_data.serial_baudrate);
+    while (Serial.available()) {
+      Serial.read();
+    }
   }
   serial_head=0;
   serial_tail=0;
@@ -611,7 +612,7 @@ void loop()
   if (willhop == 1) {
     RF_channel++;
 
-    if ((RF_channel == MAXHOPS) || (bind_data.hochannel[RF_channel] == 0)) {
+    if ((RF_channel == MAXHOPS) || (bind_data.hopchannel[RF_channel] == 0)) {
       RF_channel = 0;
     }
     rfmSetChannel(bind_data.hopchannel[RF_channel]);

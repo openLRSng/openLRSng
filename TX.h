@@ -10,9 +10,7 @@ uint32_t lastSent = 0;
 
 uint32_t lastTelemetry = 0;
 
-#ifdef FRSKY_EMULATION
 uint32_t lastFrSky = 0;
-#endif
 
 uint8_t RSSI_rx = 0;
 uint8_t RSSI_tx = 0;
@@ -322,9 +320,6 @@ void setup(void)
 
   Red_LED_OFF;
   buzzerOff();
-#ifdef TELEMETRY_BAUD_RATE
-  Serial.begin(TELEMETRY_BAUD_RATE);
-#endif
   ppmAge = 255;
   rx_reset();
 
@@ -332,11 +327,13 @@ void setup(void)
   serial_tail=0;
   serial_okToSend=0;
 
-#ifdef FRSKY_EMULATION
-  FrSkyInit();
-  lastFrSky = micros();
-  Serial.begin(9600);
-#endif
+  if (bind_data.flags & FRSKY_ENABLED) {
+    FrSkyInit();
+    lastFrSky = micros();
+    Serial.begin(9600);
+  } else if (bind_data.flags & TELEMETRY_ENABLED) {
+    Serial.begin(bind_data.serial_baudrate);
+  }
 
 }
 
@@ -375,11 +372,11 @@ void loop(void)
         // transparent serial data...
         for (i=0; i<=(rx_buf[0]&7);) {
           i++;
-#ifdef FRSKY_EMULATION
-          FrSkyUserData(rx_buf[i]);
-#else
-          Serial.write(rx_buf[i]);
-#endif
+          if (bind_data.flags & FRSKY_ENABLED) {
+            FrSkyUserData(rx_buf[i]);
+          } else {
+            Serial.write(rx_buf[i]);
+          }
         }
       } else if ((rx_buf[0] & 0x3F)==0) {
         RSSI_rx = rx_buf[1];
@@ -502,13 +499,12 @@ void loop(void)
 
   }
 
-#ifdef FRSKY_EMULATION
-  if ((micros()-lastFrSky) > FRSKY_INTERVAL) {
-    lastFrSky=micros();
-    FrSkySendFrame(RX_ain0,RX_ain1,lastTelemetry?RSSI_rx:0,lastTelemetry?RSSI_tx:0);
+  if (bind_data.flags & FRSKY_ENABLED) {
+    if ((micros()-lastFrSky) > FRSKY_INTERVAL) {
+      lastFrSky=micros();
+      FrSkySendFrame(RX_ain0,RX_ain1,lastTelemetry?RSSI_rx:0,lastTelemetry?RSSI_tx:0);
+    }
   }
-#endif
-
 
   //Green LED will be OFF
   Green_LED_OFF;

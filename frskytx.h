@@ -42,7 +42,7 @@ void FrSkySendStuffed(uint8_t frame[])
 
 
 // Send frsky voltage/RSSI or userdata frame
-// every 8th time we send the Ax/RSSI frame
+// every 6th time we send the Ax/RSSI frame
 void FrSkySendFrame(uint8_t a1, uint8_t a2, uint8_t rx, uint8_t tx)
 {
   uint8_t frame[9];
