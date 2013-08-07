@@ -49,7 +49,7 @@
 #define DEFAULT_BEACON_INTERVAL 10 // interval between beacon transmits (s)
 
 #define MIN_DEADTIME 10
-#define MAX_DEADTIME 255
+#define MAX_DEADTIME 65535
 
 #define MIN_INTERVAL 5
 #define MAX_INTERVAL 255
@@ -199,6 +199,7 @@ again:
 #define FAILSAFE_NOPPM    0x01
 #define FAILSAFE_NOPWM    0x02
 #define PPM_MAX_8CH       0x04
+#define ALWAYS_BIND       0x08
 
 #define FAILSAFE_TIME(rxc) (((uint32_t)rxc.failsafe_delay) * 100000UL)
 
@@ -208,7 +209,7 @@ struct RX_config {
   uint8_t  flags;
   uint8_t  RSSIpwm;
   uint32_t beacon_frequency;
-  uint8_t  beacon_deadtime;
+  uint16_t beacon_deadtime;
   uint8_t  beacon_interval;
   uint16_t minsync;
   uint8_t  failsafe_delay;
@@ -241,7 +242,7 @@ void rxInitDefaults()
 #error INVALID RX BOARD
 #endif
 
-  rx_config.flags = 0;
+  rx_config.flags = ALWAYS_BIND;
   rx_config.RSSIpwm = 255; // off
   rx_config.failsafe_delay = 10; //1s
   rx_config.beacon_frequency = DEFAULT_BEACON_FREQUENCY;

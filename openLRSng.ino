@@ -30,9 +30,11 @@
 // Jan-Dirk Schuitemaker (http://www.schuitemaker.org/) (forum nick name: CrashingDutchman)
 // Etienne Saint-Paul (http://www.gameseed.fr) (forum nick name: Etienne)
 
-//#############################
-//### CONFIGURATION SECTION ###
-//#############################
+//################################
+//### HW CONFIGURATION SECTION ###
+//################################
+
+// NOTE: All settings are made via the CLI or configurator interface at runtime
 
 //####### COMPILATION TARGET #######
 // Enable to compile transmitter code, default is RX
@@ -55,10 +57,6 @@
 
 //###### SERIAL PORT SPEED - during configuration #######
 #define SERIAL_BAUD_RATE 115200 //115.200 baud serial port speed
-
-//###### Should receiver always bind on bootup for 0.5s ######
-//###### If disabled a jumpper must be placed on RX ch1-ch2 to allow it to bind
-#define RX_ALWAYS_BIND
 
 //### Module type selection (only for modified HW)
 //#define RFMXX_868

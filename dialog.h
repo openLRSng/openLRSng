@@ -191,7 +191,7 @@ void rxPrint(void)
   }
   for (i=0; i<pins; i++) {
     Serial.print((char)(((i+1)>9)?(i+'A'-9):(i+'1')));
-    Serial.print(F(") pin CH"));
+    Serial.print(F(") port "));
     Serial.print(i+1);
     Serial.print(F("function: "));
     if (rx_config.pinMapping[i]<16) {
@@ -211,9 +211,9 @@ void rxPrint(void)
   Serial.print(F("I) Failsafe beacon frq. : "));
   if (rx_config.beacon_frequency) {
     Serial.println(rx_config.beacon_frequency);
-    Serial.print(F("J) Failsafe beacon delay: "));
+    Serial.print(F("J) Failsafe beacon delay (10-65535): "));
     Serial.println(rx_config.beacon_deadtime);
-    Serial.print(F("K) Failsafe beacon intv.: "));
+    Serial.print(F("K) Failsafe beacon intv. (5-255): "));
     Serial.println(rx_config.beacon_interval);
   } else {
     Serial.println(F("DISABLED"));
@@ -228,6 +228,8 @@ void rxPrint(void)
   }
   Serial.print(F("N) PPM output limited     : "));
   Serial.println((rx_config.flags & PPM_MAX_8CH)?"8ch":"N/A");
+  Serial.print(F("O) Timed BIND at startup  : "));
+  Serial.println((rx_config.flags & ALWAYS_BIND)?"Enabled":"Disabled");
 }
 
 void CLI_menu_headers(void)
@@ -339,33 +341,6 @@ void RX_menu_headers(void)
       ch++;
     }
     Serial.println();
-    break;
-  case 20:
-    Serial.println(F("Toggled 'stop PPM'"));
-    break;
-  case 21:
-    Serial.println(F("Toggled 'stop PWM'"));
-    break;
-  case 22:
-    Serial.println(F("Set failsafe delay (x 0.1s)"));
-    break;
-  case 23:
-    Serial.println(F("Set beacon frequency in Hz: 0=disable, Px=PMR channel x, Fx=FRS channel x"));
-    break;
-  case 24:
-    Serial.println(F("Set beacon delay"));
-    break;
-  case 25:
-    Serial.println(F("Set beacon interval"));
-    break;
-  case 26:
-    Serial.println(F("Set PPM minimum sync"));
-    break;
-  case 27:
-    Serial.println(F("Set RSSI injecction channel (0==disable)"));
-    break;
-  case 28:
-    Serial.println(F("Toggled PPM channel limit"));
     break;
   }
 
@@ -530,16 +505,14 @@ void handleRXmenu(char c)
       break;
     case 'f':
     case 'F':
-      CLI_menu = 20;
-      RX_menu_headers();
+      Serial.println(F("Toggled 'stop PPM'"));
       rx_config.flags ^= FAILSAFE_NOPPM;
       CLI_menu = -1;
       RX_menu_headers();
       break;
     case 'g':
     case 'G':
-      CLI_menu = 21;
-      RX_menu_headers();
+      Serial.println(F("Toggled 'stop PWM'"));
       rx_config.flags ^= FAILSAFE_NOPWM;
       CLI_menu = -1;
       RX_menu_headers();
@@ -547,38 +520,44 @@ void handleRXmenu(char c)
     case 'h':
     case 'H':
       CLI_menu = 22;
-      RX_menu_headers();
+      Serial.println(F("Set failsafe delay (x 0.1s)"));
       break;
     case 'i':
     case 'I':
       CLI_menu = 23;
-      RX_menu_headers();
+      Serial.println(F("Set beacon frequency in Hz: 0=disable, Px=PMR channel x, Fx=FRS channel x"));
       break;
     case 'j':
     case 'J':
       CLI_menu = 24;
-      RX_menu_headers();
+      Serial.println(F("Set beacon delay"));
       break;
     case 'k':
     case 'K':
       CLI_menu = 25;
-      RX_menu_headers();
+      Serial.println(F("Set beacon interval"));
       break;
     case 'l':
     case 'L':
       CLI_menu = 26;
-      RX_menu_headers();
+      Serial.println(F("Set PPM minimum sync"));
       break;
     case 'm':
     case 'M':
       CLI_menu = 27;
-      RX_menu_headers();
+      Serial.println(F("Set RSSI injecction channel (0==disable)"));
       break;
     case 'n':
     case 'N':
-      CLI_menu = 28;
-      RX_menu_headers();
+      Serial.println(F("Toggled PPM channel limit"));
       rx_config.flags ^= PPM_MAX_8CH;
+      CLI_menu = -1;
+      RX_menu_headers();
+      break;
+    case 'o':
+    case 'O':
+      Serial.println(F("Toggled 'always bind'"));
+      rx_config.flags ^= ALWAYS_BIND;
       CLI_menu = -1;
       RX_menu_headers();
       break;

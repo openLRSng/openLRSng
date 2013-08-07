@@ -362,13 +362,13 @@ void setup()
       Green_LED_ON;
     }
   } else {
-#ifdef RX_ALWAYS_BIND
-    if (bindReceive(500)) {
-      bindWriteEeprom();
-      Serial.println("Saved bind data to EEPROM\n");
-      Green_LED_ON;
+    if (rx_config.flags & ALWAYS_BIND) {
+      if (bindReceive(500)) {
+        bindWriteEeprom();
+        Serial.println("Saved bind data to EEPROM\n");
+        Green_LED_ON;
+      }
     }
-#endif
   }
 
   ppmChannels = getChannelCount(&bind_data);
