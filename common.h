@@ -141,7 +141,8 @@ uint16_t servoBits2Us(uint16_t x)
 }
 
 // Halt and blink failure code
-void fatalBlink(uint8_t blinks) {
+void fatalBlink(uint8_t blinks)
+{
   while (1) {
     for (uint8_t i=0; i < blinks; i++) {
       Red_LED_ON;
