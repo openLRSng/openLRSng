@@ -279,6 +279,11 @@ void setup(void)
   //LED and other interfaces
   pinMode(Red_LED, OUTPUT);   //RED LED
   pinMode(Green_LED, OUTPUT);   //GREEN LED
+#ifdef Red_LED2
+  pinMode(Red_LED2, OUTPUT);   //RED LED
+  pinMode(Green_LED2, OUTPUT);   //GREEN LED
+#endif
+
   pinMode(BTN, INPUT);   //Buton
 
   pinMode(PPM_IN, INPUT);   //PPM from TX
