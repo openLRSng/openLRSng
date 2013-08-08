@@ -16,17 +16,19 @@ TRANSMITTER HW:
     
   - openLRSngTX -- set TX_BOARD_TYPE 4
 
+  - DTFUHF 4ch RX as TX -- set TX_BOARD_TYPE 5
+
 RECEIVER HW:  
 ============
   - Flytron openLRS RX 
   - OrangeRX UHF RX (NOTE both LEDs are RED!!)
   - DTF UHF 4ch RX
   
-  Flytron/OrangeRX default settings:
-    RSSI output at 'first' connector (marked as RSSI on OrangeRX) 32kHz PWM signal. To make this analog you can use a simple RC filter (R=10kOhm C=100nF).
-    CH1-CH8 are parallel PWM outputs for channels 1-8 (50Hz).
+  Flytron/OrangeRX (RX_BOARD_TYPE 3) default settings:
+    RSSI output at 'first' port (marked as RSSI on OrangeRX / ch1 on Flytron) 32kHz PWM signal. To make this analog you can use a simple RC filter (R=10kOhm C=100nF).
+    Ports 2-9 are parallel PWM outputs for channels 1-8 (50Hz).
   
-  DTF UHF 4ch default settings:
+  DTF UHF 4ch (RX_BOARD_TYPE 5) default settings:
     CH1-CH4 outputted as PWM (50Hz).
 
   Receiver pin functiontions can be changed by using the TX CLI system and powering up RX when asked (so it enters config mode).  

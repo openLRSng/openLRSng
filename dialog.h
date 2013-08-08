@@ -296,7 +296,7 @@ void RX_menu_headers(void)
   switch (CLI_menu) {
   case -1:
     Serial.write(0x0c); // form feed
-    Serial.println(F("\nopenLRSng v3.0 - receiver configurator"));
+    Serial.println(F("\nopenLRSng v3.1 - receiver configurator"));
     Serial.println(F("Use numbers [1-D] to edit ports [E-N] for settings"));
     Serial.println(F("[R] revert RX settings to defaults"));
     Serial.println(F("[S] save settings to RX"));
