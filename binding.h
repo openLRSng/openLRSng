@@ -57,8 +57,10 @@
 #define BINDING_POWER     0x00 // 1 mW
 #define BINDING_VERSION   7
 
-#define EEPROM_OFFSET     0x00
-#define EEPROM_RX_OFFSET  0x40 // RX specific config struct
+#define EEPROM_OFFSET          0x100
+#define EEPROM_RX_OFFSET       0x140 // RX specific config struct
+#define EEPROM_FAILSAFE_OFFSET 0x180
+
 
 #define TELEMETRY_PACKETSIZE 9
 
@@ -112,11 +114,18 @@ struct rfm22_modem_regs {
 struct rfm22_modem_regs bind_params =
 { 9600, 0x05, 0x40, 0x0a, 0xa1, 0x20, 0x4e, 0xa5, 0x00, 0x20, 0x24, 0x4e, 0xa5, 0x2c, 0x23, 0x30 };
 
+// prototype
+void fatalBlink(uint8_t blinks);
+
 // Save EEPROM by writing just changed data
 void myEEPROMwrite(int16_t addr, uint8_t data)
 {
-  if (data != EEPROM.read(addr)) {
+  uint8_t retries = 5;
+  while ((--retries) && (data != EEPROM.read(addr))) {
     EEPROM.write(addr,data);
+  }
+  if (!retries) {
+    fatalBlink(2);
   }
 }
 

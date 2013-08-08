@@ -180,15 +180,14 @@ void setupOutputs()
 
 }
 
-#define FAILSAFE_OFFSET 0x80
-
 void save_failsafe_values(void)
 {
+  uint32_t start = millis();
   uint8_t ee_buf[20];
 
   packChannels(6, PPM, ee_buf);
   for (int16_t i = 0; i < 20; i++) {
-    EEPROM.write(FAILSAFE_OFFSET + 4 +i, ee_buf[i]);
+    myEEPROMwrite(EEPROM_FAILSAFE_OFFSET + 4 +i, ee_buf[i]);
   }
 
   ee_buf[0]=0xFA;
@@ -196,7 +195,14 @@ void save_failsafe_values(void)
   ee_buf[2]=0x5A;
   ee_buf[3]=0xFE;
   for (int16_t i = 0; i < 4; i++) {
-    EEPROM.write(FAILSAFE_OFFSET + i, ee_buf[i]);
+    myEEPROMwrite(EEPROM_FAILSAFE_OFFSET + i, ee_buf[i]);
+  }
+
+  // make this last at least 200ms for user to see it
+  // needed as optimized eeprom code can be real fast if no changes are done
+  start = millis() - start;
+  if (start<200) {
+    delay(200-start);
   }
 }
 
@@ -205,12 +211,12 @@ void load_failsafe_values(void)
   uint8_t ee_buf[20];
 
   for (int16_t i = 0; i < 4; i++) {
-    ee_buf[i] = EEPROM.read(FAILSAFE_OFFSET + i);
+    ee_buf[i] = EEPROM.read(EEPROM_FAILSAFE_OFFSET + i);
   }
 
   if ((ee_buf[0]==0xFA) && (ee_buf[1]==0x11) && (ee_buf[2]==0x5A) && (ee_buf[3]==0xFE)) {
     for (int16_t i = 0; i < 20; i++) {
-      ee_buf[i] = EEPROM.read(FAILSAFE_OFFSET + 4 +i);
+      ee_buf[i] = EEPROM.read(EEPROM_FAILSAFE_OFFSET + 4 +i);
     }
     cli();
     unpackChannels(6, PPM, ee_buf);
