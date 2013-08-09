@@ -190,7 +190,7 @@ void bindRandomize(void)
     bind_data.rf_magic = (bind_data.rf_magic << 8) + random(255);
   }
 
-  for (c = 0; bind_data.hopchannel[c] != 0; c++) {
+  for (c = 0; (c < MAXHOPS) && (bind_data.hopchannel[c] != 0); c++) {
 again:
     uint8_t ch = random(50) + 1;
 
