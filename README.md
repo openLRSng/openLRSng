@@ -9,7 +9,7 @@ TRANSMITTER HW:
 
   - OrangeRX UHF TX unit -- set TX_BOARD_TYPE 2
   
-  - Flytron openLRS RX v2 / OrangeRX UHF RX / Hawk Eye openLRS RX as TX -- set TX_BOARD_TYPE 3
+  - Flytron openLRS RX v2 / OrangeRX UHF RX / HawkEye openLRS RX as TX -- set TX_BOARD_TYPE 3
     - connect PPM input to 5th slot from left (channel 4)
     - button between ground and 4th slot from left (ch3)
     - buzzer via transistor on 3rd slot (ch2) (active high)
@@ -18,16 +18,16 @@ TRANSMITTER HW:
 
   - DTFUHF 4ch RX as TX -- set TX_BOARD_TYPE 5
 
-  - Hawk Eye OpenLRSng TX -- set TX_BOARD_TYPE 4
+  - HawkEye OpenLRSng TX -- set TX_BOARD_TYPE 4
 
 RECEIVER HW:  
 ============
   - Flytron openLRS RX 
   - OrangeRX UHF RX (NOTE both LEDs are RED!!)
-  - Hawk Eye OpenLRS RX
+  - HawkEye OpenLRS RX
   - DTF UHF 4ch RX
   
-  Flytron / OrangeRX / Hawk Eye (RX_BOARD_TYPE 3) default settings:
+  Flytron / OrangeRX / HawkEye (RX_BOARD_TYPE 3) default settings:
     RSSI output at 'first' port (marked as RSSI on OrangeRX / ch1 on Flytron) 32kHz PWM signal. To make this analog you can use a simple RC filter (R=10kOhm C=100nF).
     Ports 2-9 are parallel PWM outputs for channels 1-8 (50Hz).
   
