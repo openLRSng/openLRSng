@@ -209,6 +209,7 @@ again:
 #define FAILSAFE_NOPWM    0x02
 #define PPM_MAX_8CH       0x04
 #define ALWAYS_BIND       0x08
+#define SLAVE_MODE        0x80
 
 #define FAILSAFE_TIME(rxc) (((uint32_t)rxc.failsafe_delay) * 100000UL)
 

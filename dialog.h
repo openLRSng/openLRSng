@@ -230,6 +230,8 @@ void rxPrint(void)
   Serial.println((rx_config.flags & PPM_MAX_8CH)?"8ch":"N/A");
   Serial.print(F("O) Timed BIND at startup  : "));
   Serial.println((rx_config.flags & ALWAYS_BIND)?"Enabled":"Disabled");
+  Serial.print(F("P) Slave mode (experimental): "));
+  Serial.println((rx_config.flags & SLAVE_MODE)?"Enabled":"Disabled");
 }
 
 void CLI_menu_headers(void)
@@ -297,7 +299,7 @@ void RX_menu_headers(void)
   case -1:
     Serial.write(0x0c); // form feed
     Serial.println(F("\nopenLRSng v3.1 - receiver configurator"));
-    Serial.println(F("Use numbers [1-D] to edit ports [E-N] for settings"));
+    Serial.println(F("Use numbers [1-D] to edit ports [E-P] for settings"));
     Serial.println(F("[R] revert RX settings to defaults"));
     Serial.println(F("[S] save settings to RX"));
     Serial.println(F("[X] abort changes and exit RX config"));
@@ -558,6 +560,13 @@ void handleRXmenu(char c)
     case 'O':
       Serial.println(F("Toggled 'always bind'"));
       rx_config.flags ^= ALWAYS_BIND;
+      CLI_menu = -1;
+      RX_menu_headers();
+      break;
+    case 'p':
+    case 'P':
+      Serial.println(F("Toggled 'slave mode'"));
+      rx_config.flags ^= SLAVE_MODE;
       CLI_menu = -1;
       RX_menu_headers();
       break;
