@@ -41,17 +41,17 @@
 //#define COMPILE_TX
 
 //####### TX BOARD TYPE #######
-// 0 = Original Flytron M1 Tx Board (not verified)
-// 1 = Original Flytron M1 Rx Board as TX (not verified)
-// 2 = Original M2/M3 Tx Board or OrangeRx UHF TX
-// 3 = OpenLRS Rx v2 Board works as TX
-// 4 = OpenLRSngTX
+// 0 = Flytron OpenLRS M1 Tx Board (not verified)
+// 1 = Flytron OpenLRS M1 Rx Board as TX (not verified)
+// 2 = Flytron OpenLRS M2/M3 Tx Board / OrangeRx UHF TX
+// 3 = Flytron OpenLRS Rx v2 Board / OrangeRx UHF RX / HawkEye UHF RX workking as TX
+// 4 = OpenLRSngTX / HawkEye UHF TX
 // 5 = OpenLRSngRX-4ch (DTF UHF) as TX
 // 6 = DTF UHF DeluxeTX (Atmega32u4)
 #define TX_BOARD_TYPE 2
 
 //####### RX BOARD TYPE #######
-// 3 = OpenLRS Rx v2 Board or OrangeRx UHF RX
+// 3 = Flytron OpenLRS Rx v2 / OrangeRx UHF RX / HawkEye UHF RX
 // 5 = OpenLRSngRX-4ch (DTF UHF)
 #define RX_BOARD_TYPE 5
 
