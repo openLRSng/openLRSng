@@ -334,8 +334,8 @@ void setup(void)
 
   Serial.prinln("OpenLRSng startting");
 
-  delay(100);
-
+  delay(200);
+  checkBND();
   checkButton();
 
   Red_LED_OFF;
