@@ -227,6 +227,7 @@ void checkBND(void)
   if ((Serial.available() > 3) &&
       (Serial.read() == 'B') && (Serial.read() == 'N') &&
       (Serial.read() == 'D') && (Serial.read() == '!')) {
+    buzzerOff();
     bindMode();
   }
 }
