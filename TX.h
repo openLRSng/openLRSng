@@ -170,7 +170,6 @@ void bindMode(void)
 
 void checkButton(void)
 {
-
   uint32_t time, loop_time;
 
   if (digitalRead(BTN) == 0) {     // Check the button
@@ -219,6 +218,15 @@ void checkButton(void)
 just_bind:
     // Enter binding mode, automatically after recoding or when pressed for shorter time.
     Serial.println("Entering binding mode\n");
+    bindMode();
+  }
+}
+
+void checkBND(void)
+{
+  if ((Serial.available() > 3) &&
+      (Serial.read() == 'B') && (Serial.read() == 'N') &&
+      (Serial.read() == 'D') && (Serial.read() == '!')) {
     bindMode();
   }
 }
@@ -319,8 +327,15 @@ void setup(void)
   buzzerOn(BZ_FREQ);
   digitalWrite(BTN, HIGH);
   Red_LED_ON ;
-  delay(100);
 
+  while (Serial.available()) {
+    Serial.read();
+  }
+
+  Serial.println("OpenLRSng startting");
+
+  delay(200);
+  checkBND();
   checkButton();
 
   Red_LED_OFF;
