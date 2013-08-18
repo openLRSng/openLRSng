@@ -1,5 +1,8 @@
 /*
-    Implementation of PSP binary protocol
+    Implementation of PSP (Phoenix Serial Protocol)
+    
+    Protocol data structure:
+    [SYNC1][SYNC2][CODE][LENGTH_L][LENGTH_H][DATA/DATA ARRAY][CRC]
 */
 
 boolean binary_mode_active = false;
@@ -142,7 +145,7 @@ public:
           RF_Mode = Receive;
           rx_reset();
           delay(200);
-        } while ((RF_Mode == Receive) && ((micros() - last_time) < 10000000));
+        } while ((RF_Mode == Receive) && !Serial.available() && ((micros() - last_time) < 30000000)); // 30 seconds
 
         if (RF_Mode == Receive) {
           serialize_uint8(0x02); // timeout
