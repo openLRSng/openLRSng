@@ -68,6 +68,7 @@
 
 #include <Arduino.h>
 #include <EEPROM.h>
+#include <Wire.h>
 
 #include "hardware.h"
 #include "binding.h"

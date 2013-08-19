@@ -339,6 +339,8 @@ const uint8_t OUTPUT_PIN[OUTPUTS] = { 3, 5, 6, 7, 8, 9, 10, 11, 12 , A4, A5, 0, 
 #define RSSI_OUTPUT 0
 #define ANALOG0_OUTPUT 9
 #define ANALOG1_OUTPUT 10
+#define SDA_OUTPUT 9
+#define SCL_OUTPUT 10
 #define RXD_OUTPUT 11
 #define TXD_OUTPUT 12
 
@@ -558,6 +560,8 @@ const pinMask_t OUTPUT_MASKS[OUTPUTS] = {
 #define RSSI_OUTPUT 2
 #define ANALOG0_OUTPUT 1 // actually input
 #define ANALOG1_OUTPUT 3 // actually input
+#define SDA_OUTPUT 1
+#define SCL_OUTPUT 3
 #define RXD_OUTPUT 4
 #define TXD_OUTPUT 5
 

@@ -320,6 +320,56 @@ int8_t checkIfConnected(uint8_t pin1, uint8_t pin2)
   return ret;
 }
 
+// Slave mode I2C registers
+// 0x00-0x03 ID oLRS
+// 0x04      channel
+// 0x05      cmd / status
+// 0x08-1f   RFM config
+// 0x20-0x3f packet data (32bytes)
+
+#include <Wire.h>
+
+uint8_t slaveCurrentReg;
+uint8_t slaveRegMap[64];
+
+void slaveOnReceive(int bytes) {
+
+  if (!bytes) return;
+  slaveCurrentReg = Wire.read() & 0x3f;
+  while (--bytes) {
+    if (slaveCurrentReg>=4) {
+      Serial.print("Reg ");
+      Serial.print(slaveCurrentReg,16);
+      slaveRegMap[slaveCurrentReg] = Wire.read();
+      Serial.print("=");
+      Serial.println(slaveRegMap[slaveCurrentReg]);
+    } else {
+      Wire.read(); // discard data
+    }
+    slaveCurrentReg=(slaveCurrentReg+1) & 0x3f;
+  }
+}
+
+void slaveOnRequest() {
+  int bytes = 0x40 - slaveCurrentReg;
+  if (bytes>32) bytes=32;
+  Wire.write(slaveRegMap + slaveCurrentReg, bytes);
+}
+
+void slaveMode() {
+  //slave setup
+  Wire.begin(0x51);
+  Wire.onRequest(slaveOnRequest);
+  Wire.onReceive(slaveOnReceive);
+  slaveRegMap[0]='o';
+  slaveRegMap[1]='L';
+  slaveRegMap[2]='R';
+  slaveRegMap[3]='S';
+  while(1) {
+    //slave service loop
+  }
+}
+
 uint8_t rx_buf[21]; // RX buffer (uplink)
 // First byte of RX buf is
 // MSB..LSB [1bit uplink seqno.] [1bit downlink seqno] [6bits type)
@@ -385,6 +435,28 @@ void setup()
     }
   }
 
+  if ((rx_config.pinMapping[SDA_OUTPUT] == PINMAP_SDA) &&
+      (rx_config.pinMapping[SCL_OUTPUT] == PINMAP_SCL)) {
+    if (rx_config.flags & SLAVE_MODE) {
+      slaveMode();
+      // not reached
+    } else {
+      uint8_t idbuf[4];
+      Wire.begin(); // Master mode
+      delay(10); // wait a little to allow slave to join bus
+      Wire.beginTransmission(0x51);
+      Wire.write(0x00);
+      Wire.endTransmission();
+      if (4==Wire.requestFrom(0x51,4)) {
+	Serial.println("slave found");
+	Serial.println(Wire.read());
+	Serial.println(Wire.read());
+	Serial.println(Wire.read());
+	Serial.println(Wire.read());
+      }
+    }
+  }
+
   ppmChannels = getChannelCount(&bind_data);
   if (rx_config.RSSIpwm == ppmChannels) {
     ppmChannels+=1;
@@ -404,7 +476,6 @@ void setup()
   while ((hopcount < MAXHOPS) && (bind_data.hopchannel[hopcount] != 0)) {
     hopcount++;
   }
-
 
   //################### RX SYNC AT STARTUP #################
   RF_Mode = Receive;
