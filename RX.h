@@ -426,7 +426,7 @@ void setup()
       Green_LED_ON;
     }
   } else {
-    if (rx_config.flags & ALWAYS_BIND) {
+    if ((rx_config.flags & ALWAYS_BIND) && (!(rx_config.flags & SLAVE_MODE))) {
       if (bindReceive(500)) {
         bindWriteEeprom();
         Serial.println("Saved bind data to EEPROM\n");
@@ -438,9 +438,11 @@ void setup()
   if ((rx_config.pinMapping[SDA_OUTPUT] == PINMAP_SDA) &&
       (rx_config.pinMapping[SCL_OUTPUT] == PINMAP_SCL)) {
     if (rx_config.flags & SLAVE_MODE) {
+      Serial.println("I am slave");
       slaveMode();
       // not reached
     } else {
+      Serial.println("Looking for slave");
       uint8_t idbuf[4];
       Wire.begin(); // Master mode
       delay(10); // wait a little to allow slave to join bus
@@ -448,11 +450,11 @@ void setup()
       Wire.write(0x00);
       Wire.endTransmission();
       if (4==Wire.requestFrom(0x51,4)) {
-	Serial.println("slave found");
-	Serial.println(Wire.read());
-	Serial.println(Wire.read());
-	Serial.println(Wire.read());
-	Serial.println(Wire.read());
+      	Serial.println("slave found");
+        Serial.println(Wire.read());
+        Serial.println(Wire.read());
+        Serial.println(Wire.read());
+        Serial.println(Wire.read());
       }
     }
   }
