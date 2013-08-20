@@ -170,7 +170,7 @@ void scannerMode(void)
   Serial.println("scanner mode");
   to_rx_mode();
 
-  while (1) {
+  while (startFreq != 1000) { // if startFreq == 1000, break (used to exit scannerMode)
     while (Serial.available()) {
       c = Serial.read();
 
