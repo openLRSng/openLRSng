@@ -414,7 +414,9 @@ void setup()
   Red_LED_ON;
 
   if (checkIfConnected(OUTPUT_PIN[2],OUTPUT_PIN[3])) { // ch1 - ch2 --> force scannerMode
-    scannerMode();
+    while (1) {
+      scannerMode();
+    }
   }
 
   if (checkIfConnected(OUTPUT_PIN[0],OUTPUT_PIN[1]) || (!bindReadEeprom())) {
