@@ -189,10 +189,12 @@ void setupOutputs()
 
 void updateLBeep(boolean packetlost)
 {
-  if (packetlost) {
-    TCCR2A |= (1<<COM2B0); // enable tone
-  } else {
-    TCCR2A &= ~(1<<COM2B0); // disable tone
+  if (rx_config.pinMapping[RSSI_OUTPUT] == PINMAP_LBEEP) {
+    if (packetlost) {
+      TCCR2A |= (1<<COM2B0); // enable tone
+    } else {
+      TCCR2A &= ~(1<<COM2B0); // disable tone
+    }
   }
 }
 
