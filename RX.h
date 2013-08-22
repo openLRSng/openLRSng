@@ -173,7 +173,7 @@ void setupOutputs()
     } else { // LBEEP
       TCCR2A = (1<<WGM21); // mode=CTC
       TCCR2B = (1<<CS22) | (1<<CS20); // prescaler = 128
-      OCR2A=125; // 1KHz
+      OCR2A=62; // 1KHz
     }
   }
 
