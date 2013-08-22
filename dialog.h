@@ -547,7 +547,7 @@ void handleRXmenu(char c)
     case 'm':
     case 'M':
       CLI_menu = 27;
-      Serial.println(F("Set RSSI injecction channel (0==disable)"));
+      Serial.println(F("Set RSSI injection channel (0==disable)"));
       break;
     case 'n':
     case 'N':
