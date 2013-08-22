@@ -148,7 +148,7 @@ void setupOutputs()
       if (i == TXD_OUTPUT) {
         UCSR0B &= 0xF7; //disable serial TXD
       }
-      pinMode(OUTPUT_PIN[i], OUTPUT); //PPM,PWM,RSSI
+      pinMode(OUTPUT_PIN[i], OUTPUT); //PPM,PWM,RSSI,LBEEP
       break;
     }
   }
@@ -163,11 +163,18 @@ void setupOutputs()
   disablePWM = 0;
   disablePPM = 0;
 
-  if (rx_config.pinMapping[RSSI_OUTPUT] == PINMAP_RSSI) {
+  if ((rx_config.pinMapping[RSSI_OUTPUT] == PINMAP_RSSI) ||
+      (rx_config.pinMapping[RSSI_OUTPUT] == PINMAP_LBEEP)) {
     pinMode(OUTPUT_PIN[RSSI_OUTPUT], OUTPUT);
     digitalWrite(OUTPUT_PIN[RSSI_OUTPUT], LOW);
-    TCCR2B = (1<<CS20);
-    TCCR2A = (1<<WGM20);
+    if (rx_config.pinMapping[RSSI_OUTPUT] == PINMAP_RSSI) {
+      TCCR2B = (1<<CS20);
+      TCCR2A = (1<<WGM20);
+    } else { // LBEEP
+      TCCR2A = (1<<WGM21); // mode=CTC
+      TCCR2B = (1<<CS22) | (1<<CS20); // prescaler = 128
+      OCR2A=125; // 1KHz
+    }
   }
 
   TCCR1B = (1 << WGM13) | (1 << WGM12) | (1 << CS11);
@@ -178,6 +185,15 @@ void setupOutputs()
   ppmCountter = 0;
   TIMSK1 |= (1 << TOIE1);
 
+}
+
+void updateLBeep(boolean packetlost)
+{
+  if (packetlost) {
+    TCCR2A |= (1<<COM2B0); // enable tone
+  } else {
+    TCCR2A &= ~(1<<COM2B0); // disable tone
+  }
 }
 
 void save_failsafe_values(void)
@@ -332,9 +348,12 @@ int8_t checkIfConnected(uint8_t pin1, uint8_t pin2)
 uint8_t slaveCurrentReg;
 uint8_t slaveRegMap[64];
 
-void slaveOnReceive(int bytes) {
+void slaveOnReceive(int bytes)
+{
 
-  if (!bytes) return;
+  if (!bytes) {
+    return;
+  }
   slaveCurrentReg = Wire.read() & 0x3f;
   while (--bytes) {
     if (slaveCurrentReg>=4) {
@@ -350,13 +369,17 @@ void slaveOnReceive(int bytes) {
   }
 }
 
-void slaveOnRequest() {
+void slaveOnRequest()
+{
   int bytes = 0x40 - slaveCurrentReg;
-  if (bytes>32) bytes=32;
+  if (bytes>32) {
+    bytes=32;
+  }
   Wire.write(slaveRegMap + slaveCurrentReg, bytes);
 }
 
-void slaveMode() {
+void slaveMode()
+{
   //slave setup
   Wire.begin(0x51);
   Wire.onRequest(slaveOnRequest);
@@ -452,7 +475,7 @@ void setup()
       Wire.write(0x00);
       Wire.endTransmission();
       if (4==Wire.requestFrom(0x51,4)) {
-      	Serial.println("slave found");
+        Serial.println("slave found");
         Serial.println(Wire.read());
         Serial.println(Wire.read());
         Serial.println(Wire.read());
@@ -528,6 +551,8 @@ void loop()
 
     Red_LED_OFF;
     Green_LED_ON;
+
+    updateLBeep(false);
 
     spiSendAddress(0x7f);   // Send the package read command
 
@@ -653,6 +678,7 @@ void loop()
       last_pack_time += getInterval(&bind_data);
       willhop = 1;
       Red_LED_ON;
+      updateLBeep(true);
       if (smoothRSSI>30) {
         smoothRSSI-=30;
       } else {
