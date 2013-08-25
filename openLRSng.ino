@@ -10,12 +10,16 @@
 //
 // Donations for development tools and utilities (beer) here
 // https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=DSWGKGKPRX5CS
-
-
+//
+// Please note that for basic usage there is no need to use this 
+// code in source form. Instead use configurator program available
+// freely in Google Chrome store.
+// http://goo.gl/iX7dJx
+//
 // **********************************************************
 // ************ based on: OpenLRS thUndeadMod ***************
 // Mihai Andrian - thUndead http://www.fpvuk.org/forum/index.php?topic=3642.0
-
+//
 // **********************************************************
 // *************** based on: OpenLRS Code *******************
 // ***  OpenLRS Designed by Melih Karakelle on 2010-2011  ***

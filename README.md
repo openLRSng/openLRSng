@@ -3,6 +3,16 @@ openLRSng
 
 my fork of openLRS code (based on thUndeadMod of openLRS)
 
+CONFIGURATOR UTILY / BINARY FIRMWARE NOTE:
+==========================================
+  This software should be used in source form only by expert users, for normal use 'binary' firmwares can be uploaded and configured by free configuration software available for Windows/Mac/Linux from Chrome web store.
+
+  http://goo.gl/iX7dJx
+
+  Binary firmware images are also available from
+
+  https://github.com/openLRSng/openlrsng.github.com/tree/master/binaries
+
 TRANSMITTER HW:
 ===============
   - Flytron openLRS M2/M3 TX unit -- set TX_BOARD_TYPE 2
@@ -34,8 +44,7 @@ RECEIVER HW:
   DTF UHF 4ch (RX_BOARD_TYPE 5) default settings:
     CH1-CH4 outputted as PWM (50Hz).
 
-  Receiver pin functiontions can be changed by using the TX CLI system and powering up RX when asked (so it enters config mode).  
-
+  Receiver pin functiontions can be changed by using the TX CLI system and powering up RX when asked (so it enters config mode).
 
 SOFTWARE CONFIGURATION:
 =======================
