@@ -159,6 +159,7 @@ void bindMode(void)
         scannerMode();
         break;
       case 'B':
+        Serial.println(F("Entering binary mode"));
         binaryMode();
         break;
       default:
@@ -328,7 +329,7 @@ void setup(void)
   sei();
 
   start=millis();
-  while ((ppmAge==255) && ((millis()-start)<1000));
+  while ((ppmAge==255) && ((millis()-start)<2000));
 
   buzzerOn(BZ_FREQ);
   digitalWrite(BTN, HIGH);
