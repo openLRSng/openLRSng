@@ -159,6 +159,7 @@ void bindMode(void)
         scannerMode();
         break;
       case 'B':
+        Serial.println(F("Entering binary mode"));
         binaryMode();
         break;
       default:
@@ -278,6 +279,7 @@ uint8_t serial_okToSend; // 2 if it is ok to send serial instead of servo
 
 void setup(void)
 {
+  uint32_t start;
   setupSPI();
 
 #ifdef SDN_pin
@@ -317,6 +319,7 @@ void setup(void)
   }
 
   setupPPMinput();
+  ppmAge = 255;
 
   setupRfmInterrupt();
 
@@ -324,6 +327,9 @@ void setup(void)
   rfmSetChannel(bind_data.hopchannel[RF_channel]);
 
   sei();
+
+  start=millis();
+  while ((ppmAge==255) && ((millis()-start)<2000));
 
   buzzerOn(BZ_FREQ);
   digitalWrite(BTN, HIGH);
@@ -341,7 +347,6 @@ void setup(void)
 
   Red_LED_OFF;
   buzzerOff();
-  ppmAge = 255;
   rx_reset();
 
   serial_head=0;
