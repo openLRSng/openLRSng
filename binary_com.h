@@ -234,6 +234,8 @@ public:
           } else {
             serialize_uint8(0x00); // fail
           }
+        } else {
+          serialize_uint8(0x00); // fail
         }
       }
       break;
@@ -270,6 +272,8 @@ public:
         } else {
           serialize_uint8(0x00); // fail
         }
+      } else {
+        serialize_uint8(0x00); // fail
       }
       break;
     case PSP_SET_EXIT:
