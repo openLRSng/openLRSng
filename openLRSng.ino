@@ -73,6 +73,7 @@
 #include <Arduino.h>
 #include <EEPROM.h>
 
+#include "version.h"
 #include "hardware.h"
 #include "binding.h"
 #include "common.h"
