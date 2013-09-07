@@ -15,6 +15,7 @@ boolean binary_mode_active = false;
 #define PSP_REQ_RX_JOIN_CONFIGURATION 3
 #define PSP_REQ_SCANNER_MODE          4
 #define PSP_REQ_SPECIAL_PINS          5
+#define PSP_REQ_FW_VERSION            6
 
 #define PSP_SET_BIND_DATA          101
 #define PSP_SET_RX_CONFIG          102
@@ -180,6 +181,12 @@ public:
         for (uint16_t i = 0; i < sizeof(rxSpecialPins); i++) {
           serialize_uint8(array[i]);
         }
+      }
+      break;
+    case PSP_REQ_FW_VERSION:
+      protocol_head(PSP_REQ_FW_VERSION, sizeof(version));
+      {
+        serialize_uint16(version);
       }
       break;
       // SET
