@@ -74,6 +74,7 @@
 #include <EEPROM.h>
 #include <Wire.h>
 
+#include "version.h"
 #include "hardware.h"
 #include "binding.h"
 #include "common.h"

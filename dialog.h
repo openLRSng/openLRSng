@@ -234,13 +234,26 @@ void rxPrint(void)
   Serial.println((rx_config.flags & SLAVE_MODE)?"Enabled":"Disabled");
 }
 
+// Print version, either x.y or x.y.z (if z != 0)
+void print_version()
+{
+  Serial.print(version >> 8);
+  Serial.print('.');
+  Serial.print((version >> 4) & 0x0f);
+  if (version & 0x0f) {
+    Serial.print('.');
+    Serial.print(version & 0x0f);
+  }
+}
+
 void CLI_menu_headers(void)
 {
 
   switch (CLI_menu) {
   case -1:
-    Serial.write(0x0c); // form feed
-    Serial.println(F("\nopenLRSng v3.1"));
+    Serial.println(F("\n\nopenLRSng "));
+    print_version();
+    Serial.println(F(" - System configuration"));
     Serial.println(F("Use numbers [0-9] to edit parameters"));
     Serial.println(F("[S] save settings to EEPROM and exit menu"));
     Serial.println(F("[X] revert changes and exit menu"));
@@ -297,8 +310,9 @@ void RX_menu_headers(void)
   unsigned char ch;
   switch (CLI_menu) {
   case -1:
-    Serial.write(0x0c); // form feed
-    Serial.println(F("\nopenLRSng v3.1 - receiver configurator"));
+    Serial.println(F("\n\nopenLRSng "));
+    print_version();
+    Serial.println(F(" - receiver configurator"));
     Serial.println(F("Use numbers [1-D] to edit ports [E-P] for settings"));
     Serial.println(F("[R] revert RX settings to defaults"));
     Serial.println(F("[S] save settings to RX"));
