@@ -72,7 +72,6 @@
 
 #include <Arduino.h>
 #include <EEPROM.h>
-#include <Wire.h>
 
 #include "version.h"
 #include "hardware.h"
