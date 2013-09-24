@@ -564,11 +564,19 @@ void loop()
           tx_buf[5] = last_afcc_value & 0xff;
         }
       }
+#ifdef TEST_NO_ACK_BY_CH0
+      if (PPM[0]<900) {
+        tx_packet_async(tx_buf, 9);
+        while(!tx_done()) {
+          checkSerial();
+        }
+      }
+#else
       tx_packet_async(tx_buf, 9);
-
       while(!tx_done()) {
         checkSerial();
       }
+#endif
     }
 
     RF_Mode = Receive;
