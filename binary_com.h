@@ -178,7 +178,6 @@ public:
       
       scannerMode();
       
-      // return now, so we won't send protocol_tail 2x
       return;
       break;
     case PSP_REQ_SPECIAL_PINS:
@@ -291,7 +290,13 @@ public:
       }
       break;
     case PSP_SET_EXIT:
+      protocol_head(PSP_SET_EXIT, 1);
+      serialize_uint8(0x01);
+      protocol_tail();
+      
       binary_mode_active = false;
+      
+      return;
       break;
     default: // Unrecognized code
       REFUSED();
