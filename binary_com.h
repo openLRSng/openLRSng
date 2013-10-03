@@ -197,28 +197,35 @@ public:
       break;
       // SET
     case PSP_SET_BIND_DATA:
+      protocol_head(PSP_SET_BIND_DATA, 1);
+      
       if (payload_length_received == sizeof(bind_data)) {
-        // process data from buffer (throw it inside union)
         char* array = (char*) &bind_data;
 
         for (uint16_t i = 0; i < sizeof(bind_data); i++) {
           array[i] = data_buffer[i];
         }
+        
+        serialize_uint8(0x01);
       } else {
-        // Refuse (buffer size doesn't match struct memory size)
-        REFUSED();
+        // fail (buffer size doesn't match struct memory size)
+        serialize_uint8(0x00);
       }
       break;
     case PSP_SET_RX_CONFIG:
+      protocol_head(PSP_SET_RX_CONFIG, 1);
+      
       if (payload_length_received == sizeof(rx_config)) {
         char* array = (char*) &rx_config;
 
         for (uint16_t i = 0; i < sizeof(rx_config); i++) {
           array[i] = data_buffer[i];
         }
+        
+        serialize_uint8(0x01);
       } else {
-        // Refuse (buffer size doesn't match struct memory size)
-        REFUSED();
+        // fail (buffer size doesn't match struct memory size)
+        serialize_uint8(0x00);
       }
       break;
     case PSP_SET_TX_SAVE_EEPROM:
