@@ -172,7 +172,14 @@ public:
       }
       break;
     case PSP_REQ_SCANNER_MODE:
+      protocol_head(PSP_REQ_SCANNER_MODE, 1);
+      serialize_uint8(0x01);
+      protocol_tail();
+      
       scannerMode();
+      
+      // return now, so we won't send protocol_tail 2x
+      return;
       break;
     case PSP_REQ_SPECIAL_PINS:
       protocol_head(PSP_REQ_SPECIAL_PINS, sizeof(rxSpecialPins));
