@@ -2,7 +2,7 @@
 // ************************ openLRSng ***********************
 // **********************************************************
 // ** by Kari Hautio - kha @ AeroQuad/RCGroups/IRC(Freenode)
-// ** other commits by cTn-dev, rlboyd, DTFUHF, pwarren 
+// ** other commits by cTn-dev, rlboyd, DTFUHF, pwarren
 //
 // Developer chat at IRC: #openLRS @ freenode
 //
@@ -11,7 +11,7 @@
 // Donations for development tools and utilities (beer) here
 // https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=DSWGKGKPRX5CS
 //
-// Please note that for basic usage there is no need to use this 
+// Please note that for basic usage there is no need to use this
 // code in source form. Instead use configurator program available
 // freely in Google Chrome store.
 // http://goo.gl/iX7dJx

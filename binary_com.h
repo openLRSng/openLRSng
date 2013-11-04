@@ -175,9 +175,9 @@ public:
       protocol_head(PSP_REQ_SCANNER_MODE, 1);
       serialize_uint8(0x01);
       protocol_tail();
-      
+
       scannerMode();
-      
+
       return;
       break;
     case PSP_REQ_SPECIAL_PINS:
@@ -198,14 +198,14 @@ public:
       // SET
     case PSP_SET_BIND_DATA:
       protocol_head(PSP_SET_BIND_DATA, 1);
-      
+
       if (payload_length_received == sizeof(bind_data)) {
         char* array = (char*) &bind_data;
 
         for (uint16_t i = 0; i < sizeof(bind_data); i++) {
           array[i] = data_buffer[i];
         }
-        
+
         serialize_uint8(0x01);
       } else {
         // fail (buffer size doesn't match struct memory size)
@@ -214,14 +214,14 @@ public:
       break;
     case PSP_SET_RX_CONFIG:
       protocol_head(PSP_SET_RX_CONFIG, 1);
-      
+
       if (payload_length_received == sizeof(rx_config)) {
         char* array = (char*) &rx_config;
 
         for (uint16_t i = 0; i < sizeof(rx_config); i++) {
           array[i] = data_buffer[i];
         }
-        
+
         serialize_uint8(0x01);
       } else {
         // fail (buffer size doesn't match struct memory size)
@@ -300,9 +300,9 @@ public:
       protocol_head(PSP_SET_EXIT, 1);
       serialize_uint8(0x01);
       protocol_tail();
-      
+
       binary_mode_active = false;
-      
+
       return;
       break;
     default: // Unrecognized code
