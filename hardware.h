@@ -569,7 +569,7 @@ const pinMask_t OUTPUT_MASKS[OUTPUTS] = {
 #define RXD_OUTPUT 4
 #define TXD_OUTPUT 5
 
-const uint8_t OUTPUT_PIN[OUTPUTS] = { 9, A4, 3, A5 ,0 ,1};
+const uint8_t OUTPUT_PIN[OUTPUTS] = { 9, A4, 3, A5, 0, 1, A0, A1};
 
 #endif
 
@@ -577,26 +577,20 @@ const uint8_t OUTPUT_PIN[OUTPUTS] = { 9, A4, 3, A5 ,0 ,1};
 #define Green_LED 5
 
 #ifndef COMPILE_TX
-#define Red_LED_ON  PORTC |= _BV(3);
-#define Red_LED_OFF  PORTC &= ~_BV(3);
-#define Green_LED_ON  PORTB |= _BV(5);
-#define Green_LED_OFF  PORTB &= ~_BV(5);
+#define Red_LED_ON    PORTD |=  _BV(6);
+#define Red_LED_OFF   PORTD &= ~_BV(6);
+#define Green_LED_ON  PORTD |=  _BV(5);
+#define Green_LED_OFF PORTD &= ~_BV(5);
 #else
 #define Red_LED2   A0
 #define Green_LED2 A1
-#define Red_LED_ON    { PORTC |= _BV(3); PORTC |= _BV(0); }
-#define Red_LED_OFF   { PORTC &= ~_BV(3); PORTC &= ~_BV(0); }
-#define Green_LED_ON  { PORTB |= _BV(5); PORTC |= _BV(1); }
-#define Green_LED_OFF { PORTB &= ~_BV(5); PORTC &= ~_BV(1); }
+#define Red_LED_ON    { PORTD |=  _BV(6); PORTC |=  _BV(0); }
+#define Red_LED_OFF   { PORTD &= ~_BV(6); PORTC &= ~_BV(0); }
+#define Green_LED_ON  { PORTD |=  _BV(5); POTRC |=  _BV(1); }
+#define Green_LED_OFF { PORTD &= ~_BV(5); PORTC &= ~_BV(1); }
 #endif
 
 #define buzzerOff(foo) buzzerOn(0)
-
-#define Red_LED_ON  PORTD |= _BV(6);
-#define Red_LED_OFF  PORTD &= ~_BV(6);
-
-#define Green_LED_ON   PORTD |= _BV(5);
-#define Green_LED_OFF  PORTD &= ~_BV(5);
 
 //## RFM22B Pinouts for Public Edition (M2)
 #define  nIRQ_1 (PIND & 0x04)==0x04 //D2
