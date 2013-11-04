@@ -248,6 +248,8 @@ void rxInitDefaults()
   }
   rx_config.pinMapping[4] = PINMAP_RXD;
   rx_config.pinMapping[5] = PINMAP_TXD;
+  rx_config.pinMapping[6] = 4;
+  rx_config.pinMapping[7] = 5;
 #else
 #error INVALID RX BOARD
 #endif
