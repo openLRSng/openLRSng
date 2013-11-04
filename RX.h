@@ -550,13 +550,23 @@ void loop()
         } else {
           // tx_buf[0] lowest 6 bits left at 0
           tx_buf[1] = last_rssi_value;
+
           if (rx_config.pinMapping[ANALOG0_OUTPUT] == PINMAP_ANALOG) {
             tx_buf[2] = analogRead(OUTPUT_PIN[ANALOG0_OUTPUT])>>2;
+#ifdef ANALOG0_OUTPUT_ALT
+          } else if (rx_config.pinMapping[ANALOG0_OUTPUT_ALT] == PINMAP_ANALOG) {
+            tx_buf[2] = analogRead(OUTPUT_PIN[ANALOG0_OUTPUT_ALT])>>2;
+#endif
           } else {
             tx_buf[2] = 0;
           }
+
           if (rx_config.pinMapping[ANALOG1_OUTPUT] == PINMAP_ANALOG) {
             tx_buf[3] = analogRead(OUTPUT_PIN[ANALOG1_OUTPUT])>>2;
+#ifdef ANALOG1_OUTPUT_ALT
+          } else if (rx_config.pinMapping[ANALOG1_OUTPUT_ALT] == PINMAP_ANALOG) {
+            tx_buf[3] = analogRead(OUTPUT_PIN[ANALOG1_OUTPUT_ALT])>>2;
+#endif
           } else {
             tx_buf[3] = 0;
           }

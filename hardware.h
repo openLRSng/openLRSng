@@ -510,7 +510,7 @@ void setupRfmInterrupt()
 #define PPM_IN 8 // ICP1
 
 #define BUZZER 3 // OCR2B
-#define BTN A0
+#define BTN    A4
 
 void buzzerInit()
 {
@@ -546,13 +546,15 @@ void buzzerOn(uint16_t freq)
 #define PWM_2 A4 // PC4 - also SDA
 #define PWM_3 3 // PD3 - also RSSI
 #define PWM_4 A5 // PC5 - also SCL
+#define PWM_5 A0 // PC0
+#define PWM_6 A1 // PC1
 
-#define OUTPUTS 6 // outputs available
+#define OUTPUTS 8 // outputs available
 
 const pinMask_t OUTPUT_MASKS[OUTPUTS] = {
   {0x02,0x00,0x00}, {0x00,0x10,0x00}, {0x00,0x00,0x08},// CH1/PPM, CH2/SDA, CH3/RSSI
   {0x00,0x20,0x00}, {0x00,0x00,0x01}, {0x00,0x00,0x02},// CH4/SCL, RXD/CH5, TXD/CH6
-
+  {0x00,0x01,0x00}, {0x00,0x02,0x00},                  // CH5/AIN, CH6/AIN - only on 6ch
 
 };
 
@@ -560,6 +562,8 @@ const pinMask_t OUTPUT_MASKS[OUTPUTS] = {
 #define RSSI_OUTPUT 2
 #define ANALOG0_OUTPUT 1 // actually input
 #define ANALOG1_OUTPUT 3 // actually input
+#define ANALOG0_OUTPUT_ALT 4 // actually input
+#define ANALOG1_OUTPUT_ALT 5 // actually input
 #define SDA_OUTPUT 1
 #define SCL_OUTPUT 3
 #define RXD_OUTPUT 4
@@ -571,6 +575,20 @@ const uint8_t OUTPUT_PIN[OUTPUTS] = { 9, A4, 3, A5 ,0 ,1};
 
 #define Red_LED 6
 #define Green_LED 5
+
+#ifndef COMPILE_TX
+#define Red_LED_ON  PORTC |= _BV(3);
+#define Red_LED_OFF  PORTC &= ~_BV(3);
+#define Green_LED_ON  PORTB |= _BV(5);
+#define Green_LED_OFF  PORTB &= ~_BV(5);
+#else
+#define Red_LED2   A0
+#define Green_LED2 A1
+#define Red_LED_ON    { PORTC |= _BV(3); PORTC |= _BV(0); }
+#define Red_LED_OFF   { PORTC &= ~_BV(3); PORTC &= ~_BV(0); }
+#define Green_LED_ON  { PORTB |= _BV(5); PORTC |= _BV(1); }
+#define Green_LED_OFF { PORTB &= ~_BV(5); PORTC &= ~_BV(1); }
+#endif
 
 #define buzzerOff(foo) buzzerOn(0)
 
@@ -762,6 +780,8 @@ struct rxSpecialPinMap {
   {RX_OLRSNG4CH,   3, PINMAP_ANALOG}, // AIN1
   {RX_OLRSNG4CH,   4, PINMAP_RXD},
   {RX_OLRSNG4CH,   5, PINMAP_TXD},
+  {RX_OLRSNG4CH,   6, PINMAP_ANALOG},
+  {RX_OLRSNG4CH,   7, PINMAP_ANALOG},
   {RX_DTFUHF10CH,  8, PINMAP_RSSI},
   {RX_DTFUHF10CH,  8, PINMAP_LBEEP},
   {RX_DTFUHF10CH,  9, PINMAP_PPM},
