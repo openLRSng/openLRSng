@@ -318,7 +318,7 @@ void RX_menu_headers(void)
     rxPrint();
     break;
   default:
-    if ((CLI_menu > 0) && (CLI_menu<=numberOfPinsOnRX[rx_config.rx_type])) {
+    if ((CLI_menu > 0) && (CLI_menu<=numberOfOutputsOnRX[rx_config.rx_type])) {
       Serial.print(F("Set output for port "));
       Serial.println(CLI_menu);
       Serial.print(F("Valid choices are: [1]-[16] (channel 1-16)"));
