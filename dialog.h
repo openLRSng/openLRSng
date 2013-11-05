@@ -177,19 +177,16 @@ void bindPrint(void)
 
 void rxPrint(void)
 {
-  uint8_t i,pins;
+  uint8_t i;
   Serial.print(F("RX type: "));
   if (rx_config.rx_type == RX_FLYTRON8CH) {
-    pins=13;
     Serial.println(F("Flytron/OrangeRX UHF 8ch"));
   } else if (rx_config.rx_type == RX_OLRSNG4CH) {
-    pins=6;
     Serial.println(F("OpenLRSngRX mini 4ch"));
   } else if (rx_config.rx_type == RX_DTFUHF10CH) {
-    pins=10;
     Serial.println(F("DTF UHF 32-bit 10ch"));
   }
-  for (i=0; i<pins; i++) {
+  for (i=0; i<numberOfOutputsOnRX[rx_config.rx_type]; i++) {
     Serial.print((char)(((i+1)>9)?(i+'A'-9):(i+'1')));
     Serial.print(F(") port "));
     Serial.print(i+1);
@@ -320,43 +317,25 @@ void RX_menu_headers(void)
     Serial.println();
     rxPrint();
     break;
-  case 13:
-  case 12:
-  case 11:
-    if (rx_config.rx_type == RX_DTFUHF10CH) {
-      break;
-    }
-    // Fallthru
-  case 10:
-  case 9:
-  case 8:
-  case 7:
-    if (rx_config.rx_type == RX_OLRSNG4CH) {
-      break;
-    }
-    // Fallthru
-  case 6:
-  case 5:
-  case 4:
-  case 3:
-  case 2:
-  case 1:
-    Serial.print(F("Set output for port "));
-    Serial.println(CLI_menu);
-    Serial.print(F("Valid choices are: [1]-[16] (channel 1-16)"));
-    ch=20;
-    for (struct rxSpecialPinMap *pm = rxSpecialPins; pm->rxtype; pm++) {
-      if ((pm->rxtype!=rx_config.rx_type) || (pm->output!=(CLI_menu-1))) {
-        continue;
+  default:
+    if ((CLI_menu > 0) && (CLI_menu<=numberOfPinsOnRX[rx_config.rx_type])) {
+      Serial.print(F("Set output for port "));
+      Serial.println(CLI_menu);
+      Serial.print(F("Valid choices are: [1]-[16] (channel 1-16)"));
+      ch=20;
+      for (struct rxSpecialPinMap *pm = rxSpecialPins; pm->rxtype; pm++) {
+        if ((pm->rxtype!=rx_config.rx_type) || (pm->output!=(CLI_menu-1))) {
+          continue;
+        }
+        Serial.print(", [");
+        Serial.print(ch);
+        Serial.print("] (");
+        Serial.print(SPECIALSTR(pm->type));
+        Serial.print(")");
+        ch++;
       }
-      Serial.print(", [");
-      Serial.print(ch);
-      Serial.print("] (");
-      Serial.print(SPECIALSTR(pm->type));
-      Serial.print(")");
-      ch++;
+      Serial.println();
     }
-    Serial.println();
     break;
   }
 
@@ -512,7 +491,7 @@ void handleRXmenu(char c)
     case '2':
     case '1':
       c -= '0';
-      if ( ((c > 6) & (rx_config.rx_type == RX_OLRSNG4CH)) || ((c > 10) & (rx_config.rx_type == RX_DTFUHF10CH)) ) {
+      if ( c > numberOfOutputsOnRX[rx_config.rx_type]) {
         Serial.println("invalid selection");
         break;
       }
@@ -597,24 +576,19 @@ void handleRXmenu(char c)
         case 13:
         case 12:
         case 11:
-          if (rx_config.rx_type == RX_DTFUHF10CH) {
-            break;
-          }
-          // Fallthru
         case 10:
         case 9:
         case 8:
         case 7:
-          if (rx_config.rx_type == RX_OLRSNG4CH) {
-            break;
-          }
-          // Fallthru
         case 6:
         case 5:
         case 4:
         case 3:
         case 2:
         case 1:
+          if (CLI_menu > numberOfOutputsOnRX[rx_config.rx_type]) {
+            break;
+          }
           if ((value > 0) && (value<=16)) {
             rx_config.pinMapping[CLI_menu-1] = value-1;
             valid_input = 1;

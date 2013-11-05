@@ -736,6 +736,8 @@ ISR(PCINT0_vect)
 #define RX_OLRSNG12CH 0x03
 #define RX_DTFUHF10CH 0x04
 
+uint8_t numberOfOutputsOnRX[5] = { 0, 13, 8, 12, 10 };
+
 #define PINMAP_PPM  0x20
 #define PINMAP_RSSI 0x21
 #define PINMAP_SDA  0x22
