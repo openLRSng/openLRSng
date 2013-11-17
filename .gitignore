@@ -1,1 +1,6 @@
 *.bak
+*.vsarduino.h
+*.vmps.xml
+*.cppproj
+*.atsln
+*.atsuo

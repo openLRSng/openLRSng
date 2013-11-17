@@ -16,6 +16,7 @@ boolean binary_mode_active = false;
 #define PSP_REQ_SCANNER_MODE          4
 #define PSP_REQ_SPECIAL_PINS          5
 #define PSP_REQ_FW_VERSION            6
+#define PSP_REQ_NUMBER_OF_OUTPUTS     7
 
 #define PSP_SET_BIND_DATA          101
 #define PSP_SET_RX_CONFIG          102
@@ -195,7 +196,13 @@ public:
         serialize_uint16(version);
       }
       break;
-      // SET
+    case PSP_REQ_NUMBER_OF_OUTPUTS:
+      protocol_head(PSP_REQ_NUMBER_OF_OUTPUTS, 1);
+      {
+        serialize_uint8(numberOfOutputsOnRX[rx_config.rx_type]);
+      }
+      break;
+    // SET
     case PSP_SET_BIND_DATA:
       protocol_head(PSP_SET_BIND_DATA, 1);
 
