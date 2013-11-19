@@ -11,6 +11,12 @@ bool    CLI_magic_set = 0;
 
 static char hexTab[16] = {'0','1','2','3','4','5','6','7','8','9','A','B','C','D','E','F'};
 
+#define RXC_MAX_SPECIAL_PINS 16
+struct rxSpecialPinMap rxcSpecialPins[RXC_MAX_SPECIAL_PINS];
+unsigned char rxcSpecialPinCount;
+unsigned char rxcNumberOfOutputs;
+unsigned short rxcVersion;
+
 void hexDump(void *in, uint16_t bytes)
 {
   uint16_t check=0;
@@ -182,11 +188,11 @@ void rxPrint(void)
   if (rx_config.rx_type == RX_FLYTRON8CH) {
     Serial.println(F("Flytron/OrangeRX UHF 8ch"));
   } else if (rx_config.rx_type == RX_OLRSNG4CH) {
-    Serial.println(F("OpenLRSngRX mini 4ch"));
+    Serial.println(F("OpenLRSngRX mini 4/6ch"));
   } else if (rx_config.rx_type == RX_DTFUHF10CH) {
     Serial.println(F("DTF UHF 32-bit 10ch"));
   }
-  for (i=0; i<numberOfOutputsOnRX[rx_config.rx_type]; i++) {
+  for (i=0; i<rxcNumberOfOutputs; i++) {
     Serial.print((char)(((i+1)>9)?(i+'A'-9):(i+'1')));
     Serial.print(F(") port "));
     Serial.print(i+1);
@@ -318,19 +324,16 @@ void RX_menu_headers(void)
     rxPrint();
     break;
   default:
-    if ((CLI_menu > 0) && (CLI_menu<=numberOfOutputsOnRX[rx_config.rx_type])) {
+    if ((CLI_menu > 0) && (CLI_menu<=rxcNumberOfOutputs)) {
       Serial.print(F("Set output for port "));
       Serial.println(CLI_menu);
       Serial.print(F("Valid choices are: [1]-[16] (channel 1-16)"));
       ch=20;
-      for (struct rxSpecialPinMap *pm = rxSpecialPins; pm->rxtype; pm++) {
-        if ((pm->rxtype!=rx_config.rx_type) || (pm->output!=(CLI_menu-1))) {
-          continue;
-        }
+      for (uint8_t i=0; i<rxcSpecialPinCount; i++) {
         Serial.print(", [");
         Serial.print(ch);
         Serial.print("] (");
-        Serial.print(SPECIALSTR(pm->type));
+        Serial.print(SPECIALSTR(rxcSpecialPins[i].type));
         Serial.print(")");
         ch++;
       }
@@ -594,12 +597,12 @@ void handleRXmenu(char c)
             valid_input = 1;
           } else {
             ch=20;
-            for (struct rxSpecialPinMap *pm = rxSpecialPins; pm->rxtype; pm++) {
-              if ((pm->rxtype!=rx_config.rx_type) || (pm->output!=(CLI_menu-1))) {
+            for (uint8_t i = 0; i < rxcSpecialPinCount; i++) {
+              if (rxcSpecialPins[i].output!=(CLI_menu-1)) {
                 continue;
               }
               if (ch==value) {
-                rx_config.pinMapping[CLI_menu-1] = pm->type;
+                rx_config.pinMapping[CLI_menu-1] = rxcSpecialPins[i].type;
                 valid_input = 1;
               }
               ch++;
@@ -684,7 +687,7 @@ void CLI_RX_config()
   Serial.println(F("Connecting to RX, power up the RX (with bind plug if not using always bind)"));
   init_rfm(1);
   do {
-    tx_buf[0]='p';
+    tx_buf[0]='t';
     tx_packet(tx_buf,1);
     RF_Mode = Receive;
     rx_reset();
@@ -696,13 +699,50 @@ void CLI_RX_config()
     Serial.println("TIMEOUT");
     return;
   }
-  Serial.println("got response");
+
+  spiSendAddress(0x7f);   // Send the package read command
+  tx_buf[0]=spiReadData();
+  if (tx_buf[0]!='T') {
+    Serial.println("Invalid response");
+    return;
+  }
+
+  rxcVersion = (uint16_t)spiReadData() * 256;
+  rxcVersion += spiReadData();
+  Serial.print("got rx type info, RX SW version:");
+  Serial.print(rxcVersion>>8);
+  Serial.print('.');
+  Serial.println(rxcVersion&255);
+
+
+  rxcNumberOfOutputs = spiReadData();
+  rxcSpecialPinCount = spiReadData();
+  if (rxcSpecialPinCount>RXC_MAX_SPECIAL_PINS) {
+    Serial.println("Invalid special pin count");
+    return;
+  }
+
+  for (uint8_t i = 0; i < sizeof(struct rxSpecialPinMap) * rxcSpecialPinCount; i++) {
+    *(((uint8_t*)&rxcSpecialPins) + i) = spiReadData();
+  }
+
+  tx_buf[0]='p'; // ask for config dump
+  tx_packet(tx_buf,1);
+  RF_Mode = Receive;
+  rx_reset();
+  delay(50);
+
+  if (RF_Mode == Receive) {
+    Serial.println("TIMEOUT");
+    return;
+  }
   spiSendAddress(0x7f);   // Send the package read command
   tx_buf[0]=spiReadData();
   if (tx_buf[0]!='P') {
     Serial.println("Invalid response");
     return;
   }
+
   for (uint8_t i = 0; i < sizeof(rx_config); i++) {
     *(((uint8_t*)&rx_config) + i) = spiReadData();
   }

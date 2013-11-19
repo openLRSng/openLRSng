@@ -282,6 +282,17 @@ uint8_t bindReceive(uint32_t timeout)
         }
         memcpy(rxc_buf+1, &rx_config, sizeof(rx_config));
         tx_packet(rxc_buf,sizeof(rx_config)+1);
+      } else if (rxb=='t') {
+        uint8_t rxc_buf[sizeof(rxSpecialPins)+5];
+        Serial.println(F("Sending RX type info"));
+        timeout=0;
+        rxc_buf[0]='T';
+        rxc_buf[1]=(version >> 8);
+        rxc_buf[2]=(version & 0xff);
+        rxc_buf[3]=OUTPUTS;
+        rxc_buf[4]=sizeof(rxSpecialPins)/sizeof(rxSpecialPins[0]);
+        memcpy(rxc_buf+5, &rxSpecialPins, sizeof(rxSpecialPins));
+        tx_packet(rxc_buf,sizeof(rxSpecialPins)+5);
       } else if (rxb=='u') {
         for (uint8_t i = 0; i < sizeof(rx_config); i++) {
           *(((uint8_t*)&rx_config) + i) = spiReadData();
@@ -441,12 +452,16 @@ void setup()
   RF_Mode = Receive;
   to_rx_mode();
 
-  if (bind_data.flags & TELEMETRY_ENABLED) {
-    Serial.begin((bind_data.flags & FRSKY_ENABLED)? 9600 : bind_data.serial_baudrate);
-    while (Serial.available()) {
-      Serial.read();
-    }
+  if ((bind_data.flags & TELEMETRY_MASK) == TELEMETRY_FRSKY) {
+    Serial.begin(9600);
+  } else {
+    Serial.begin(bind_data.serial_baudrate);
   }
+
+  while (Serial.available()) {
+    Serial.read();
+  }
+
   serial_head=0;
   serial_tail=0;
   firstpack = 0;
@@ -533,7 +548,7 @@ void loop()
       disablePPM = 0;
     }
 
-    if (bind_data.flags & TELEMETRY_ENABLED) {
+    if (bind_data.flags & TELEMETRY_MASK) {
       if ((tx_buf[0] ^ rx_buf[0]) & 0x40) {
         // resend last message
       } else {

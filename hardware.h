@@ -4,6 +4,8 @@
 #define BOARD_TYPE RX_BOARD_TYPE
 #endif
 
+// Generic definitions needed always
+
 #define Available 0
 #define Transmit 1
 #define Transmitted 2
@@ -26,6 +28,36 @@ void RFM22B_Int()
 typedef struct pinMask {
   uint8_t B,C,D;
 } pinMask_t;
+
+
+#define RX_FLYTRON8CH 0x01
+#define RX_OLRSNG4CH  0x02
+#define RX_OLRSNG12CH 0x03
+#define RX_DTFUHF10CH 0x04
+
+#define PINMAP_PPM    0x20
+#define PINMAP_RSSI   0x21
+#define PINMAP_SDA    0x22
+#define PINMAP_SCL    0x23
+#define PINMAP_RXD    0x24
+#define PINMAP_TXD    0x25
+#define PINMAP_ANALOG 0x26
+#define PINMAP_LBEEP  0x27 // packetloss beeper
+
+// Following table is used by the dialog code to
+// determine possible extra functions for each output.
+
+
+struct rxSpecialPinMap {
+  unsigned char output;
+  unsigned char type;
+};
+
+#ifdef COMPILE_TX
+// Needed by dialog code
+static const char *specialStrs[] = { "PPM","RSSI","SDA","SCL","RXD","TXD","AIN","LBEEP"};
+#define SPECIALSTR(x) (specialStrs[(x)&7]) // note must be changed if not 8 strings
+#endif
 
 //####### Board Pinouts #########
 
@@ -344,6 +376,18 @@ const uint8_t OUTPUT_PIN[OUTPUTS] = { 3, 5, 6, 7, 8, 9, 10, 11, 12 , A4, A5, 0, 
 #define RXD_OUTPUT 11
 #define TXD_OUTPUT 12
 
+struct rxSpecialPinMap rxSpecialPins[] = {
+  {  0, PINMAP_RSSI},
+  {  0, PINMAP_LBEEP},
+  {  5, PINMAP_PPM},
+  {  9, PINMAP_SDA},
+  {  9, PINMAP_ANALOG}, // AIN0
+  { 10, PINMAP_SCL},
+  { 10, PINMAP_ANALOG}, // AIN1
+  { 11, PINMAP_RXD},
+  { 12, PINMAP_TXD},
+};
+
 #endif
 
 #define Red_LED    A3
@@ -571,6 +615,20 @@ const pinMask_t OUTPUT_MASKS[OUTPUTS] = {
 
 const uint8_t OUTPUT_PIN[OUTPUTS] = { 9, A4, 3, A5, 0, 1, A0, A1};
 
+struct rxSpecialPinMap rxSpecialPins[] = {
+  { 0, PINMAP_PPM},
+  { 1, PINMAP_SDA},
+  { 1, PINMAP_ANALOG}, // AIN0
+  { 2, PINMAP_RSSI},
+  { 2, PINMAP_LBEEP},
+  { 3, PINMAP_SCL},
+  { 3, PINMAP_ANALOG}, // AIN1
+  { 4, PINMAP_RXD},
+  { 5, PINMAP_TXD},
+  { 6, PINMAP_ANALOG},
+  { 7, PINMAP_ANALOG},
+};
+
 #endif
 
 #define Red_LED 6
@@ -730,62 +788,3 @@ ISR(PCINT0_vect)
 
 #endif
 
-// Generic defines needed by pinmapping on RX:s
-#define RX_FLYTRON8CH 0x01
-#define RX_OLRSNG4CH  0x02
-#define RX_OLRSNG12CH 0x03
-#define RX_DTFUHF10CH 0x04
-
-uint8_t numberOfOutputsOnRX[5] = { 0, 13, 8, 12, 10 };
-
-#define PINMAP_PPM  0x20
-#define PINMAP_RSSI 0x21
-#define PINMAP_SDA  0x22
-#define PINMAP_SCL  0x23
-#define PINMAP_RXD  0x24
-#define PINMAP_TXD  0x25
-#define PINMAP_ANALOG 0x26
-#define PINMAP_LBEEP  0x27 // packetloss beeper
-
-// RX type information used by TX
-#ifdef COMPILE_TX
-
-// Following table is used by the dialog code to
-// determine possible extra functions for each output.
-
-struct rxSpecialPinMap {
-  unsigned char rxtype;
-  unsigned char output;
-  unsigned char type;
-} rxSpecialPins[] = {
-  {RX_FLYTRON8CH,  0, PINMAP_RSSI},
-  {RX_FLYTRON8CH,  0, PINMAP_LBEEP},
-  {RX_FLYTRON8CH,  5, PINMAP_PPM},
-  {RX_FLYTRON8CH,  9, PINMAP_SDA},
-  {RX_FLYTRON8CH,  9, PINMAP_ANALOG}, // AIN0
-  {RX_FLYTRON8CH, 10, PINMAP_SCL},
-  {RX_FLYTRON8CH, 10, PINMAP_ANALOG}, // AIN1
-  {RX_FLYTRON8CH, 11, PINMAP_RXD},
-  {RX_FLYTRON8CH, 12, PINMAP_TXD},
-  {RX_OLRSNG4CH,   0, PINMAP_PPM},
-  {RX_OLRSNG4CH,   1, PINMAP_SDA},
-  {RX_OLRSNG4CH,   1, PINMAP_ANALOG}, // AIN0
-  {RX_OLRSNG4CH,   2, PINMAP_RSSI},
-  {RX_OLRSNG4CH,   2, PINMAP_LBEEP},
-  {RX_OLRSNG4CH,   3, PINMAP_SCL},
-  {RX_OLRSNG4CH,   3, PINMAP_ANALOG}, // AIN1
-  {RX_OLRSNG4CH,   4, PINMAP_RXD},
-  {RX_OLRSNG4CH,   5, PINMAP_TXD},
-  {RX_OLRSNG4CH,   6, PINMAP_ANALOG},
-  {RX_OLRSNG4CH,   7, PINMAP_ANALOG},
-  {RX_DTFUHF10CH,  8, PINMAP_RSSI},
-  {RX_DTFUHF10CH,  8, PINMAP_LBEEP},
-  {RX_DTFUHF10CH,  9, PINMAP_PPM},
-  {0,0,0},
-};
-
-static const char *specialStrs[] = { "PPM","RSSI","SDA","SCL","RXD","TXD","AIN","LBEEP"};
-
-#define SPECIALSTR(x) (specialStrs[(x)&7]) // note must be changed if not 8 strings
-
-#endif

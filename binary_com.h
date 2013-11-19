@@ -202,7 +202,7 @@ public:
         serialize_uint8(numberOfOutputsOnRX[rx_config.rx_type]);
       }
       break;
-    // SET
+      // SET
     case PSP_SET_BIND_DATA:
       protocol_head(PSP_SET_BIND_DATA, 1);
 

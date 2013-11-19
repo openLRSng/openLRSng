@@ -10,8 +10,6 @@ uint32_t lastSent = 0;
 
 uint32_t lastTelemetry = 0;
 
-uint32_t lastFrSky = 0;
-
 uint8_t RSSI_rx = 0;
 uint8_t RSSI_tx = 0;
 uint8_t RX_ain0 = 0;
@@ -25,7 +23,7 @@ volatile uint8_t ppmDetecting = 1; // countter for microPPM detection
 volatile uint8_t ppmMicroPPM = 0;  // status flag for 'Futaba microPPM mode'
 
 #ifndef BZ_FREQ
-#define BZ_FREQ 2000
+5~#define BZ_FREQ 2000
 #endif
 
 /****************************************************
@@ -353,10 +351,8 @@ void setup(void)
   serial_tail=0;
   serial_okToSend=0;
 
-  if (bind_data.flags & FRSKY_ENABLED) {
-    FrSkyInit();
-    lastFrSky = micros();
-    Serial.begin(9600);
+  if (bind_data.flags & TELEMETRY_FRSKY) {
+    frskyInit((bind_data.flags & TELEMETRY_MASK) == TELEMETRY_SMARTPORT);
   } else if (bind_data.flags & TELEMETRY_ENABLED) {
     Serial.begin(bind_data.serial_baudrate);
   }
@@ -398,8 +394,8 @@ void loop(void)
         // transparent serial data...
         for (i=0; i<=(rx_buf[0]&7);) {
           i++;
-          if (bind_data.flags & FRSKY_ENABLED) {
-            FrSkyUserData(rx_buf[i]);
+          if (bind_data.flags & TELEMETRY_FRSKY) {
+            frskyUserData(rx_buf[i]);
           } else {
             Serial.write(rx_buf[i]);
           }
@@ -525,11 +521,8 @@ void loop(void)
 
   }
 
-  if (bind_data.flags & FRSKY_ENABLED) {
-    if ((micros()-lastFrSky) > FRSKY_INTERVAL) {
-      lastFrSky=micros();
-      FrSkySendFrame(RX_ain0,RX_ain1,lastTelemetry?RSSI_rx:0,lastTelemetry?RSSI_tx:0);
-    }
+  if (bind_data.flags & TELEMETRY_FRSKY) {
+    frskyUpdate(RX_ain0,RX_ain1,lastTelemetry?RSSI_rx:0,lastTelemetry?RSSI_tx:0);
   }
 
   //Green LED will be OFF

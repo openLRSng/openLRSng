@@ -26,8 +26,13 @@
 #define DEFAULT_BAUDRATE 115200
 
 // FLAGS: 8bits
-#define TELEMETRY_ENABLED 0x08
-#define FRSKY_ENABLED     0x10
+
+#define TELEMETRY_OFF       0x00
+#define TELEMETRY_PASSTHRU  0x08
+#define TELEMETRY_FRSKY     0x10 // covers smartport if used with &
+#define TELEMETRY_SMARTPORT 0x18
+#define TELEMETRY_MASK      0x18
+
 #define CHANNELS_4_4  1
 #define CHANNELS_8    2
 #define CHANNELS_8_4  3
@@ -36,7 +41,7 @@
 #define CHANNELS_16   6
 
 
-#define DEFAULT_FLAGS (CHANNELS_8 | TELEMETRY_ENABLED)
+#define DEFAULT_FLAGS (CHANNELS_8 | TELEMETRY_PASSTHRU)
 
 // helpper macro for European PMR channels
 #define EU_PMR_CH(x) (445993750L + 12500L * (x)) // valid for ch1-ch8
@@ -55,7 +60,7 @@
 #define MAX_INTERVAL 255
 
 #define BINDING_POWER     0x00 // 1 mW
-#define BINDING_VERSION   7
+#define BINDING_VERSION   8
 
 #define EEPROM_OFFSET          0x100
 #define EEPROM_RX_OFFSET       0x140 // RX specific config struct
