@@ -597,8 +597,8 @@ void buzzerOn(uint16_t freq)
 
 const pinMask_t OUTPUT_MASKS[OUTPUTS] = {
   {0x02,0x00,0x00}, {0x00,0x10,0x00}, {0x00,0x00,0x08},// CH1/PPM, CH2/SDA, CH3/RSSI
-  {0x00,0x20,0x00}, {0x00,0x00,0x01}, {0x00,0x00,0x02},// CH4/SCL, RXD/CH5, TXD/CH6
-  {0x00,0x01,0x00}, {0x00,0x02,0x00},                  // CH5/AIN, CH6/AIN - only on 6ch
+  {0x00,0x20,0x00}, {0x00,0x01,0x00}, {0x00,0x02,0x00},// CH4/SCL, CH5/AIN, CH6/AIN,
+  {0x00,0x00,0x01}, {0x00,0x00,0x02},                  // CH7/RXD, CH8/TXD - only on 6ch
 
 };
 
@@ -610,10 +610,10 @@ const pinMask_t OUTPUT_MASKS[OUTPUTS] = {
 #define ANALOG1_OUTPUT_ALT 5 // actually input
 #define SDA_OUTPUT 1
 #define SCL_OUTPUT 3
-#define RXD_OUTPUT 4
-#define TXD_OUTPUT 5
+#define RXD_OUTPUT 6
+#define TXD_OUTPUT 7
 
-const uint8_t OUTPUT_PIN[OUTPUTS] = { 9, A4, 3, A5, 0, 1, A0, A1};
+const uint8_t OUTPUT_PIN[OUTPUTS] = { 9, A4, 3, A5, A0, A1, 0, 1};
 
 struct rxSpecialPinMap rxSpecialPins[] = {
   { 0, PINMAP_PPM},
@@ -623,10 +623,10 @@ struct rxSpecialPinMap rxSpecialPins[] = {
   { 2, PINMAP_LBEEP},
   { 3, PINMAP_SCL},
   { 3, PINMAP_ANALOG}, // AIN1
-  { 4, PINMAP_RXD},
-  { 5, PINMAP_TXD},
-  { 6, PINMAP_ANALOG},
-  { 7, PINMAP_ANALOG},
+  { 4, PINMAP_ANALOG},
+  { 5, PINMAP_ANALOG},
+  { 6, PINMAP_RXD},
+  { 7, PINMAP_TXD},
 };
 
 #endif
