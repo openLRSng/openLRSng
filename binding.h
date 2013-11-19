@@ -59,7 +59,7 @@
 #define MIN_INTERVAL 5
 #define MAX_INTERVAL 255
 
-#define BINDING_POWER     0x00 // 1 mW
+#define BINDING_POWER     0x06 // not lowest since may result fail with RFM23BP
 #define BINDING_VERSION   8
 
 #define EEPROM_OFFSET          0x100
