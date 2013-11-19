@@ -384,7 +384,7 @@ void setup()
   pinMode(0, INPUT);   // Serial Rx
   pinMode(1, OUTPUT);  // Serial Tx
 
-  Serial.begin(SERIAL_BAUD_RATE);   //Serial Transmission
+  Serial.begin(115200);
   rxReadEeprom();
 
   setupRfmInterrupt();
