@@ -326,12 +326,14 @@ void RX_menu_headers(void)
       Serial.print(F("Valid choices are: [1]-[16] (channel 1-16)"));
       ch=20;
       for (uint8_t i=0; i<rxcSpecialPinCount; i++) {
-        Serial.print(", [");
-        Serial.print(ch);
-        Serial.print("] (");
-        Serial.print(SPECIALSTR(rxcSpecialPins[i].type));
-        Serial.print(")");
-        ch++;
+        if (rxcSpecialPins[i].output == CLI_menu-1) {
+	  Serial.print(", [");
+	  Serial.print(ch);
+	  Serial.print("] (");
+	  Serial.print(SPECIALSTR(rxcSpecialPins[i].type));
+	  Serial.print(")");
+	  ch++;
+	}
       }
       Serial.println();
     }
@@ -829,7 +831,7 @@ void handleCLImenu(char c)
       CLI_menu_headers();
       break;
     case '9':
-      CLI_menu = 10;
+      CLI_menu = 9;
       CLI_menu_headers();
       break;
     case 'z':
@@ -899,7 +901,7 @@ void handleCLImenu(char c)
             valid_input = 1;
           }
           break;
-        case 10:
+        case 9:
           if ((value >= 1200) && (value <= 115200)) {
             bind_data.serial_baudrate = value;
             valid_input = 1;
