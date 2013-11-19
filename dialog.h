@@ -321,9 +321,10 @@ void RX_menu_headers(void)
   uint8_t ch;
   switch (CLI_menu) {
   case -1:
-    Serial.println(F("\n\nopenLRSng "));
+    Serial.print(F("\n\nopenLRSng "));
     printVersion(version);
-    Serial.println(F(" - receiver configurator"));
+    Serial.print(F(" - receiver configurator, rx sw "));
+    printVersion(rxcVersion);
     Serial.println(F("Use numbers [1-D] to edit ports [E-P] for settings"));
     Serial.println(F("[R] revert RX settings to defaults"));
     Serial.println(F("[S] save settings to RX"));
@@ -724,8 +725,6 @@ void CLI_RX_config()
 
   rxcVersion = (uint16_t)spiReadData() * 256;
   rxcVersion += spiReadData();
-  Serial.print("got rx type info, RX SW version:");
-  printVersion(rxcVersion);
 
   rxcNumberOfOutputs = spiReadData();
   rxcSpecialPinCount = spiReadData();
