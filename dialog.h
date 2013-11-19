@@ -708,7 +708,6 @@ uint8_t rxcConnect()
     RF_Mode = Receive;
     rx_reset();
     delay(250);
-    Serial.print(".");
   } while ((RF_Mode==Receive) && (!Serial.available()) && ((micros()-last_time)<30000000));
 
   if (RF_Mode == Receive) {
