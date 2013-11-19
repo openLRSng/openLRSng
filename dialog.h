@@ -192,6 +192,19 @@ void bindPrint(void)
 
 }
 
+void rxPrintDTime(uint8_t val)
+{
+  if (!val) {
+    Serial.println(F("Disabled"));
+  } else {
+    uint32_t us = delayInus(val) / 100000;
+    Serial.print(us/10);
+    Serial.print('.');
+    Serial.print(us%10);
+    Serial.println('s');
+  }
+}
+
 void rxPrint(void)
 {
   uint8_t i;
@@ -215,13 +228,12 @@ void rxPrint(void)
       Serial.println(SPECIALSTR(rx_config.pinMapping[i]));
     }
   }
-  Serial.print(F("F) Stop PPM on failsafe : O"));
-  Serial.println((rx_config.flags & FAILSAFE_NOPPM)?"N":"FF");
-  Serial.print(F("G) Stop PWM on failsafe : O"));
-  Serial.println((rx_config.flags & FAILSAFE_NOPWM)?"N":"FF");
-  Serial.print(F("H) Failsafe speed       : "));
-  Serial.print(rx_config.failsafe_delay);
-  Serial.println(F(" x 0.1s"));
+  Serial.print(F("F) Failsafe delay       : "));
+  rxPrintDTime(rx_config.failsafeDelay);
+  Serial.print(F("G) PPM stop delay       : "));
+  rxPrintDTime(rx_config.ppmStopDelay);
+  Serial.print(F("H) PWM stop delay       : "));
+  rxPrintDTime(rx_config.pwmStopDelay);
   Serial.print(F("I) Failsafe beacon frq. : "));
   if (rx_config.beacon_frequency) {
     Serial.println(rx_config.beacon_frequency);
@@ -338,12 +350,6 @@ void RX_menu_headers(void)
       Serial.println();
     }
     break;
-  }
-
-  // Flush input
-  delay(10);
-  while (Serial.available()) {
-    Serial.read();
   }
 }
 
@@ -501,22 +507,18 @@ void handleRXmenu(char c)
       break;
     case 'f':
     case 'F':
-      Serial.println(F("Toggled 'stop PPM'"));
-      rx_config.flags ^= FAILSAFE_NOPPM;
-      CLI_menu = -1;
-      RX_menu_headers();
+      CLI_menu = 20;
+      Serial.println(F("Set failsafe delay (x 0.1s)"));
       break;
     case 'g':
     case 'G':
-      Serial.println(F("Toggled 'stop PWM'"));
-      rx_config.flags ^= FAILSAFE_NOPWM;
-      CLI_menu = -1;
-      RX_menu_headers();
+      CLI_menu = 21;
+      Serial.println(F("Set PPM stop delay (x 0.1s)"));
       break;
     case 'h':
     case 'H':
       CLI_menu = 22;
-      Serial.println(F("Set failsafe delay (x 0.1s)"));
+      Serial.println(F("Set PWM stop delay (x 0.1s)"));
       break;
     case 'i':
     case 'I':
@@ -565,6 +567,9 @@ void handleRXmenu(char c)
       RX_menu_headers();
       break;
     }
+    while (Serial.available()) {
+      Serial.read();
+    }
   } else { // we are inside the menu
     if (CLI_inline_edit(c)) {
       if (CLI_buffer_position == 0) { // no input - abort
@@ -607,9 +612,21 @@ void handleRXmenu(char c)
             }
           }
           break;
+        case 20:
+         if (value <= 255) {
+            rx_config.failsafeDelay = value;
+            valid_input = 1;
+          }
+          break;
+        case 21:
+         if (value <= 255) {
+            rx_config.ppmStopDelay = value;
+            valid_input = 1;
+          }
+          break;
         case 22:
-          if ((value >= 1) && (value <= 255)) {
-            rx_config.failsafe_delay = value;
+          if (value <= 255) {
+            rx_config.pwmStopDelay = value;
             valid_input = 1;
           }
           break;
@@ -708,10 +725,7 @@ void CLI_RX_config()
   rxcVersion = (uint16_t)spiReadData() * 256;
   rxcVersion += spiReadData();
   Serial.print("got rx type info, RX SW version:");
-  Serial.print(rxcVersion>>8);
-  Serial.print('.');
-  Serial.println(rxcVersion&255);
-
+  printVersion(rxcVersion);
 
   rxcNumberOfOutputs = spiReadData();
   rxcSpecialPinCount = spiReadData();

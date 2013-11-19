@@ -5,11 +5,11 @@
 uint8_t RF_channel = 0;
 
 uint32_t time;
-uint32_t last_pack_time = 0;
-uint32_t last_rssi_time = 0;
-uint32_t fs_time; // time when failsafe activated
+uint32_t lastPacketTime = 0;
+uint32_t lastRSSITime = 0;
+uint32_t linkLossTime;
 
-uint32_t last_beacon;
+uint32_t lastBeaconTime;
 
 uint8_t  RSSI_count = 0;
 uint16_t RSSI_sum = 0;
@@ -23,6 +23,7 @@ uint8_t  ppmChannels = 8;
 
 volatile uint8_t disablePWM = 0;
 volatile uint8_t disablePPM = 0;
+uint8_t failsafeSet = 0;
 
 uint8_t firstpack = 0;
 uint8_t lostpack = 0;
@@ -465,7 +466,7 @@ void setup()
   serial_head=0;
   serial_tail=0;
   firstpack = 0;
-  last_pack_time = micros();
+  lastPacketTime = micros();
 
 }
 
@@ -494,7 +495,7 @@ void loop()
 
   if (RF_Mode == Received) {   // RFM22B int16_t pin Enabled by received Data
 
-    last_pack_time = micros(); // record last package time
+    lastPacketTime = micros(); // record last package time
     lostpack = 0;
 
     Red_LED_OFF;
@@ -544,6 +545,7 @@ void loop()
       firstpack = 1;
       setupOutputs();
     } else {
+      failsafeSet = 0;
       disablePWM = 0;
       disablePPM = 0;
     }
@@ -607,9 +609,9 @@ void loop()
   time = micros();
 
   // sample RSSI when packet is in the 'air'
-  if ((lostpack < 2) && (last_rssi_time != last_pack_time) &&
-      (time - last_pack_time) > (getInterval(&bind_data) - 1500)) {
-    last_rssi_time = last_pack_time;
+  if ((lostpack < 2) && (lastRSSITime != lastPacketTime) &&
+      (time - lastPacketTime) > (getInterval(&bind_data) - 1500)) {
+    lastRSSITime = lastPacketTime;
     last_rssi_value = rfmGetRSSI(); // Read the RSSI value
     RSSI_sum += last_rssi_value;    // tally up for average
     RSSI_count++;
@@ -625,15 +627,15 @@ void loop()
   }
 
   if (firstpack) {
-    if ((lostpack < hopcount) && ((time - last_pack_time) > (getInterval(&bind_data) + 1000))) {
+    if ((lostpack < hopcount) && ((time - lastPacketTime) > (getInterval(&bind_data) + 1000))) {
       // we lost packet, hop to next channel
       willhop = 1;
       if (lostpack==0) {
-        fs_time = time;
-        last_beacon = 0;
+        linkLossTime = time;
+        lastBeaconTime = 0;
       }
       lostpack++;
-      last_pack_time += getInterval(&bind_data);
+      lastPacketTime += getInterval(&bind_data);
       willhop = 1;
       Red_LED_ON;
       updateLBeep(true);
@@ -643,41 +645,41 @@ void loop()
         smoothRSSI=0;
       }
       set_RSSI_output(smoothRSSI);
-    } else if ((lostpack == hopcount) && ((time - last_pack_time) > (getInterval(&bind_data) * hopcount))) {
+    } else if ((lostpack == hopcount) && ((time - lastPacketTime) > (getInterval(&bind_data) * hopcount))) {
       // hop slowly to allow resync with TX
       willhop = 1;
       smoothRSSI=0;
       set_RSSI_output(smoothRSSI);
-      last_pack_time = time;
+      lastPacketTime = time;
     }
 
     if (lostpack) {
-      if ((fs_time) && ((time - fs_time) > FAILSAFE_TIME(rx_config))) {
+      if (rx_config.failsafeDelay && (!failsafeSet) && ((time - linkLossTime) > delayInus(rx_config.failsafeDelay))) {
+	failsafeSet = 1;
         load_failsafe_values();
-        if (rx_config.flags & FAILSAFE_NOPWM) {
-          disablePWM = 1;
-        }
-        if (rx_config.flags & FAILSAFE_NOPPM) {
-          disablePPM = 1;
-        }
-        fs_time=0;
-        last_beacon = (time + ((uint32_t)rx_config.beacon_deadtime * 1000000UL)) | 1; //beacon activating...
+	lastBeaconTime = (time + ((uint32_t)rx_config.beacon_deadtime * 1000000UL)) | 1; //beacon activating...
+      }
+      if (rx_config.pwmStopDelay && (!disablePWM) && ((time - linkLossTime) > delayInus(rx_config.pwmStopDelay))) {
+	disablePWM = 1;
+      }
+      if (rx_config.pwmStopDelay && (!disablePPM) && ((time - linkLossTime) > delayInus(rx_config.ppmStopDelay))) {
+	disablePPM = 1;
       }
 
-      if ((rx_config.beacon_frequency) && (last_beacon)) {
-        if (((time - last_beacon) < 0x80000000) && // last beacon is future during deadtime
-            (time - last_beacon) > ((uint32_t)rx_config.beacon_interval * 1000000UL)) {
+      if ((rx_config.beacon_frequency) && (lastBeaconTime)) {
+        if (((time - lastBeaconTime) < 0x80000000) && // last beacon is future during deadtime
+            (time - lastBeaconTime) > ((uint32_t)rx_config.beacon_interval * 1000000UL)) {
           beacon_send();
           init_rfm(0);   // go back to normal RX
           rx_reset();
-          last_beacon = micros() | 1; // avoid 0 in time
+          lastBeaconTime = micros() | 1; // avoid 0 in time
         }
       }
     }
   } else {
     // Waiting for first packet, hop slowly
-    if ((time - last_pack_time) > (getInterval(&bind_data) * hopcount)) {
-      last_pack_time = time;
+    if ((time - lastPacketTime) > (getInterval(&bind_data) * hopcount)) {
+      lastPacketTime = time;
       willhop = 1;
     }
   }

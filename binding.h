@@ -212,13 +212,30 @@ again:
   }
 }
 
-#define FAILSAFE_NOPPM    0x01
-#define FAILSAFE_NOPWM    0x02
-#define PPM_MAX_8CH       0x04
-#define ALWAYS_BIND       0x08
-#define SLAVE_MODE        0x80
+#define PPM_MAX_8CH       0x01
+#define ALWAYS_BIND       0x02
+#define SLAVE_MODE        0x04
 
-#define FAILSAFE_TIME(rxc) (((uint32_t)rxc.failsafe_delay) * 100000UL)
+// non linear mapping
+// 0 - disabled
+// 1-99    - 100ms - 9900ms (100ms res)
+// 100-189 - 10s  - 99s   (1s res)
+// 190-209 - 100s - 290s (10s res)
+// 210-255 - 5m - 50m (1m res)
+uint32_t delayInus(uint8_t d)
+{
+  uint32_t us;
+  if (d < 100) {
+    us = d;
+  } else if (d < 190) {
+    us = (d-90) * 10UL;
+  } else if (d < 210) {
+    us = (d-180) * 100UL;
+  } else {
+    us = (d-205) * 600UL;
+  }
+  return us * 100000UL;
+}
 
 struct RX_config {
   uint8_t  rx_type; // RX type fillled in by RX, do not change
@@ -229,7 +246,9 @@ struct RX_config {
   uint16_t beacon_deadtime;
   uint8_t  beacon_interval;
   uint16_t minsync;
-  uint8_t  failsafe_delay;
+  uint8_t  failsafeDelay;
+  uint8_t  ppmStopDelay;
+  uint8_t  pwmStopDelay;
 } rx_config;
 
 #ifndef COMPILE_TX
@@ -263,7 +282,9 @@ void rxInitDefaults()
 
   rx_config.flags = ALWAYS_BIND;
   rx_config.RSSIpwm = 255; // off
-  rx_config.failsafe_delay = 10; //1s
+  rx_config.failsafeDelay = 10; //1s
+  rx_config.ppmStopDelay = 0;
+  rx_config.pwmStopDelay = 0;
   rx_config.beacon_frequency = DEFAULT_BEACON_FREQUENCY;
   rx_config.beacon_deadtime = DEFAULT_BEACON_DEADTIME;
   rx_config.beacon_interval = DEFAULT_BEACON_INTERVAL;
