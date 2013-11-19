@@ -696,7 +696,7 @@ void handleRXmenu(char c)
   }
 }
 
-uint8_t rxcConnect(bool verbose)
+uint8_t rxcConnect()
 {
   uint8_t tx_buf[1+sizeof(rx_config)];
   uint32_t last_time = micros();
@@ -712,18 +712,12 @@ uint8_t rxcConnect(bool verbose)
   } while ((RF_Mode==Receive) && (!Serial.available()) && ((micros()-last_time)<30000000));
 
   if (RF_Mode == Receive) {
-    if (verbose) {
-      Serial.println("TIMEOUT");
-    }
     return 2;
   }
 
   spiSendAddress(0x7f);   // Send the package read command
   tx_buf[0]=spiReadData();
   if (tx_buf[0]!='T') {
-    if (verbose) {
-      Serial.println("Invalid response");
-    }
     return 3;
   }
 
@@ -733,9 +727,6 @@ uint8_t rxcConnect(bool verbose)
   rxcNumberOfOutputs = spiReadData();
   rxcSpecialPinCount = spiReadData();
   if (rxcSpecialPinCount>RXC_MAX_SPECIAL_PINS) {
-    if (verbose) {
-      Serial.println("Invalid special pin count");
-    }
     return 3;
   }
 
@@ -750,17 +741,11 @@ uint8_t rxcConnect(bool verbose)
   delay(50);
 
   if (RF_Mode == Receive) {
-    if (verbose) {
-      Serial.println("TIMEOUT");
-    }
-    return 3;
+    return 2;
   }
   spiSendAddress(0x7f);   // Send the package read command
   tx_buf[0]=spiReadData();
   if (tx_buf[0]!='P') {
-    if (verbose) {
-      Serial.println("Invalid response");
-    }
     return 3;
   }
 
@@ -774,11 +759,16 @@ void CLI_RX_config()
 {
   Serial.println(F("Connecting to RX, power up the RX (with bind plug if not using always bind)"));
   Serial.println(F("Press any key to cancel"));
-    if (Serial.available()) {
-      handleRXmenu(Serial.read());
-    }
+  if (Serial.available()) {
+    handleRXmenu(Serial.read());
+  }
 
-  if (1 != rxcConnect(1)) {
+  switch (rxcConnect()) {
+  case 2:
+    Serial.println(F("Timeout when connecting to RX"));
+    return;
+  case 3:
+    Serial.println(F("Protocol error with RX"));
     return;
   }
 

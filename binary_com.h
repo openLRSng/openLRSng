@@ -35,7 +35,7 @@ extern struct rxSpecialPinMap rxcSpecialPins[];
 extern uint8_t rxcSpecialPinCount;
 extern uint8_t rxcNumberOfOutputs;
 extern uint16_t rxcVersion;
-uint8_t rxcConnect(bool verbose);
+uint8_t rxcConnect();
 
 
 class binary_PSP
@@ -145,7 +145,7 @@ public:
       protocol_head(PSP_REQ_RX_JOIN_CONFIGURATION, 1);
       // 1 success, 2 timeout, 3 failed response
 
-      serialize_uint8(rxcConnect(0));
+      serialize_uint8(rxcConnect());
 
       break;
     case PSP_REQ_SCANNER_MODE:
