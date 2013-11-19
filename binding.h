@@ -272,10 +272,11 @@ void rxInitDefaults()
   for (i=0; i<4; i++) {
     rx_config.pinMapping[i]=i; // default to PWM out
   }
-  rx_config.pinMapping[4] = PINMAP_RXD;
-  rx_config.pinMapping[5] = PINMAP_TXD;
-  rx_config.pinMapping[6] = 4;
-  rx_config.pinMapping[7] = 5;
+  rx_config.pinMapping[4] = 4;
+  rx_config.pinMapping[5] = 5;
+  rx_config.pinMapping[6] = PINMAP_RXD;
+  rx_config.pinMapping[7] = PINMAP_TXD;
+
 #else
 #error INVALID RX BOARD
 #endif
