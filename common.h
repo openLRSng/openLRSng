@@ -13,7 +13,6 @@ volatile uint16_t PPM[PPM_CHANNELS] = { 512, 512, 512, 512, 512, 512, 512, 512 ,
 
 const static uint8_t pktsizes[8] = {0, 7, 11, 12, 16, 17, 21, 0};
 
-const static char *chConfStr[8] = {"N/A", "4+4", "8", "8+4", "12", "12+4", "16", "N/A"};
 
 uint8_t getPacketSize(struct bind_data *bd)
 {
@@ -662,3 +661,17 @@ void beacon_send(void)
   spiWriteRegister(0x07, RF22B_PWRSTATE_READY);
   Green_LED_OFF
 }
+
+// Print version, either x.y or x.y.z (if z != 0)
+void printVersion(uint16_t v)
+{
+  Serial.print(v >> 8);
+  Serial.print('.');
+  Serial.print((v >> 4) & 0x0f);
+  if (version & 0x0f) {
+    Serial.print('.');
+    Serial.print(v & 0x0f);
+  }
+}
+
+

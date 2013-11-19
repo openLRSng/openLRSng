@@ -305,7 +305,7 @@ void setup(void)
 
   buzzerInit();
 
-  Serial.begin(SERIAL_BAUD_RATE);
+  Serial.begin(115200);
 
   if (bindReadEeprom()) {
     Serial.println("Loaded settings from EEPROM\n");
@@ -313,7 +313,6 @@ void setup(void)
     Serial.print("EEPROM data not valid, reiniting\n");
     bindInitDefaults();
     bindWriteEeprom();
-    Serial.print("EEPROM data saved\n");
   }
 
   setupPPMinput();
@@ -341,6 +340,9 @@ void setup(void)
 
   delay(200);
   checkBND();
+
+  // switch to userdefined baudrate here
+  Serial.begin(bind_data.serial_baudrate);
   checkButton();
 
   Red_LED_OFF;
@@ -354,7 +356,6 @@ void setup(void)
   if (bind_data.flags & TELEMETRY_FRSKY) {
     frskyInit((bind_data.flags & TELEMETRY_MASK) == TELEMETRY_SMARTPORT);
   } else if (bind_data.flags & TELEMETRY_MASK) {
-    Serial.begin(bind_data.serial_baudrate);
   }
 
 }

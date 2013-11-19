@@ -49,8 +49,8 @@ typedef struct pinMask {
 
 
 struct rxSpecialPinMap {
-  unsigned char output;
-  unsigned char type;
+  uint8_t output;
+  uint8_t type;
 };
 
 #ifdef COMPILE_TX

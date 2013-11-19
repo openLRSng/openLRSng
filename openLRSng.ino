@@ -59,9 +59,6 @@
 // 5 = OpenLRSngRX-4ch (DTF UHF)
 #define RX_BOARD_TYPE 5
 
-//###### SERIAL PORT SPEED - during configuration #######
-#define SERIAL_BAUD_RATE 115200 //115.200 baud serial port speed
-
 //### Module type selection (only for modified HW)
 //#define RFMXX_868
 //#define RFMXX_915

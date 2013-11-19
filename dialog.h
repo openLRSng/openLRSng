@@ -9,13 +9,14 @@ char    CLI_buffer[EDIT_BUFFER_SIZE+1];
 uint8_t CLI_buffer_position = 0;
 bool    CLI_magic_set = 0;
 
-static char hexTab[16] = {'0','1','2','3','4','5','6','7','8','9','A','B','C','D','E','F'};
+const static char hexTab[16] = {'0','1','2','3','4','5','6','7','8','9','A','B','C','D','E','F'};
+const static char *chConfStr[8] = {"N/A", "4+4", "8", "8+4", "12", "12+4", "16", "N/A"};
 
 #define RXC_MAX_SPECIAL_PINS 16
 struct rxSpecialPinMap rxcSpecialPins[RXC_MAX_SPECIAL_PINS];
-unsigned char rxcSpecialPinCount;
-unsigned char rxcNumberOfOutputs;
-unsigned short rxcVersion;
+uint8_t rxcSpecialPinCount;
+uint8_t rxcNumberOfOutputs;
+uint16_t rxcVersion;
 
 void hexDump(void *in, uint16_t bytes)
 {
@@ -247,25 +248,13 @@ void rxPrint(void)
   Serial.println((rx_config.flags & SLAVE_MODE)?"Enabled":"Disabled");
 }
 
-// Print version, either x.y or x.y.z (if z != 0)
-void print_version()
-{
-  Serial.print(version >> 8);
-  Serial.print('.');
-  Serial.print((version >> 4) & 0x0f);
-  if (version & 0x0f) {
-    Serial.print('.');
-    Serial.print(version & 0x0f);
-  }
-}
-
 void CLI_menu_headers(void)
 {
 
   switch (CLI_menu) {
   case -1:
     Serial.println(F("\n\nopenLRSng "));
-    print_version();
+    printVersion(version);
     Serial.println(F(" - System configuration"));
     Serial.println(F("Use numbers [0-9] to edit parameters"));
     Serial.println(F("[S] save settings to EEPROM and exit menu"));
@@ -317,11 +306,11 @@ void CLI_menu_headers(void)
 
 void RX_menu_headers(void)
 {
-  unsigned char ch;
+  uint8_t ch;
   switch (CLI_menu) {
   case -1:
     Serial.println(F("\n\nopenLRSng "));
-    print_version();
+    printVersion(version);
     Serial.println(F(" - receiver configurator"));
     Serial.println(F("Use numbers [1-D] to edit ports [E-P] for settings"));
     Serial.println(F("[R] revert RX settings to defaults"));
@@ -397,7 +386,7 @@ uint8_t CLI_inline_edit(char c)
   } else if (c == 0x1B) { // ESC
     CLI_buffer_reset();
     return 1; // signal editing done
-  } else if(c == 0x0D) { // Enter
+  } else if((c == 0x0D)||(c == 0x0A)) { // Enter/Newline
     return 1; // signal editing done
   } else {
     if (CLI_buffer_position < EDIT_BUFFER_SIZE) {
@@ -412,7 +401,7 @@ uint8_t CLI_inline_edit(char c)
 
 void handleRXmenu(char c)
 {
-  unsigned char ch;
+  uint8_t ch;
   if (CLI_menu == -1) {
     switch (c) {
     case '!':
@@ -459,7 +448,7 @@ void handleRXmenu(char c)
       if (RF_Mode == Received) {
         spiSendAddress(0x7f);   // Send the package read command
         tx_buf[0]=spiReadData();
-        for (unsigned int i=0; i<sizeof(rx_config); i++) {
+        for (uint8_t i=0; i<sizeof(rx_config); i++) {
           tx_buf[i+1]=spiReadData();
         }
         memcpy(&rx_config,tx_buf+1,sizeof(rx_config));
@@ -832,9 +821,9 @@ void handleCLImenu(char c)
       CLI_menu = 8;
       CLI_menu_headers();
       {
-	uint8_t newf = (bind_data.flags + TELEMETRY_PASSTHRU) & TELEMETRY_MASK;
-	bind_data.flags&= ~TELEMETRY_MASK;
-	bind_data.flags|= newf;
+        uint8_t newf = (bind_data.flags + TELEMETRY_PASSTHRU) & TELEMETRY_MASK;
+        bind_data.flags&= ~TELEMETRY_MASK;
+        bind_data.flags|= newf;
       }
       CLI_menu = -1;
       CLI_menu_headers();

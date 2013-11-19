@@ -32,9 +32,9 @@ boolean binary_mode_active = false;
 #define PSP_INF_DATA_TOO_LONG 204
 
 extern struct rxSpecialPinMap rxcSpecialPins[];
-extern unsigned char rxcSpecialPinCount;
-extern unsigned char rxcNumberOfOutputs;
-extern unsigned short rxcVersion;
+extern uint8_t rxcSpecialPinCount;
+extern uint8_t rxcNumberOfOutputs;
+extern uint16_t rxcVersion;
 
 
 
@@ -295,7 +295,7 @@ public:
         spiSendAddress(0x7f);   // Send the package read command
         tx_buf[0] = spiReadData();
 
-        for (unsigned int i = 0; i < sizeof(rx_config); i++) {
+        for (uint8_t i = 0; i < sizeof(rx_config); i++) {
           tx_buf[i + 1] = spiReadData();
         }
 

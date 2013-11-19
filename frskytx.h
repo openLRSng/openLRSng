@@ -81,9 +81,9 @@ void frskySendFrame(uint8_t a1, uint8_t a2, uint8_t rx, uint8_t tx)
   frskySchedule=(frskySchedule+1) % 6;
 }
 
-void smartportSend(unsigned char *p)
+void smartportSend(uint8_t *p)
 {
-  unsigned short crc=0;
+  uint16_t crc=0;
   Serial.write(0x7e);
   for (int i=0; i<9; i++) {
     if (i==8) {
