@@ -23,7 +23,7 @@ volatile uint8_t ppmDetecting = 1; // countter for microPPM detection
 volatile uint8_t ppmMicroPPM = 0;  // status flag for 'Futaba microPPM mode'
 
 #ifndef BZ_FREQ
-5~#define BZ_FREQ 2000
+#define BZ_FREQ 2000
 #endif
 
 /****************************************************
@@ -353,7 +353,7 @@ void setup(void)
 
   if (bind_data.flags & TELEMETRY_FRSKY) {
     frskyInit((bind_data.flags & TELEMETRY_MASK) == TELEMETRY_SMARTPORT);
-  } else if (bind_data.flags & TELEMETRY_ENABLED) {
+  } else if (bind_data.flags & TELEMETRY_MASK) {
     Serial.begin(bind_data.serial_baudrate);
   }
 
@@ -500,7 +500,7 @@ void loop(void)
       }
 
       // do not switch channel as we may receive telemetry on the old channel
-      if (bind_data.flags & TELEMETRY_ENABLED) {
+      if (bind_data.flags & TELEMETRY_MASK) {
         RF_Mode = Receive;
         rx_reset();
         // tell loop to sample downlink RSSI

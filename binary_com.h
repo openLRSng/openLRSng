@@ -31,6 +31,13 @@ boolean binary_mode_active = false;
 #define PSP_INF_CRC_FAIL      203
 #define PSP_INF_DATA_TOO_LONG 204
 
+extern struct rxSpecialPinMap rxcSpecialPins[];
+extern unsigned char rxcSpecialPinCount;
+extern unsigned char rxcNumberOfOutputs;
+extern unsigned short rxcVersion;
+
+
+
 class binary_PSP
 {
 public:
@@ -182,10 +189,10 @@ public:
       return;
       break;
     case PSP_REQ_SPECIAL_PINS:
-      protocol_head(PSP_REQ_SPECIAL_PINS, sizeof(rxSpecialPins));
+      protocol_head(PSP_REQ_SPECIAL_PINS, sizeof(struct rxSpecialPinMap) * rxcSpecialPinCount);
       {
-        char* array = (char*) &rxSpecialPins;
-        for (uint16_t i = 0; i < sizeof(rxSpecialPins); i++) {
+        char* array = (char*) &rxcSpecialPins;
+        for (uint16_t i = 0; i < sizeof(struct rxSpecialPinMap) * rxcSpecialPinCount; i++) {
           serialize_uint8(array[i]);
         }
       }
@@ -199,7 +206,7 @@ public:
     case PSP_REQ_NUMBER_OF_RX_OUTPUTS:
       protocol_head(PSP_REQ_NUMBER_OF_RX_OUTPUTS, 1);
       {
-        serialize_uint8(numberOfOutputsOnRX[rx_config.rx_type]);
+        serialize_uint8(rxcNumberOfOutputs);
       }
       break;
       // SET

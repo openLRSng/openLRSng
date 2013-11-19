@@ -44,10 +44,10 @@ void hexGet(void *out, uint16_t expected)
 {
   uint32_t start = millis();
   uint16_t bytes = 0;
-  uint8_t  state=0;
-  uint16_t numin;
+  uint8_t  state = 0;
+  uint16_t numin = 0;
   uint8_t  buffer[expected];
-  uint16_t check;
+  uint16_t check = 0;
   char     ch;
   while ((millis()-start)<2000) {
     if (Serial.available()) {
@@ -165,12 +165,22 @@ void bindPrint(void)
   Serial.println(chConfStr[bind_data.flags&0x07]);
 
   Serial.print(F("8) Telemetry:       "));
-  Serial.println((bind_data.flags&TELEMETRY_ENABLED)?"Enabled":"Disabled");
+  switch (bind_data.flags & TELEMETRY_MASK) {
+  case TELEMETRY_OFF:
+    Serial.println(F("Disabled"));
+    break;
+  case TELEMETRY_PASSTHRU:
+    Serial.println(F("Transparent"));
+    break;
+  case TELEMETRY_FRSKY:
+    Serial.println(F("FrSky"));
+    break;
+  case TELEMETRY_SMARTPORT:
+    Serial.println(F("smartPort"));
+    break;
+  }
 
-  Serial.print(F("9) FrSky emulation: "));
-  Serial.println((bind_data.flags&FRSKY_ENABLED)?"Enabled":"Disabled");
-
-  Serial.print(F("0) Serial baudrate:"));
+  Serial.print(F("9) Serial baudrate:"));
   Serial.println(bind_data.serial_baudrate);
 
   Serial.print(F("Calculated packet interval: "));
@@ -294,9 +304,6 @@ void CLI_menu_headers(void)
     Serial.println(F("Toggled telemetry!"));
     break;
   case 9:
-    Serial.println(F("Toggled FrSky emulation!"));
-    break;
-  case 10:
     Serial.println(F("Set serial baudrate: "));
     break;
   }
@@ -494,7 +501,7 @@ void handleRXmenu(char c)
     case '2':
     case '1':
       c -= '0';
-      if ( c > numberOfOutputsOnRX[rx_config.rx_type]) {
+      if ( c > rxcNumberOfOutputs) {
         Serial.println("invalid selection");
         break;
       }
@@ -589,7 +596,7 @@ void handleRXmenu(char c)
         case 3:
         case 2:
         case 1:
-          if (CLI_menu > numberOfOutputsOnRX[rx_config.rx_type]) {
+          if (CLI_menu > rxcNumberOfOutputs) {
             break;
           }
           if ((value > 0) && (value<=16)) {
@@ -824,18 +831,15 @@ void handleCLImenu(char c)
     case '8':
       CLI_menu = 8;
       CLI_menu_headers();
-      bind_data.flags ^= TELEMETRY_ENABLED;
+      {
+	uint8_t newf = (bind_data.flags + TELEMETRY_PASSTHRU) & TELEMETRY_MASK;
+	bind_data.flags&= ~TELEMETRY_MASK;
+	bind_data.flags|= newf;
+      }
       CLI_menu = -1;
       CLI_menu_headers();
       break;
     case '9':
-      CLI_menu = 9;
-      CLI_menu_headers();
-      bind_data.flags ^= FRSKY_ENABLED;
-      CLI_menu = -1;
-      CLI_menu_headers();
-      break;
-    case '0':
       CLI_menu = 10;
       CLI_menu_headers();
       break;
