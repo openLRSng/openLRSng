@@ -696,11 +696,11 @@ void handleRXmenu(char c)
   }
 }
 
-void CLI_RX_config()
+uint8_t rxcConnect(bool verbose)
 {
   uint8_t tx_buf[1+sizeof(rx_config)];
   uint32_t last_time = micros();
-  Serial.println(F("Connecting to RX, power up the RX (with bind plug if not using always bind)"));
+
   init_rfm(1);
   do {
     tx_buf[0]='t';
@@ -709,18 +709,22 @@ void CLI_RX_config()
     rx_reset();
     delay(250);
     Serial.print(".");
-  } while ((RF_Mode==Receive) && ((micros()-last_time)<20000000));
+  } while ((RF_Mode==Receive) && (!Serial.available()) && ((micros()-last_time)<30000000));
 
   if (RF_Mode == Receive) {
-    Serial.println("TIMEOUT");
-    return;
+    if (verbose) {
+      Serial.println("TIMEOUT");
+    }
+    return 2;
   }
 
   spiSendAddress(0x7f);   // Send the package read command
   tx_buf[0]=spiReadData();
   if (tx_buf[0]!='T') {
-    Serial.println("Invalid response");
-    return;
+    if (verbose) {
+      Serial.println("Invalid response");
+    }
+    return 3;
   }
 
   rxcVersion = (uint16_t)spiReadData() * 256;
@@ -729,8 +733,10 @@ void CLI_RX_config()
   rxcNumberOfOutputs = spiReadData();
   rxcSpecialPinCount = spiReadData();
   if (rxcSpecialPinCount>RXC_MAX_SPECIAL_PINS) {
-    Serial.println("Invalid special pin count");
-    return;
+    if (verbose) {
+      Serial.println("Invalid special pin count");
+    }
+    return 3;
   }
 
   for (uint8_t i = 0; i < sizeof(struct rxSpecialPinMap) * rxcSpecialPinCount; i++) {
@@ -744,18 +750,36 @@ void CLI_RX_config()
   delay(50);
 
   if (RF_Mode == Receive) {
-    Serial.println("TIMEOUT");
-    return;
+    if (verbose) {
+      Serial.println("TIMEOUT");
+    }
+    return 3;
   }
   spiSendAddress(0x7f);   // Send the package read command
   tx_buf[0]=spiReadData();
   if (tx_buf[0]!='P') {
-    Serial.println("Invalid response");
-    return;
+    if (verbose) {
+      Serial.println("Invalid response");
+    }
+    return 3;
   }
 
   for (uint8_t i = 0; i < sizeof(rx_config); i++) {
     *(((uint8_t*)&rx_config) + i) = spiReadData();
+  }
+  return 1;
+}
+
+void CLI_RX_config()
+{
+  Serial.println(F("Connecting to RX, power up the RX (with bind plug if not using always bind)"));
+  Serial.println(F("Press any key to cancel"));
+    if (Serial.available()) {
+      handleRXmenu(Serial.read());
+    }
+
+  if (1 != rxcConnect(1)) {
+    return;
   }
 
   CLI_menu = -1;

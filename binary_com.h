@@ -35,7 +35,7 @@ extern struct rxSpecialPinMap rxcSpecialPins[];
 extern uint8_t rxcSpecialPinCount;
 extern uint8_t rxcNumberOfOutputs;
 extern uint16_t rxcVersion;
-
+uint8_t rxcConnect(bool verbose);
 
 
 class binary_PSP
@@ -144,40 +144,9 @@ public:
     case PSP_REQ_RX_JOIN_CONFIGURATION:
       protocol_head(PSP_REQ_RX_JOIN_CONFIGURATION, 1);
       // 1 success, 2 timeout, 3 failed response
-      {
-        uint8_t tx_buf[1 + sizeof(rx_config)];
-        uint32_t last_time = micros();
-        init_rfm(1);
 
-        do {
-          tx_buf[0]='p';
-          tx_packet(tx_buf,1);
-          RF_Mode = Receive;
-          rx_reset();
-          delay(200);
-        } while ((RF_Mode == Receive) && !Serial.available() && ((micros() - last_time) < 30000000)); // 30 seconds
+      serialize_uint8(rxcConnect(0));
 
-        if (RF_Mode == Receive) {
-          serialize_uint8(0x02); // timeout
-          protocol_tail();
-          return;
-        }
-
-        spiSendAddress(0x7f);   // Send the package read command
-        tx_buf[0] = spiReadData();
-
-        if (tx_buf[0]!='P') {
-          serialize_uint8(0x03); // invalid response
-          protocol_tail();
-          return;
-        }
-
-        for (uint8_t i = 0; i < sizeof(rx_config); i++) {
-          *(((uint8_t*)&rx_config) + i) = spiReadData();
-        }
-
-        serialize_uint8(0x01); // success
-      }
       break;
     case PSP_REQ_SCANNER_MODE:
       protocol_head(PSP_REQ_SCANNER_MODE, 1);
