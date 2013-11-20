@@ -132,6 +132,11 @@ void smartportSendFrame(uint8_t a1, uint8_t a2 ,uint8_t rx, uint8_t tx)
     buf[3]=0xf1;
     buf[4]=a1;
     break;
+  case 3: //A2
+    buf[2]=0x03;
+    buf[3]=0xf1;
+    buf[4]=a2;
+    break;
   default:
     smartportIdle();
     return;
