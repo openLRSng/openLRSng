@@ -431,7 +431,9 @@ void loop(void)
       if (lastTelemetry) {
         if ((time - lastTelemetry) > getInterval(&bind_data)) {
           // telemetry lost
-          buzzerOn(BZ_FREQ);
+          if (!(bind_data.flags & MUTE_TX)) {
+            buzzerOn(BZ_FREQ);
+          }
           lastTelemetry=0;
         } else {
           // telemetry link re-established

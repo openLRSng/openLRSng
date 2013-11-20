@@ -184,6 +184,9 @@ void bindPrint(void)
   Serial.print(F("9) Serial baudrate:"));
   Serial.println(bind_data.serial_baudrate);
 
+  Serial.print(F("0) Mute buzzer (mostly):"));
+  Serial.println((bind_data.flags & MUTE_TX)?"Yes":"No");
+
   Serial.print(F("Calculated packet interval: "));
   Serial.print(getInterval(&bind_data));
   Serial.print(F(" == "));
@@ -301,9 +304,6 @@ void CLI_menu_headers(void)
     Serial.println(F("Set Channel config: "));
     Serial.println(F("Valid choices: 1 - 4+4 / 2 - 8 / 3 - 8+4 / 4 - 12 / 5 - 12+4 / 6 - 16"));
     break;
-  case 8:
-    Serial.println(F("Toggled telemetry!"));
-    break;
   case 9:
     Serial.println(F("Set serial baudrate: "));
     break;
@@ -340,13 +340,13 @@ void RX_menu_headers(void)
       ch=20;
       for (uint8_t i=0; i<rxcSpecialPinCount; i++) {
         if (rxcSpecialPins[i].output == CLI_menu-1) {
-	  Serial.print(", [");
-	  Serial.print(ch);
-	  Serial.print("] (");
-	  Serial.print(SPECIALSTR(rxcSpecialPins[i].type));
-	  Serial.print(")");
-	  ch++;
-	}
+          Serial.print(", [");
+          Serial.print(ch);
+          Serial.print("] (");
+          Serial.print(SPECIALSTR(rxcSpecialPins[i].type));
+          Serial.print(")");
+          ch++;
+        }
       }
       Serial.println();
     }
@@ -614,13 +614,13 @@ void handleRXmenu(char c)
           }
           break;
         case 20:
-         if (value <= 255) {
+          if (value <= 255) {
             rx_config.failsafeDelay = value;
             valid_input = 1;
           }
           break;
         case 21:
-         if (value <= 255) {
+          if (value <= 255) {
             rx_config.ppmStopDelay = value;
             valid_input = 1;
           }
@@ -846,8 +846,7 @@ void handleCLImenu(char c)
       CLI_menu_headers();
       break;
     case '8':
-      CLI_menu = 8;
-      CLI_menu_headers();
+      Serial.println(F("Toggled telemetry!"));
       {
         uint8_t newf = (bind_data.flags + TELEMETRY_PASSTHRU) & TELEMETRY_MASK;
         bind_data.flags&= ~TELEMETRY_MASK;
@@ -858,6 +857,12 @@ void handleCLImenu(char c)
       break;
     case '9':
       CLI_menu = 9;
+      CLI_menu_headers();
+      break;
+    case '0':
+      Serial.println(F("Toggled TX muting!"));
+      bind_data.flags^= MUTE_TX;
+      CLI_menu = -1;
       CLI_menu_headers();
       break;
     case 'z':

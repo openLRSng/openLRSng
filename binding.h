@@ -33,13 +33,14 @@
 #define TELEMETRY_SMARTPORT 0x18
 #define TELEMETRY_MASK      0x18
 
-#define CHANNELS_4_4  1
-#define CHANNELS_8    2
-#define CHANNELS_8_4  3
-#define CHANNELS_12   4
-#define CHANNELS_12_4 5
-#define CHANNELS_16   6
+#define CHANNELS_4_4  0x01
+#define CHANNELS_8    0x02
+#define CHANNELS_8_4  0x03
+#define CHANNELS_12   0x04
+#define CHANNELS_12_4 0x05
+#define CHANNELS_16   0x06
 
+#define MUTE_TX       0x20 // do not beep on telemetry loss
 
 #define DEFAULT_FLAGS (CHANNELS_8 | TELEMETRY_PASSTHRU)
 

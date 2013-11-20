@@ -655,15 +655,15 @@ void loop()
 
     if (lostpack) {
       if (rx_config.failsafeDelay && (!failsafeSet) && ((time - linkLossTime) > delayInus(rx_config.failsafeDelay))) {
-	failsafeSet = 1;
+        failsafeSet = 1;
         load_failsafe_values();
-	lastBeaconTime = (time + ((uint32_t)rx_config.beacon_deadtime * 1000000UL)) | 1; //beacon activating...
+        lastBeaconTime = (time + ((uint32_t)rx_config.beacon_deadtime * 1000000UL)) | 1; //beacon activating...
       }
       if (rx_config.pwmStopDelay && (!disablePWM) && ((time - linkLossTime) > delayInus(rx_config.pwmStopDelay))) {
-	disablePWM = 1;
+        disablePWM = 1;
       }
       if (rx_config.pwmStopDelay && (!disablePPM) && ((time - linkLossTime) > delayInus(rx_config.ppmStopDelay))) {
-	disablePPM = 1;
+        disablePPM = 1;
       }
 
       if ((rx_config.beacon_frequency) && (lastBeaconTime)) {
