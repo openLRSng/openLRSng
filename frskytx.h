@@ -87,7 +87,7 @@ void smartportSend(uint8_t *p)
   Serial.write(0x7e);
   for (int i=0; i<9; i++) {
     if (i==8) {
-      p[i] = crc;
+      p[i] = 0xff - crc;
     }
     if ((p[i]==0x7e) || (p[i]==0x7d)) {
       Serial.write(0x7d);
@@ -95,11 +95,13 @@ void smartportSend(uint8_t *p)
     } else {
       Serial.write(p[i]);
     }
-    crc += p[i]; //0-1FF
-    crc += crc >> 8; //0-100
-    crc &= 0x00ff;
-    crc += crc >> 8; //0-0FF
-    crc &= 0x00ff;
+    if (i>0) {
+      crc += p[i]; //0-1FF
+      crc += crc >> 8; //0-100
+      crc &= 0x00ff;
+      crc += crc >> 8; //0-0FF
+      crc &= 0x00ff;
+    }
   }
 }
 
