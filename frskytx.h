@@ -25,7 +25,7 @@ void frskyInit(bool isSmartPort)
 {
   frskyLast=micros();
   frskyIsSmartPort = isSmartPort;
-  Serial.begin(isSmartPort ? SMARTPORT_BAUDRATE : FRSKY_BAUDRATE);
+  TelemetrySerial.begin(isSmartPort ? SMARTPORT_BAUDRATE : FRSKY_BAUDRATE);
 }
 
 void frskyUserData(uint8_t c)
@@ -38,15 +38,15 @@ void frskyUserData(uint8_t c)
 
 void frskySendStuffed(uint8_t frame[])
 {
-  Serial.write(0x7e);
+  TelemetrySerial.write(0x7e);
   for (uint8_t i=0; i<9; i++) {
     if ((frame[i]==0x7e) || (frame[i]==0x7d)) {
-      Serial.write(0x7d);
+      TelemetrySerial.write(0x7d);
       frame[i]^=0x20;
     }
-    Serial.write(frame[i]);
+    TelemetrySerial.write(frame[i]);
   }
-  Serial.write(0x7e);
+  TelemetrySerial.write(0x7e);
 }
 
 
@@ -84,16 +84,16 @@ void frskySendFrame(uint8_t a1, uint8_t a2, uint8_t rx, uint8_t tx)
 void smartportSend(uint8_t *p)
 {
   uint16_t crc=0;
-  Serial.write(0x7e);
+  TelemetrySerial.write(0x7e);
   for (int i=0; i<9; i++) {
     if (i==8) {
       p[i] = 0xff - crc;
     }
     if ((p[i]==0x7e) || (p[i]==0x7d)) {
-      Serial.write(0x7d);
-      Serial.write(0x20^p[i]);
+      TelemetrySerial.write(0x7d);
+      TelemetrySerial.write(0x20^p[i]);
     } else {
-      Serial.write(p[i]);
+      TelemetrySerial.write(p[i]);
     }
     if (i>0) {
       crc += p[i]; //0-1FF
@@ -107,7 +107,7 @@ void smartportSend(uint8_t *p)
 
 void smartportIdle()
 {
-  Serial.write(0x7e);
+  TelemetrySerial.write(0x7e);
 }
 
 void smartportSendFrame(uint8_t a1, uint8_t a2 ,uint8_t rx, uint8_t tx)

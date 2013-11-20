@@ -342,7 +342,7 @@ void setup(void)
   checkBND();
 
   // switch to userdefined baudrate here
-  Serial.begin(bind_data.serial_baudrate);
+  TelemetrySerial.begin(bind_data.serial_baudrate);
   checkButton();
 
   Red_LED_OFF;
@@ -371,8 +371,8 @@ void loop(void)
     Red_LED_OFF;
   }
 
-  while (Serial.available() && (((serial_tail + 1) % SERIAL_BUFSIZE) != serial_head)) {
-    serial_buffer[serial_tail] = Serial.read();
+  while (TelemetrySerial.available() && (((serial_tail + 1) % SERIAL_BUFSIZE) != serial_head)) {
+    serial_buffer[serial_tail] = TelemetrySerial.read();
     serial_tail = (serial_tail + 1) % SERIAL_BUFSIZE;
   }
 
@@ -398,7 +398,7 @@ void loop(void)
           if (bind_data.flags & TELEMETRY_FRSKY) {
             frskyUserData(rx_buf[i]);
           } else {
-            Serial.write(rx_buf[i]);
+            TelemetrySerial.write(rx_buf[i]);
           }
         }
       } else if ((rx_buf[0] & 0x3F)==0) {
