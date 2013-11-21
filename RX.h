@@ -207,7 +207,9 @@ void failsafeSave(void)
   uint32_t start = millis();
   uint8_t ee_buf[20];
 
-  memcpy(failsafePPM, PPM, sizeof(PPM));
+  for (int16_t i = 0; i < PPM_CHANNELS; i++) {
+    failsafePPM[i]=PPM[i];
+  }
 
   packChannels(6, failsafePPM, ee_buf);
   for (int16_t i = 0; i < 20; i++) {
@@ -252,9 +254,11 @@ void failsafeLoad(void)
 void failsafeApply()
 {
   if (failsafeIsValid) {
-    cli();
-    memcpy(PPM,failsafePPM,sizeof(PPM));
-    sei();
+    for (int16_t i = 0; i < PPM_CHANNELS; i++) {
+      cli();
+      PPM[i]=failsafePPM[i];
+      sei();
+    }
   }
 }
 
@@ -457,8 +461,8 @@ void setup()
   rfmSetChannel(bind_data.hopchannel[RF_channel]);
 
   setupOutputs();
-  if ((rx_config.flags & IMMEDIATE_OUTPUT) && failsafeIsSet) {
-    failsafeActivate();
+  if ((rx_config.flags & IMMEDIATE_OUTPUT) && failsafeIsValid) {
+    failsafeApply();
     disablePPM=0;
     disablePWM=0;
   }
