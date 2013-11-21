@@ -217,7 +217,9 @@ void failsafeSave(void)
   uint32_t start = millis();
   uint8_t ee_buf[20];
 
-  memcpy(failsafePPM, PPM, sizeof(PPM));
+  for (int16_t i = 0; i < PPM_CHANNELS; i++) {
+    failsafePPM[i]=PPM[i];
+  }
 
   packChannels(6, failsafePPM, ee_buf);
   for (int16_t i = 0; i < 20; i++) {
@@ -262,9 +264,11 @@ void failsafeLoad(void)
 void failsafeApply()
 {
   if (failsafeIsValid) {
-    cli();
-    memcpy(PPM,failsafePPM,sizeof(PPM));
-    sei();
+    for (int16_t i = 0; i < PPM_CHANNELS; i++) {
+      cli();
+      PPM[i]=failsafePPM[i];
+      sei();
+    }
   }
 }
 
@@ -440,7 +444,7 @@ void setup()
       if (bindReceive(500)) {
         bindWriteEeprom();
         Serial.println("Saved bind data to EEPROM\n");
-	setupOutputs(); // parameters may have changed
+        setupOutputs(); // parameters may have changed
         Green_LED_ON;
       }
     }

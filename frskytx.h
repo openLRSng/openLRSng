@@ -125,7 +125,7 @@ void smartportSendFrame(uint8_t a1, uint8_t a2 ,uint8_t rx, uint8_t tx)
   case 1: // RSSI
     buf[2]=0x01;
     buf[3]=0xf1;
-    buf[4]=(tx<rx)?tx:rx;
+    buf[4]=(uint16_t)((tx<rx)?tx:rx)*100/256;
     break;
   case 2: //BATT
     buf[2]=0x04;
