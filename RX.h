@@ -195,7 +195,7 @@ void setupOutputs()
   TIMSK1 |= (1 << TOIE1);
 
   if ((rx_config.flags & IMMEDIATE_OUTPUT) && failsafeIsSet) {
-    failsafeActivate();
+    failsafeApply();
     disablePPM=0;
     disablePWM=0;
   }
