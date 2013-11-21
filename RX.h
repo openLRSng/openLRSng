@@ -654,7 +654,7 @@ void loop()
       // we lost packet, hop to next channel
       willhop = 1;
       if (numberOfLostPackets==0) {
-        linkLossTime = millis();
+        linkLossTimeMs = millis();
         lastBeaconTimeMs = 0;
       }
       numberOfLostPackets++;
@@ -677,15 +677,15 @@ void loop()
     }
 
     if (numberOfLostPackets) {
-      if (rx_config.failsafeDelay && (!failsafeActive) && ((timeMs - linkLossTime) > delayInMs(rx_config.failsafeDelay))) {
+      if (rx_config.failsafeDelay && (!failsafeActive) && ((timeMs - linkLossTimeMs) > delayInMs(rx_config.failsafeDelay))) {
         failsafeActive = 1;
         failsafeApply();
         lastBeaconTimeMs = (timeMs + (uint32_t)rx_config.beacon_deadtime * 1000) | 1; //beacon activating...
       }
-      if (rx_config.pwmStopDelay && (!disablePWM) && ((timeMs - linkLossTime) > delayInMs(rx_config.pwmStopDelay))) {
+      if (rx_config.pwmStopDelay && (!disablePWM) && ((timeMs - linkLossTimeMs) > delayInMs(rx_config.pwmStopDelay))) {
         disablePWM = 1;
       }
-      if (rx_config.pwmStopDelay && (!disablePPM) && ((timeMs - linkLossTime) > delayInMs(rx_config.ppmStopDelay))) {
+      if (rx_config.pwmStopDelay && (!disablePPM) && ((timeMs - linkLossTimeMs) > delayInMs(rx_config.ppmStopDelay))) {
         disablePPM = 1;
       }
 
