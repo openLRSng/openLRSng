@@ -112,6 +112,66 @@ void set_RSSI_output( uint8_t val )
   }
 }
 
+void failsafeSave(void)
+{
+  uint32_t start = millis();
+  uint8_t ee_buf[20];
+
+  for (int16_t i = 0; i < PPM_CHANNELS; i++) {
+    failsafePPM[i]=PPM[i];
+  }
+
+  packChannels(6, failsafePPM, ee_buf);
+  for (int16_t i = 0; i < 20; i++) {
+    myEEPROMwrite(EEPROM_FAILSAFE_OFFSET + 4 +i, ee_buf[i]);
+  }
+
+  ee_buf[0]=0xFA;
+  ee_buf[1]=0x11;
+  ee_buf[2]=0x5A;
+  ee_buf[3]=0xFE;
+  for (int16_t i = 0; i < 4; i++) {
+    myEEPROMwrite(EEPROM_FAILSAFE_OFFSET + i, ee_buf[i]);
+  }
+
+  // make this last at least 200ms for user to see it
+  // needed as optimized eeprom code can be real fast if no changes are done
+  start = millis() - start;
+  if (start<200) {
+    delay(200-start);
+  }
+}
+
+void failsafeLoad(void)
+{
+  uint8_t ee_buf[20];
+
+  for (int16_t i = 0; i < 4; i++) {
+    ee_buf[i] = EEPROM.read(EEPROM_FAILSAFE_OFFSET + i);
+  }
+
+  if ((ee_buf[0]==0xFA) && (ee_buf[1]==0x11) && (ee_buf[2]==0x5A) && (ee_buf[3]==0xFE)) {
+    for (int16_t i = 0; i < 20; i++) {
+      ee_buf[i] = EEPROM.read(EEPROM_FAILSAFE_OFFSET + 4 +i);
+    }
+    unpackChannels(6, failsafePPM, ee_buf);
+    failsafeIsValid = 1;
+  } else {
+    failsafeIsValid = 0;
+  }
+}
+
+void failsafeApply()
+{
+  if (failsafeIsValid) {
+    for (int16_t i = 0; i < PPM_CHANNELS; i++) {
+      cli();
+      PPM[i]=failsafePPM[i];
+      sei();
+    }
+  }
+}
+
 void setupOutputs()
 {
   uint8_t i;
@@ -194,7 +254,7 @@ void setupOutputs()
   ppmCountter = 0;
   TIMSK1 |= (1 << TOIE1);
 
-  if ((rx_config.flags & IMMEDIATE_OUTPUT) && failsafeIsSet) {
+  if ((rx_config.flags & IMMEDIATE_OUTPUT) && failsafeIsValid) {
     failsafeApply();
     disablePPM=0;
     disablePWM=0;
@@ -208,66 +268,6 @@ void updateLBeep(boolean packetlost)
       TCCR2A |= (1<<COM2B0); // enable tone
     } else {
       TCCR2A &= ~(1<<COM2B0); // disable tone
-    }
-  }
-}
-
-void failsafeSave(void)
-{
-  uint32_t start = millis();
-  uint8_t ee_buf[20];
-
-  for (int16_t i = 0; i < PPM_CHANNELS; i++) {
-    failsafePPM[i]=PPM[i];
-  }
-
-  packChannels(6, failsafePPM, ee_buf);
-  for (int16_t i = 0; i < 20; i++) {
-    myEEPROMwrite(EEPROM_FAILSAFE_OFFSET + 4 +i, ee_buf[i]);
-  }
-
-  ee_buf[0]=0xFA;
-  ee_buf[1]=0x11;
-  ee_buf[2]=0x5A;
-  ee_buf[3]=0xFE;
-  for (int16_t i = 0; i < 4; i++) {
-    myEEPROMwrite(EEPROM_FAILSAFE_OFFSET + i, ee_buf[i]);
-  }
-
-  // make this last at least 200ms for user to see it
-  // needed as optimized eeprom code can be real fast if no changes are done
-  start = millis() - start;
-  if (start<200) {
-    delay(200-start);
-  }
-}
-
-void failsafeLoad(void)
-{
-  uint8_t ee_buf[20];
-
-  for (int16_t i = 0; i < 4; i++) {
-    ee_buf[i] = EEPROM.read(EEPROM_FAILSAFE_OFFSET + i);
-  }
-
-  if ((ee_buf[0]==0xFA) && (ee_buf[1]==0x11) && (ee_buf[2]==0x5A) && (ee_buf[3]==0xFE)) {
-    for (int16_t i = 0; i < 20; i++) {
-      ee_buf[i] = EEPROM.read(EEPROM_FAILSAFE_OFFSET + 4 +i);
-    }
-    unpackChannels(6, failsafePPM, ee_buf);
-    failsafeIsValid = 1;
-  } else {
-    failsafeIsValid = 0;
-  }
-}
-
-void failsafeApply()
-{
-  if (failsafeIsValid) {
-    for (int16_t i = 0; i < PPM_CHANNELS; i++) {
-      cli();
-      PPM[i]=failsafePPM[i];
-      sei();
     }
   }
 }
