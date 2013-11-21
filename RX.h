@@ -116,6 +116,11 @@ void setupOutputs()
 {
   uint8_t i;
 
+  ppmChannels = getChannelCount(&bind_data);
+  if (rx_config.RSSIpwm == ppmChannels) {
+    ppmChannels+=1;
+  }
+
   for (i = 0; i < OUTPUTS; i++) {
     chToMask[i].B = 0;
     chToMask[i].C = 0;
@@ -189,6 +194,11 @@ void setupOutputs()
   ppmCountter = 0;
   TIMSK1 |= (1 << TOIE1);
 
+  if ((rx_config.flags & IMMEDIATE_OUTPUT) && failsafeIsSet) {
+    failsafeActivate();
+    disablePPM=0;
+    disablePWM=0;
+  }
 }
 
 void updateLBeep(boolean packetlost)
@@ -423,11 +433,14 @@ void setup()
       Serial.println("Saved bind data to EEPROM\n");
       Green_LED_ON;
     }
+    setupOutputs();
   } else {
+    setupOutputs();
     if ((rx_config.flags & ALWAYS_BIND) && (!(rx_config.flags & SLAVE_MODE))) {
       if (bindReceive(500)) {
         bindWriteEeprom();
         Serial.println("Saved bind data to EEPROM\n");
+	setupOutputs(); // parameters may have changed
         Green_LED_ON;
       }
     }
@@ -445,23 +458,11 @@ void setup()
     }
   }
 
-  ppmChannels = getChannelCount(&bind_data);
-  if (rx_config.RSSIpwm == ppmChannels) {
-    ppmChannels+=1;
-  }
-
   Serial.print("Entering normal mode");
 
   init_rfm(0);   // Configure the RFM22B's registers for normal operation
   RF_channel = 0;
   rfmSetChannel(bind_data.hopchannel[RF_channel]);
-
-  setupOutputs();
-  if ((rx_config.flags & IMMEDIATE_OUTPUT) && failsafeIsSet) {
-    failsafeActivate();
-    disablePPM=0;
-    disablePWM=0;
-  }
 
   // Count hopchannels as we need it later
   hopcount=0;
