@@ -200,10 +200,10 @@ void rxPrintDTime(uint8_t val)
   if (!val) {
     Serial.println(F("Disabled"));
   } else {
-    uint32_t us = delayInus(val) / 100000;
-    Serial.print(us/10);
+    uint32_t ms = delayInMs(val) / 100;
+    Serial.print(ms/10);
     Serial.print('.');
-    Serial.print(us%10);
+    Serial.print(ms%10);
     Serial.println('s');
   }
 }

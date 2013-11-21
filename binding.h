@@ -51,8 +51,8 @@
 #define US_FRS_CH(x) (462537500L + 25000L * (x)) // valid for ch1-ch7
 
 #define DEFAULT_BEACON_FREQUENCY 0 // disable beacon
-#define DEFAULT_BEACON_DEADTIME 30 // time to wait until go into beacon mode (s)
-#define DEFAULT_BEACON_INTERVAL 10 // interval between beacon transmits (s)
+#define DEFAULT_BEACON_DEADTIME 30 // time to wait until go into beacon mode (30s)
+#define DEFAULT_BEACON_INTERVAL 10 // interval between beacon transmits (10s)
 
 #define MIN_DEADTIME 10
 #define MAX_DEADTIME 65535
@@ -224,19 +224,19 @@ again:
 // 100-189 - 10s  - 99s   (1s res)
 // 190-209 - 100s - 290s (10s res)
 // 210-255 - 5m - 50m (1m res)
-uint32_t delayInus(uint8_t d)
+uint32_t delayInMs(uint8_t d)
 {
-  uint32_t us;
+  uint32_t ms;
   if (d < 100) {
-    us = d;
+    ms = d;
   } else if (d < 190) {
-    us = (d-90) * 10UL;
+    ms = (d-90) * 10UL;
   } else if (d < 210) {
-    us = (d-180) * 100UL;
+    ms = (d-180) * 100UL;
   } else {
-    us = (d-205) * 600UL;
+    ms = (d-205) * 600UL;
   }
-  return us * 100000UL;
+  return ms * 100UL;
 }
 
 struct RX_config {

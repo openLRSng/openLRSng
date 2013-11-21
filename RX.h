@@ -4,18 +4,17 @@
 
 uint8_t RF_channel = 0;
 
-uint32_t time;
-uint32_t lastPacketTime = 0;
-uint32_t lastRSSITime = 0;
-uint32_t linkLossTime;
+uint32_t lastPacketTimeUs = 0;
+uint32_t lastRSSITimeUs = 0;
+uint32_t linkLossTimeMs;
 
-uint32_t lastBeaconTime;
+uint32_t lastBeaconTimeMs;
 
 uint8_t  RSSI_count = 0;
 uint16_t RSSI_sum = 0;
-uint8_t  last_rssi_value = 0;
+uint8_t  lastRSSIvalue = 0;
 uint8_t  smoothRSSI = 0;
-uint16_t last_afcc_value = 0;
+uint16_t lastAFCCvalue = 0;
 
 uint8_t  ppmCountter = 0;
 uint16_t ppmSync = 40000;
@@ -28,8 +27,8 @@ uint8_t failsafeActive = 0;
 uint16_t failsafePPM[PPM_CHANNELS];
 uint8_t  failsafeIsValid = 0;
 
-uint8_t firstpack = 0;
-uint8_t lostpack = 0;
+uint8_t linkAcquired = 0;
+uint8_t numberOfLostPackets = 0;
 
 boolean willhop = 0, fs_saved = 0;
 
@@ -490,8 +489,8 @@ void setup()
 
   serial_head=0;
   serial_tail=0;
-  firstpack = 0;
-  lastPacketTime = micros();
+  linkAcquired = 0;
+  lastPacketTimeUs = micros();
 
 }
 
@@ -506,7 +505,7 @@ void checkSerial()
 //############ MAIN LOOP ##############
 void loop()
 {
-  uint32_t time;
+  uint32_t timeUs,timeMs;
 
   if (spiReadRegister(0x0C) == 0) {     // detect the locked module and reboot
     Serial.println("RX hang");
@@ -516,12 +515,12 @@ void loop()
 
   checkSerial();
 
-  time = micros();
+  timeUs = micros();
 
   if (RF_Mode == Received) {   // RFM22B int16_t pin Enabled by received Data
 
-    lastPacketTime = micros(); // record last package time
-    lostpack = 0;
+    lastPacketTimeUs = micros(); // record last package time
+    numberOfLostPackets = 0;
 
     Red_LED_OFF;
     Green_LED_ON;
@@ -534,7 +533,7 @@ void loop()
       rx_buf[i] = spiReadData();
     }
 
-    last_afcc_value = rfmGetAFCC();
+    lastAFCCvalue = rfmGetAFCC();
 
     if ((rx_buf[0]&0x3e) == 0x00) {
       cli();
@@ -566,8 +565,8 @@ void loop()
       }
     }
 
-    if (firstpack == 0) {
-      firstpack = 1;
+    if (linkAcquired == 0) {
+      linkAcquired = 1;
     }
     failsafeActive = 0;
     disablePWM = 0;
@@ -589,7 +588,7 @@ void loop()
           tx_buf[0] |= (0x37 + bytes);
         } else {
           // tx_buf[0] lowest 6 bits left at 0
-          tx_buf[1] = last_rssi_value;
+          tx_buf[1] = lastRSSIvalue;
 
           if (rx_config.pinMapping[ANALOG0_OUTPUT] == PINMAP_ANALOG) {
             tx_buf[2] = analogRead(OUTPUT_PIN[ANALOG0_OUTPUT])>>2;
@@ -610,8 +609,8 @@ void loop()
           } else {
             tx_buf[3] = 0;
           }
-          tx_buf[4] = (last_afcc_value >> 8);
-          tx_buf[5] = last_afcc_value & 0xff;
+          tx_buf[4] = (lastAFCCvalue >> 8);
+          tx_buf[5] = lastAFCCvalue & 0xff;
         }
       }
       tx_packet_async(tx_buf, 9);
@@ -629,14 +628,15 @@ void loop()
     Green_LED_OFF;
   }
 
-  time = micros();
+  timeUs = micros();
+  timeMs = millis();
 
   // sample RSSI when packet is in the 'air'
-  if ((lostpack < 2) && (lastRSSITime != lastPacketTime) &&
-      (time - lastPacketTime) > (getInterval(&bind_data) - 1500)) {
-    lastRSSITime = lastPacketTime;
-    last_rssi_value = rfmGetRSSI(); // Read the RSSI value
-    RSSI_sum += last_rssi_value;    // tally up for average
+  if ((numberOfLostPackets < 2) && (lastRSSITimeUs != lastPacketTimeUs) &&
+      (timeUs - lastPacketTimeUs) > (getInterval(&bind_data) - 1500)) {
+    lastRSSITimeUs = lastPacketTimeUs;
+    lastRSSIvalue = rfmGetRSSI(); // Read the RSSI value
+    RSSI_sum += lastRSSIvalue;    // tally up for average
     RSSI_count++;
 
     if (RSSI_count > 20) {
@@ -649,16 +649,16 @@ void loop()
     }
   }
 
-  if (firstpack) {
-    if ((lostpack < hopcount) && ((time - lastPacketTime) > (getInterval(&bind_data) + 1000))) {
+  if (linkAcquired) {
+    if ((numberOfLostPackets < hopcount) && ((timeUs - lastPacketTimeUs) > (getInterval(&bind_data) + 1000))) {
       // we lost packet, hop to next channel
       willhop = 1;
-      if (lostpack==0) {
-        linkLossTime = time;
-        lastBeaconTime = 0;
+      if (numberOfLostPackets==0) {
+        linkLossTime = millis();
+        lastBeaconTimeMs = 0;
       }
-      lostpack++;
-      lastPacketTime += getInterval(&bind_data);
+      numberOfLostPackets++;
+      lastPacketTimeUs += getInterval(&bind_data);
       willhop = 1;
       Red_LED_ON;
       updateLBeep(true);
@@ -668,41 +668,41 @@ void loop()
         smoothRSSI=0;
       }
       set_RSSI_output(smoothRSSI);
-    } else if ((lostpack == hopcount) && ((time - lastPacketTime) > (getInterval(&bind_data) * hopcount))) {
+    } else if ((numberOfLostPackets == hopcount) && ((timeUs - lastPacketTimeUs) > (getInterval(&bind_data) * hopcount))) {
       // hop slowly to allow resync with TX
       willhop = 1;
       smoothRSSI=0;
       set_RSSI_output(smoothRSSI);
-      lastPacketTime = time;
+      lastPacketTimeUs = timeUs;
     }
 
-    if (lostpack) {
-      if (rx_config.failsafeDelay && (!failsafeActive) && ((time - linkLossTime) > delayInus(rx_config.failsafeDelay))) {
+    if (numberOfLostPackets) {
+      if (rx_config.failsafeDelay && (!failsafeActive) && ((timeMs - linkLossTime) > delayInMs(rx_config.failsafeDelay))) {
         failsafeActive = 1;
         failsafeApply();
-        lastBeaconTime = (time + ((uint32_t)rx_config.beacon_deadtime * 1000000UL)) | 1; //beacon activating...
+        lastBeaconTimeMs = (timeMs + (uint32_t)rx_config.beacon_deadtime * 1000) | 1; //beacon activating...
       }
-      if (rx_config.pwmStopDelay && (!disablePWM) && ((time - linkLossTime) > delayInus(rx_config.pwmStopDelay))) {
+      if (rx_config.pwmStopDelay && (!disablePWM) && ((timeMs - linkLossTime) > delayInMs(rx_config.pwmStopDelay))) {
         disablePWM = 1;
       }
-      if (rx_config.pwmStopDelay && (!disablePPM) && ((time - linkLossTime) > delayInus(rx_config.ppmStopDelay))) {
+      if (rx_config.pwmStopDelay && (!disablePPM) && ((timeMs - linkLossTime) > delayInMs(rx_config.ppmStopDelay))) {
         disablePPM = 1;
       }
 
-      if ((rx_config.beacon_frequency) && (lastBeaconTime)) {
-        if (((time - lastBeaconTime) < 0x80000000) && // last beacon is future during deadtime
-            (time - lastBeaconTime) > ((uint32_t)rx_config.beacon_interval * 1000000UL)) {
+      if ((rx_config.beacon_frequency) && (lastBeaconTimeMs)) {
+        if (((timeMs - lastBeaconTimeMs) < 0x80000000) && // last beacon is future during deadtime
+            (timeMs - lastBeaconTimeMs) > (uint32_t)rx_config.beacon_interval * 1000) {
           beacon_send();
           init_rfm(0);   // go back to normal RX
           rx_reset();
-          lastBeaconTime = micros() | 1; // avoid 0 in time
+          lastBeaconTimeMs = millis() | 1; // avoid 0 in time
         }
       }
     }
   } else {
     // Waiting for first packet, hop slowly
-    if ((time - lastPacketTime) > (getInterval(&bind_data) * hopcount)) {
-      lastPacketTime = time;
+    if ((timeUs - lastPacketTimeUs) > (getInterval(&bind_data) * hopcount)) {
+      lastPacketTimeUs = timeUs;
       willhop = 1;
     }
   }
