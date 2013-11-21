@@ -261,6 +261,8 @@ void rxPrint(void)
   Serial.println((rx_config.flags & ALWAYS_BIND)?"Enabled":"Disabled");
   Serial.print(F("P) Slave mode (experimental): "));
   Serial.println((rx_config.flags & SLAVE_MODE)?"Enabled":"Disabled");
+  Serial.print(F("Q) Output before link (=FS) : "));
+  Serial.println((rx_config.flags & IMMEDIATE_OUTPUT)?"Enabled":"Disabled");
 }
 
 void CLI_menu_headers(void)
@@ -325,7 +327,7 @@ void RX_menu_headers(void)
     printVersion(version);
     Serial.print(F(" - receiver configurator, rx sw "));
     printVersion(rxcVersion);
-    Serial.println(F("Use numbers [1-D] to edit ports [E-P] for settings"));
+    Serial.println(F("Use numbers [1-D] to edit ports [E-Q] for settings"));
     Serial.println(F("[R] revert RX settings to defaults"));
     Serial.println(F("[S] save settings to RX"));
     Serial.println(F("[X] abort changes and exit RX config"));
@@ -564,6 +566,13 @@ void handleRXmenu(char c)
     case 'P':
       Serial.println(F("Toggled 'slave mode'"));
       rx_config.flags ^= SLAVE_MODE;
+      CLI_menu = -1;
+      RX_menu_headers();
+      break;
+    case 'q':
+    case 'Q':
+      Serial.println(F("Toggled 'immediate output'"));
+      rx_config.flags ^= IMMEDIATE_OUTPUT;
       CLI_menu = -1;
       RX_menu_headers();
       break;

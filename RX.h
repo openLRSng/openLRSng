@@ -23,7 +23,10 @@ uint8_t  ppmChannels = 8;
 
 volatile uint8_t disablePWM = 0;
 volatile uint8_t disablePPM = 0;
-uint8_t failsafeSet = 0;
+uint8_t failsafeActive = 0;
+
+uint16_t failsafePPM[PPM_CHANNELS];
+uint8_t  failsafeIsValid = 0;
 
 uint8_t firstpack = 0;
 uint8_t lostpack = 0;
@@ -161,8 +164,8 @@ void setupOutputs()
     TCCR1A = (1 << WGM11);
   }
 
-  disablePWM = 0;
-  disablePPM = 0;
+  disablePWM = 1;
+  disablePPM = 1;
 
   if ((rx_config.pinMapping[RSSI_OUTPUT] == PINMAP_RSSI) ||
       (rx_config.pinMapping[RSSI_OUTPUT] == PINMAP_LBEEP)) {
@@ -199,12 +202,14 @@ void updateLBeep(boolean packetlost)
   }
 }
 
-void save_failsafe_values(void)
+void failsafeSave(void)
 {
   uint32_t start = millis();
   uint8_t ee_buf[20];
 
-  packChannels(6, PPM, ee_buf);
+  memcpy(failsafePPM, PPM, sizeof(PPM));
+
+  packChannels(6, failsafePPM, ee_buf);
   for (int16_t i = 0; i < 20; i++) {
     myEEPROMwrite(EEPROM_FAILSAFE_OFFSET + 4 +i, ee_buf[i]);
   }
@@ -225,7 +230,7 @@ void save_failsafe_values(void)
   }
 }
 
-void load_failsafe_values(void)
+void failsafeLoad(void)
 {
   uint8_t ee_buf[20];
 
@@ -237,8 +242,18 @@ void load_failsafe_values(void)
     for (int16_t i = 0; i < 20; i++) {
       ee_buf[i] = EEPROM.read(EEPROM_FAILSAFE_OFFSET + 4 +i);
     }
+    unpackChannels(6, failsafePPM, ee_buf);
+    failsafeIsValid = 1;
+  } else {
+    failsafeIsValid = 0;
+  }
+}
+
+void failsafeApply()
+{
+  if (failsafeIsValid) {
     cli();
-    unpackChannels(6, PPM, ee_buf);
+    memcpy(PPM,failsafePPM,sizeof(PPM));
     sei();
   }
 }
@@ -387,6 +402,7 @@ void setup()
 
   Serial.begin(115200);
   rxReadEeprom();
+  failsafeLoad();
 
   setupRfmInterrupt();
 
@@ -434,14 +450,18 @@ void setup()
     ppmChannels+=1;
   }
 
-  Serial.print("Entering normal mode with PPM ");
-  Serial.print((rx_config.pinMapping[PPM_OUTPUT] == PINMAP_PPM)?"Enabled":"Disabled");
-  Serial.print(" CHs=");
-  Serial.println(ppmChannels);
-  Serial.println(bind_data.flags,16);
+  Serial.print("Entering normal mode");
+
   init_rfm(0);   // Configure the RFM22B's registers for normal operation
   RF_channel = 0;
   rfmSetChannel(bind_data.hopchannel[RF_channel]);
+
+  setupOutputs();
+  if ((rx_config.flags & IMMEDIATE_OUTPUT) && failsafeIsSet) {
+    failsafeActivate();
+    disablePPM=0;
+    disablePWM=0;
+  }
 
   // Count hopchannels as we need it later
   hopcount=0;
@@ -520,7 +540,7 @@ void loop()
       sei();
       if (rx_buf[0] & 0x01) {
         if (!fs_saved) {
-          save_failsafe_values();
+          failsafeSave();
           fs_saved = 1;
         }
       } else if (fs_saved) {
@@ -543,12 +563,10 @@ void loop()
 
     if (firstpack == 0) {
       firstpack = 1;
-      setupOutputs();
-    } else {
-      failsafeSet = 0;
-      disablePWM = 0;
-      disablePPM = 0;
     }
+    failsafeActive = 0;
+    disablePWM = 0;
+    disablePPM = 0;
 
     if (bind_data.flags & TELEMETRY_MASK) {
       if ((tx_buf[0] ^ rx_buf[0]) & 0x40) {
@@ -654,9 +672,9 @@ void loop()
     }
 
     if (lostpack) {
-      if (rx_config.failsafeDelay && (!failsafeSet) && ((time - linkLossTime) > delayInus(rx_config.failsafeDelay))) {
-        failsafeSet = 1;
-        load_failsafe_values();
+      if (rx_config.failsafeDelay && (!failsafeActive) && ((time - linkLossTime) > delayInus(rx_config.failsafeDelay))) {
+        failsafeActive = 1;
+        failsafeApply();
         lastBeaconTime = (time + ((uint32_t)rx_config.beacon_deadtime * 1000000UL)) | 1; //beacon activating...
       }
       if (rx_config.pwmStopDelay && (!disablePWM) && ((time - linkLossTime) > delayInus(rx_config.pwmStopDelay))) {

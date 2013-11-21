@@ -216,6 +216,7 @@ again:
 #define PPM_MAX_8CH       0x01
 #define ALWAYS_BIND       0x02
 #define SLAVE_MODE        0x04
+#define IMMEDIATE_OUTPUT  0x08
 
 // non linear mapping
 // 0 - disabled
