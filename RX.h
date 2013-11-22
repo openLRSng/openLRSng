@@ -338,34 +338,17 @@ uint8_t bindReceive(uint32_t timeout)
   return 0;
 }
 
-uint8_t checkIfGrounded(uint8_t pin)
-{
-  int8_t ret = 0;
-
-  pinMode(pin, INPUT);
-  digitalWrite(pin, 1);
-  delay(10);
-
-  if (!digitalRead(pin)) {
-    ret = 1;
-  }
-
-  digitalWrite(pin, 0);
-
-  return ret;
-}
-
 int8_t checkIfConnected(uint8_t pin1, uint8_t pin2)
 {
   int8_t ret = 0;
   pinMode(pin1, OUTPUT);
   digitalWrite(pin1, 1);
   digitalWrite(pin2, 1);
-  delay(10);
+  delayMicroseconds(10);
 
   if (digitalRead(pin2)) {
     digitalWrite(pin1, 0);
-    delay(10);
+    delayMicroseconds(10);
 
     if (!digitalRead(pin2)) {
       ret = 1;
