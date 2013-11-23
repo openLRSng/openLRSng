@@ -336,7 +336,7 @@ void setup(void)
     Serial.read();
   }
 
-  Serial.println("OpenLRSng starting");
+  Serial.println("OpenLRSng TX starting");
 
   delay(200);
   checkBND();

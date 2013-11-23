@@ -399,6 +399,7 @@ void setup()
   Serial.begin(115200);
   rxReadEeprom();
   failsafeLoad();
+  Serial.println("OpenLRSng RX starting");
 
   setupRfmInterrupt();
 
