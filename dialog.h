@@ -240,10 +240,10 @@ void rxPrint(void)
   Serial.print(F("I) Failsafe beacon frq. : "));
   if (rx_config.beacon_frequency) {
     Serial.println(rx_config.beacon_frequency);
-    Serial.print(F("J) Failsafe beacon delay (10-65535): "));
-    Serial.println(rx_config.beacon_deadtime);
-    Serial.print(F("K) Failsafe beacon intv. (5-255): "));
-    Serial.println(rx_config.beacon_interval);
+    Serial.print(F("J) Failsafe beacon delay (0-255 => 10s - 150min): "));
+    Serial.println(delayInMsLong(rx_config.beacon_deadtime));
+    Serial.print(F("K) Failsafe beacon intv. (0-255 => 10s - 150min): "));
+    Serial.println(delayInMsLong(rx_config.beacon_interval));
   } else {
     Serial.println(F("DISABLED"));
   }
@@ -511,17 +511,17 @@ void handleRXmenu(char c)
     case 'f':
     case 'F':
       CLI_menu = 20;
-      Serial.println(F("Set failsafe delay (x 0.1s)"));
+      Serial.println(F("Set failsafe delay (0 disabled, 1-255 == 0.1s - 50min)"));
       break;
     case 'g':
     case 'G':
       CLI_menu = 21;
-      Serial.println(F("Set PPM stop delay (x 0.1s)"));
+      Serial.println(F("Set PPM stop delay (0 disabled, 1-255 == 0.1s - 50min)"));
       break;
     case 'h':
     case 'H':
       CLI_menu = 22;
-      Serial.println(F("Set PWM stop delay (x 0.1s)"));
+      Serial.println(F("Set PWM stop delay (0 disabled, 1-255 == 0.1s - 50min)"));
       break;
     case 'i':
     case 'I':

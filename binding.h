@@ -54,14 +54,14 @@
 #define DEFAULT_BEACON_DEADTIME 30 // time to wait until go into beacon mode (30s)
 #define DEFAULT_BEACON_INTERVAL 10 // interval between beacon transmits (10s)
 
-#define MIN_DEADTIME 10
-#define MAX_DEADTIME 65535
+#define MIN_DEADTIME 0
+#define MAX_DEADTIME 255
 
-#define MIN_INTERVAL 5
+#define MIN_INTERVAL 0
 #define MAX_INTERVAL 255
 
 #define BINDING_POWER     0x06 // not lowest since may result fail with RFM23BP
-#define BINDING_VERSION   8
+#define BINDING_VERSION   9
 
 #define EEPROM_OFFSET          0x100
 #define EEPROM_RX_OFFSET       0x140 // RX specific config struct
@@ -224,7 +224,7 @@ again:
 // 100-189 - 10s  - 99s   (1s res)
 // 190-209 - 100s - 290s (10s res)
 // 210-255 - 5m - 50m (1m res)
-uint32_t delayInMs(uint8_t d)
+uint32_t delayInMs(uint16_t d)
 {
   uint32_t ms;
   if (d < 100) {
@@ -239,13 +239,18 @@ uint32_t delayInMs(uint8_t d)
   return ms * 100UL;
 }
 
+uint32_t delayInMsLong(uint8_t d)
+{
+  return delayInMs((uint16_t)d+100);
+}
+
 struct RX_config {
   uint8_t  rx_type; // RX type fillled in by RX, do not change
   uint8_t  pinMapping[13];
   uint8_t  flags;
   uint8_t  RSSIpwm;
   uint32_t beacon_frequency;
-  uint16_t beacon_deadtime;
+  uint8_t  beacon_deadtime;
   uint8_t  beacon_interval;
   uint16_t minsync;
   uint8_t  failsafeDelay;

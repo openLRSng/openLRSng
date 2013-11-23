@@ -664,7 +664,7 @@ void loop()
       if (rx_config.failsafeDelay && (!failsafeActive) && ((timeMs - linkLossTimeMs) > delayInMs(rx_config.failsafeDelay))) {
         failsafeActive = 1;
         failsafeApply();
-        lastBeaconTimeMs = (timeMs + (uint32_t)rx_config.beacon_deadtime * 1000) | 1; //beacon activating...
+        lastBeaconTimeMs = (timeMs + delayInMsLong(rx_config.beacon_deadtime)) | 1; //beacon activating...
       }
       if (rx_config.pwmStopDelay && (!disablePWM) && ((timeMs - linkLossTimeMs) > delayInMs(rx_config.pwmStopDelay))) {
         disablePWM = 1;
@@ -675,7 +675,7 @@ void loop()
 
       if ((rx_config.beacon_frequency) && (lastBeaconTimeMs)) {
         if (((timeMs - lastBeaconTimeMs) < 0x80000000) && // last beacon is future during deadtime
-            (timeMs - lastBeaconTimeMs) > (uint32_t)rx_config.beacon_interval * 1000) {
+            (timeMs - lastBeaconTimeMs) > delayInMsLong(rx_config.beacon_interval)) {
           beacon_send();
           init_rfm(0);   // go back to normal RX
           rx_reset();
