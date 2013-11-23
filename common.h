@@ -398,7 +398,7 @@ void spiWriteRegister(uint8_t address, uint8_t data)
 void rfmSetChannel(uint8_t ch)
 {
   uint8_t magicLSB = (bind_data.rf_magic & 0xff) ^ ch;
-  spiWriteRegister(0x79, ch);
+  spiWriteRegister(0x79, bind_data.hopchannel[ch]);
   spiWriteRegister(0x3a + 3, magicLSB);
   spiWriteRegister(0x3f + 3, magicLSB);
 }

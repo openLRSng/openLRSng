@@ -448,7 +448,7 @@ void setup()
 
   init_rfm(0);   // Configure the RFM22B's registers for normal operation
   RF_channel = 0;
-  rfmSetChannel(bind_data.hopchannel[RF_channel]);
+  rfmSetChannel(RF_channel);
 
   // Count hopchannels as we need it later
   hopcount=0;
@@ -696,7 +696,7 @@ void loop()
     if ((RF_channel == MAXHOPS) || (bind_data.hopchannel[RF_channel] == 0)) {
       RF_channel = 0;
     }
-    rfmSetChannel(bind_data.hopchannel[RF_channel]);
+    rfmSetChannel(RF_channel);
     willhop = 0;
   }
 

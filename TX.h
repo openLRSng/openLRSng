@@ -321,7 +321,7 @@ void setup(void)
   setupRfmInterrupt();
 
   init_rfm(0);
-  rfmSetChannel(bind_data.hopchannel[RF_channel]);
+  rfmSetChannel(RF_channel);
 
   sei();
 
@@ -491,7 +491,7 @@ void loop(void)
       Green_LED_ON ;
 
       // Send the data over RF
-      rfmSetChannel(bind_data.hopchannel[RF_channel]);
+      rfmSetChannel(RF_channel);
 
       tx_packet(tx_buf, getPacketSize(&bind_data));
 
