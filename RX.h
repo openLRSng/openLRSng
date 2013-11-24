@@ -305,8 +305,7 @@ uint8_t bindReceive(uint32_t timeout)
           timeout=0;
         } else {
           Serial.println(F("Reinit RX config"));
-          rxInitDefaults();
-          rxWriteEeprom();
+          rxInitDefaults(1);
           rxc_buf[0]='I';
         }
         memcpy(rxc_buf+1, &rx_config, sizeof(rx_config));
@@ -675,7 +674,7 @@ void loop()
 
       if ((rx_config.beacon_frequency) && (lastBeaconTimeMs)) {
         if (((timeMs - lastBeaconTimeMs) < 0x80000000) && // last beacon is future during deadtime
-            (timeMs - lastBeaconTimeMs) > delayInMsLong(rx_config.beacon_interval)) {
+            (timeMs - lastBeaconTimeMs) > (1000UL * rx_config.beacon_interval)) {
           beacon_send();
           init_rfm(0);   // go back to normal RX
           rx_reset();

@@ -57,7 +57,7 @@
 #define MIN_DEADTIME 0
 #define MAX_DEADTIME 255
 
-#define MIN_INTERVAL 0
+#define MIN_INTERVAL 1
 #define MAX_INTERVAL 255
 
 #define BINDING_POWER     0x06 // not lowest since may result fail with RFM23BP
@@ -261,7 +261,7 @@ struct RX_config {
 #ifndef COMPILE_TX
 // following is only needed on receiver
 
-void rxInitDefaults()
+void rxInitDefaults(bool save)
 {
   uint8_t i;
 #if (BOARD_TYPE == 3)
@@ -297,6 +297,10 @@ void rxInitDefaults()
   rx_config.beacon_deadtime = DEFAULT_BEACON_DEADTIME;
   rx_config.beacon_interval = DEFAULT_BEACON_INTERVAL;
   rx_config.minsync = 3000;
+
+  if (save) {
+    rxWriteEeprom();
+  }
 }
 
 void rxWriteEeprom()
@@ -319,13 +323,22 @@ void rxReadEeprom()
   }
 
   if (temp!=BIND_MAGIC) {
-    Serial.println("RXconf reinit");
-    rxInitDefaults();
-    rxWriteEeprom();
+    rxInitDefaults(1);
   } else {
     for (uint8_t i = 0; i < sizeof(rx_config); i++) {
       *((uint8_t*)&rx_config + i) = EEPROM.read(EEPROM_RX_OFFSET + 4 + i);
     }
+#if (BOARD_TYPE == 3)
+    if (rx_config.rx_type != RX_FLYTRON8CH) {
+      rxInitDefaults(1);
+    }
+#elif (BOARD_TYPE == 5)
+    if (rx_config.rx_type != RX_OLRSNG4CH) {
+      rxInitDefaults(1);
+    }
+#else
+#error FIXME
+#endif
     Serial.println("RXconf loaded");
   }
 }

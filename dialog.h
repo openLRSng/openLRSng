@@ -242,8 +242,8 @@ void rxPrint(void)
     Serial.println(rx_config.beacon_frequency);
     Serial.print(F("J) Failsafe beacon delay (0-255 => 10s - 150min): "));
     Serial.println(delayInMsLong(rx_config.beacon_deadtime));
-    Serial.print(F("K) Failsafe beacon intv. (0-255 => 10s - 150min): "));
-    Serial.println(delayInMsLong(rx_config.beacon_interval));
+    Serial.print(F("K) Failsafe beacon intv. (1-255s): "));
+    Serial.println(rx_config.beacon_interval);
   } else {
     Serial.println(F("DISABLED"));
   }
