@@ -260,6 +260,16 @@ struct RX_config {
 
 #ifndef COMPILE_TX
 // following is only needed on receiver
+void rxWriteEeprom()
+{
+  for (uint8_t i = 0; i < 4; i++) {
+    myEEPROMwrite(EEPROM_RX_OFFSET + i, (BIND_MAGIC >> ((3-i) * 8))& 0xff);
+  }
+
+  for (uint8_t i = 0; i < sizeof(rx_config); i++) {
+    myEEPROMwrite(EEPROM_RX_OFFSET + 4 + i, *((uint8_t*)&rx_config + i));
+  }
+}
 
 void rxInitDefaults(bool save)
 {
@@ -300,17 +310,6 @@ void rxInitDefaults(bool save)
 
   if (save) {
     rxWriteEeprom();
-  }
-}
-
-void rxWriteEeprom()
-{
-  for (uint8_t i = 0; i < 4; i++) {
-    myEEPROMwrite(EEPROM_RX_OFFSET + i, (BIND_MAGIC >> ((3-i) * 8))& 0xff);
-  }
-
-  for (uint8_t i = 0; i < sizeof(rx_config); i++) {
-    myEEPROMwrite(EEPROM_RX_OFFSET + 4 + i, *((uint8_t*)&rx_config + i));
   }
 }
 
