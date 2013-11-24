@@ -26,17 +26,23 @@
 #define DEFAULT_BAUDRATE 115200
 
 // FLAGS: 8bits
-#define TELEMETRY_ENABLED 0x08
-#define FRSKY_ENABLED     0x10
-#define CHANNELS_4_4  1
-#define CHANNELS_8    2
-#define CHANNELS_8_4  3
-#define CHANNELS_12   4
-#define CHANNELS_12_4 5
-#define CHANNELS_16   6
 
+#define TELEMETRY_OFF       0x00
+#define TELEMETRY_PASSTHRU  0x08
+#define TELEMETRY_FRSKY     0x10 // covers smartport if used with &
+#define TELEMETRY_SMARTPORT 0x18
+#define TELEMETRY_MASK      0x18
 
-#define DEFAULT_FLAGS (CHANNELS_8 | TELEMETRY_ENABLED)
+#define CHANNELS_4_4  0x01
+#define CHANNELS_8    0x02
+#define CHANNELS_8_4  0x03
+#define CHANNELS_12   0x04
+#define CHANNELS_12_4 0x05
+#define CHANNELS_16   0x06
+
+#define MUTE_TX       0x20 // do not beep on telemetry loss
+
+#define DEFAULT_FLAGS (CHANNELS_8 | TELEMETRY_PASSTHRU)
 
 // helpper macro for European PMR channels
 #define EU_PMR_CH(x) (445993750L + 12500L * (x)) // valid for ch1-ch8
@@ -45,17 +51,17 @@
 #define US_FRS_CH(x) (462537500L + 25000L * (x)) // valid for ch1-ch7
 
 #define DEFAULT_BEACON_FREQUENCY 0 // disable beacon
-#define DEFAULT_BEACON_DEADTIME 30 // time to wait until go into beacon mode (s)
-#define DEFAULT_BEACON_INTERVAL 10 // interval between beacon transmits (s)
+#define DEFAULT_BEACON_DEADTIME 30 // time to wait until go into beacon mode (30s)
+#define DEFAULT_BEACON_INTERVAL 10 // interval between beacon transmits (10s)
 
-#define MIN_DEADTIME 10
-#define MAX_DEADTIME 65535
+#define MIN_DEADTIME 0
+#define MAX_DEADTIME 255
 
-#define MIN_INTERVAL 5
+#define MIN_INTERVAL 1
 #define MAX_INTERVAL 255
 
-#define BINDING_POWER     0x00 // 1 mW
-#define BINDING_VERSION   7
+#define BINDING_POWER     0x06 // not lowest since may result fail with RFM23BP
+#define BINDING_VERSION   9
 
 #define EEPROM_OFFSET          0x100
 #define EEPROM_RX_OFFSET       0x140 // RX specific config struct
@@ -106,7 +112,9 @@ struct rfm22_modem_regs {
 } modem_params[] = {
   { 4800, 0x1a, 0x40, 0x0a, 0xa1, 0x20, 0x4e, 0xa5, 0x00, 0x1b, 0x1e, 0x27, 0x52, 0x2c, 0x23, 0x30 }, // 50000 0x00
   { 9600, 0x05, 0x40, 0x0a, 0xa1, 0x20, 0x4e, 0xa5, 0x00, 0x20, 0x24, 0x4e, 0xa5, 0x2c, 0x23, 0x30 }, // 25000 0x00
-  { 19200,0x06, 0x40, 0x0a, 0xd0, 0x00, 0x9d, 0x49, 0x00, 0x7b, 0x28, 0x9d, 0x49, 0x2c, 0x23, 0x30 }  // 25000 0x01
+  { 19200,0x06, 0x40, 0x0a, 0xd0, 0x00, 0x9d, 0x49, 0x00, 0x7b, 0x28, 0x9d, 0x49, 0x2c, 0x23, 0x30 },  // 25000 0x01
+  { 57600,0x05, 0x40, 0x0a, 0x45, 0x01, 0xd7, 0xdc, 0x03, 0xb8, 0x1e, 0x0e, 0xbf, 0x00, 0x23, 0x2e },
+  {125000,0x8a, 0x40, 0x0a, 0x60, 0x01, 0x55, 0x55, 0x02, 0xad, 0x1e, 0x20, 0x00, 0x00, 0x23, 0xc8 },
 };
 
 #define DATARATE_COUNT (sizeof(modem_params)/sizeof(modem_params[0]))
@@ -205,13 +213,36 @@ again:
   }
 }
 
-#define FAILSAFE_NOPPM    0x01
-#define FAILSAFE_NOPWM    0x02
-#define PPM_MAX_8CH       0x04
-#define ALWAYS_BIND       0x08
-#define SLAVE_MODE        0x80
+#define PPM_MAX_8CH       0x01
+#define ALWAYS_BIND       0x02
+#define SLAVE_MODE        0x04
+#define IMMEDIATE_OUTPUT  0x08
 
-#define FAILSAFE_TIME(rxc) (((uint32_t)rxc.failsafe_delay) * 100000UL)
+// non linear mapping
+// 0 - disabled
+// 1-99    - 100ms - 9900ms (100ms res)
+// 100-189 - 10s  - 99s   (1s res)
+// 190-209 - 100s - 290s (10s res)
+// 210-255 - 5m - 50m (1m res)
+uint32_t delayInMs(uint16_t d)
+{
+  uint32_t ms;
+  if (d < 100) {
+    ms = d;
+  } else if (d < 190) {
+    ms = (d-90) * 10UL;
+  } else if (d < 210) {
+    ms = (d-180) * 100UL;
+  } else {
+    ms = (d-205) * 600UL;
+  }
+  return ms * 100UL;
+}
+
+uint32_t delayInMsLong(uint8_t d)
+{
+  return delayInMs((uint16_t)d+100);
+}
 
 struct RX_config {
   uint8_t  rx_type; // RX type fillled in by RX, do not change
@@ -219,16 +250,18 @@ struct RX_config {
   uint8_t  flags;
   uint8_t  RSSIpwm;
   uint32_t beacon_frequency;
-  uint16_t beacon_deadtime;
+  uint8_t  beacon_deadtime;
   uint8_t  beacon_interval;
   uint16_t minsync;
-  uint8_t  failsafe_delay;
+  uint8_t  failsafeDelay;
+  uint8_t  ppmStopDelay;
+  uint8_t  pwmStopDelay;
 } rx_config;
 
 #ifndef COMPILE_TX
 // following is only needed on receiver
 
-void rxInitDefaults()
+void rxInitDefaults(bool save)
 {
   uint8_t i;
 #if (BOARD_TYPE == 3)
@@ -246,19 +279,28 @@ void rxInitDefaults()
   for (i=0; i<4; i++) {
     rx_config.pinMapping[i]=i; // default to PWM out
   }
-  rx_config.pinMapping[4] = PINMAP_RXD;
-  rx_config.pinMapping[5] = PINMAP_TXD;
+  rx_config.pinMapping[4] = 4;
+  rx_config.pinMapping[5] = 5;
+  rx_config.pinMapping[6] = PINMAP_RXD;
+  rx_config.pinMapping[7] = PINMAP_TXD;
+
 #else
 #error INVALID RX BOARD
 #endif
 
   rx_config.flags = ALWAYS_BIND;
   rx_config.RSSIpwm = 255; // off
-  rx_config.failsafe_delay = 10; //1s
+  rx_config.failsafeDelay = 10; //1s
+  rx_config.ppmStopDelay = 0;
+  rx_config.pwmStopDelay = 0;
   rx_config.beacon_frequency = DEFAULT_BEACON_FREQUENCY;
   rx_config.beacon_deadtime = DEFAULT_BEACON_DEADTIME;
   rx_config.beacon_interval = DEFAULT_BEACON_INTERVAL;
   rx_config.minsync = 3000;
+
+  if (save) {
+    rxWriteEeprom();
+  }
 }
 
 void rxWriteEeprom()
@@ -281,13 +323,22 @@ void rxReadEeprom()
   }
 
   if (temp!=BIND_MAGIC) {
-    Serial.println("RXconf reinit");
-    rxInitDefaults();
-    rxWriteEeprom();
+    rxInitDefaults(1);
   } else {
     for (uint8_t i = 0; i < sizeof(rx_config); i++) {
       *((uint8_t*)&rx_config + i) = EEPROM.read(EEPROM_RX_OFFSET + 4 + i);
     }
+#if (BOARD_TYPE == 3)
+    if (rx_config.rx_type != RX_FLYTRON8CH) {
+      rxInitDefaults(1);
+    }
+#elif (BOARD_TYPE == 5)
+    if (rx_config.rx_type != RX_OLRSNG4CH) {
+      rxInitDefaults(1);
+    }
+#else
+#error FIXME
+#endif
     Serial.println("RXconf loaded");
   }
 }

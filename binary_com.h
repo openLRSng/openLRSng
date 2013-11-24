@@ -16,6 +16,7 @@ boolean binary_mode_active = false;
 #define PSP_REQ_SCANNER_MODE          4
 #define PSP_REQ_SPECIAL_PINS          5
 #define PSP_REQ_FW_VERSION            6
+#define PSP_REQ_NUMBER_OF_RX_OUTPUTS  7
 
 #define PSP_SET_BIND_DATA          101
 #define PSP_SET_RX_CONFIG          102
@@ -29,6 +30,13 @@ boolean binary_mode_active = false;
 #define PSP_INF_REFUSED       202
 #define PSP_INF_CRC_FAIL      203
 #define PSP_INF_DATA_TOO_LONG 204
+
+extern struct rxSpecialPinMap rxcSpecialPins[];
+extern uint8_t rxcSpecialPinCount;
+extern uint8_t rxcNumberOfOutputs;
+extern uint16_t rxcVersion;
+uint8_t rxcConnect();
+
 
 class binary_PSP
 {
@@ -136,55 +144,24 @@ public:
     case PSP_REQ_RX_JOIN_CONFIGURATION:
       protocol_head(PSP_REQ_RX_JOIN_CONFIGURATION, 1);
       // 1 success, 2 timeout, 3 failed response
-      {
-        uint8_t tx_buf[1 + sizeof(rx_config)];
-        uint32_t last_time = micros();
-        init_rfm(1);
 
-        do {
-          tx_buf[0]='p';
-          tx_packet(tx_buf,1);
-          RF_Mode = Receive;
-          rx_reset();
-          delay(200);
-        } while ((RF_Mode == Receive) && !Serial.available() && ((micros() - last_time) < 30000000)); // 30 seconds
+      serialize_uint8(rxcConnect());
 
-        if (RF_Mode == Receive) {
-          serialize_uint8(0x02); // timeout
-          protocol_tail();
-          return;
-        }
-
-        spiSendAddress(0x7f);   // Send the package read command
-        tx_buf[0] = spiReadData();
-
-        if (tx_buf[0]!='P') {
-          serialize_uint8(0x03); // invalid response
-          protocol_tail();
-          return;
-        }
-
-        for (uint8_t i = 0; i < sizeof(rx_config); i++) {
-          *(((uint8_t*)&rx_config) + i) = spiReadData();
-        }
-
-        serialize_uint8(0x01); // success
-      }
       break;
     case PSP_REQ_SCANNER_MODE:
       protocol_head(PSP_REQ_SCANNER_MODE, 1);
       serialize_uint8(0x01);
       protocol_tail();
-      
+
       scannerMode();
-      
+
       return;
       break;
     case PSP_REQ_SPECIAL_PINS:
-      protocol_head(PSP_REQ_SPECIAL_PINS, sizeof(rxSpecialPins));
+      protocol_head(PSP_REQ_SPECIAL_PINS, sizeof(struct rxSpecialPinMap) * rxcSpecialPinCount);
       {
-        char* array = (char*) &rxSpecialPins;
-        for (uint16_t i = 0; i < sizeof(rxSpecialPins); i++) {
+        char* array = (char*) &rxcSpecialPins;
+        for (uint16_t i = 0; i < sizeof(struct rxSpecialPinMap) * rxcSpecialPinCount; i++) {
           serialize_uint8(array[i]);
         }
       }
@@ -195,17 +172,23 @@ public:
         serialize_uint16(version);
       }
       break;
+    case PSP_REQ_NUMBER_OF_RX_OUTPUTS:
+      protocol_head(PSP_REQ_NUMBER_OF_RX_OUTPUTS, 1);
+      {
+        serialize_uint8(rxcNumberOfOutputs);
+      }
+      break;
       // SET
     case PSP_SET_BIND_DATA:
       protocol_head(PSP_SET_BIND_DATA, 1);
-      
+
       if (payload_length_received == sizeof(bind_data)) {
         char* array = (char*) &bind_data;
 
         for (uint16_t i = 0; i < sizeof(bind_data); i++) {
           array[i] = data_buffer[i];
         }
-        
+
         serialize_uint8(0x01);
       } else {
         // fail (buffer size doesn't match struct memory size)
@@ -214,14 +197,14 @@ public:
       break;
     case PSP_SET_RX_CONFIG:
       protocol_head(PSP_SET_RX_CONFIG, 1);
-      
+
       if (payload_length_received == sizeof(rx_config)) {
         char* array = (char*) &rx_config;
 
         for (uint16_t i = 0; i < sizeof(rx_config); i++) {
           array[i] = data_buffer[i];
         }
-        
+
         serialize_uint8(0x01);
       } else {
         // fail (buffer size doesn't match struct memory size)
@@ -281,7 +264,7 @@ public:
         spiSendAddress(0x7f);   // Send the package read command
         tx_buf[0] = spiReadData();
 
-        for (unsigned int i = 0; i < sizeof(rx_config); i++) {
+        for (uint8_t i = 0; i < sizeof(rx_config); i++) {
           tx_buf[i + 1] = spiReadData();
         }
 
@@ -300,9 +283,9 @@ public:
       protocol_head(PSP_SET_EXIT, 1);
       serialize_uint8(0x01);
       protocol_tail();
-      
+
       binary_mode_active = false;
-      
+
       return;
       break;
     default: // Unrecognized code

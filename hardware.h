@@ -4,6 +4,8 @@
 #define BOARD_TYPE RX_BOARD_TYPE
 #endif
 
+// Generic definitions needed always
+
 #define Available 0
 #define Transmit 1
 #define Transmitted 2
@@ -27,6 +29,36 @@ typedef struct pinMask {
   uint8_t B,C,D;
 } pinMask_t;
 
+
+#define RX_FLYTRON8CH 0x01
+#define RX_OLRSNG4CH  0x02
+#define RX_OLRSNG12CH 0x03
+#define RX_DTFUHF10CH 0x04
+
+#define PINMAP_PPM    0x20
+#define PINMAP_RSSI   0x21
+#define PINMAP_SDA    0x22
+#define PINMAP_SCL    0x23
+#define PINMAP_RXD    0x24
+#define PINMAP_TXD    0x25
+#define PINMAP_ANALOG 0x26
+#define PINMAP_LBEEP  0x27 // packetloss beeper
+
+// Following table is used by the dialog code to
+// determine possible extra functions for each output.
+
+
+struct rxSpecialPinMap {
+  uint8_t output;
+  uint8_t type;
+};
+
+#ifdef COMPILE_TX
+// Needed by dialog code
+static const char *specialStrs[] = { "PPM","RSSI","SDA","SCL","RXD","TXD","AIN","LBEEP"};
+#define SPECIALSTR(x) (specialStrs[(x)&7]) // note must be changed if not 8 strings
+#endif
+
 //####### Board Pinouts #########
 
 #if (BOARD_TYPE == 0) // Flytron M1 TX
@@ -37,6 +69,8 @@ typedef struct pinMask {
 #ifndef COMPILE_TX
 #error TX module cannot be used as RX
 #endif
+
+#define TelemetrySerial Serial
 
 #define PPM_IN A5
 #define BUZZER 9
@@ -118,6 +152,8 @@ void setupRfmInterrupt()
 #ifndef COMPILE_TX
 #error M1 RX not verified yet
 #endif
+
+#define TelemetrySerial Serial
 
 #define PPM_IN 5
 #define BUZZER 7
@@ -201,6 +237,8 @@ void setupRfmInterrupt()
 #error TX module cannot be used as RX
 #endif
 
+#define TelemetrySerial Serial
+
 #define PPM_IN 3
 #define RF_OUT_INDICATOR A0
 #define BUZZER 10
@@ -280,6 +318,7 @@ void setupRfmInterrupt()
 #endif
 
 #ifdef COMPILE_TX
+#define TelemetrySerial Serial
 
 #define USE_ICP1 // use ICP1 for PPM input for less jitter
 
@@ -343,6 +382,18 @@ const uint8_t OUTPUT_PIN[OUTPUTS] = { 3, 5, 6, 7, 8, 9, 10, 11, 12 , A4, A5, 0, 
 #define SCL_OUTPUT 10
 #define RXD_OUTPUT 11
 #define TXD_OUTPUT 12
+
+struct rxSpecialPinMap rxSpecialPins[] = {
+  {  0, PINMAP_RSSI},
+  {  0, PINMAP_LBEEP},
+  {  5, PINMAP_PPM},
+  {  9, PINMAP_SDA},
+  {  9, PINMAP_ANALOG}, // AIN0
+  { 10, PINMAP_SCL},
+  { 10, PINMAP_ANALOG}, // AIN1
+  { 11, PINMAP_RXD},
+  { 12, PINMAP_TXD},
+};
 
 #endif
 
@@ -410,6 +461,8 @@ void setupRfmInterrupt()
 #ifndef COMPILE_TX
 #error TX module cannot be used as RX
 #endif
+
+#define TelemetrySerial Serial
 
 #define USE_ICP1 // use ICP1 for PPM input for less jitter
 #define PPM_IN 8 // ICP1
@@ -506,11 +559,13 @@ void setupRfmInterrupt()
 #ifdef COMPILE_TX
 // TX operation
 
+#define TelemetrySerial Serial
+
 #define USE_ICP1 // use ICP1 for PPM input for less jitter
 #define PPM_IN 8 // ICP1
 
 #define BUZZER 3 // OCR2B
-#define BTN A0
+#define BTN    A4
 
 void buzzerInit()
 {
@@ -546,13 +601,15 @@ void buzzerOn(uint16_t freq)
 #define PWM_2 A4 // PC4 - also SDA
 #define PWM_3 3 // PD3 - also RSSI
 #define PWM_4 A5 // PC5 - also SCL
+#define PWM_5 A0 // PC0
+#define PWM_6 A1 // PC1
 
-#define OUTPUTS 6 // outputs available
+#define OUTPUTS 8 // outputs available
 
 const pinMask_t OUTPUT_MASKS[OUTPUTS] = {
   {0x02,0x00,0x00}, {0x00,0x10,0x00}, {0x00,0x00,0x08},// CH1/PPM, CH2/SDA, CH3/RSSI
-  {0x00,0x20,0x00}, {0x00,0x00,0x01}, {0x00,0x00,0x02},// CH4/SCL, RXD/CH5, TXD/CH6
-
+  {0x00,0x20,0x00}, {0x00,0x01,0x00}, {0x00,0x02,0x00},// CH4/SCL, CH5/AIN, CH6/AIN,
+  {0x00,0x00,0x01}, {0x00,0x00,0x02},                  // CH7/RXD, CH8/TXD - only on 6ch
 
 };
 
@@ -560,25 +617,49 @@ const pinMask_t OUTPUT_MASKS[OUTPUTS] = {
 #define RSSI_OUTPUT 2
 #define ANALOG0_OUTPUT 1 // actually input
 #define ANALOG1_OUTPUT 3 // actually input
+#define ANALOG0_OUTPUT_ALT 4 // actually input
+#define ANALOG1_OUTPUT_ALT 5 // actually input
 #define SDA_OUTPUT 1
 #define SCL_OUTPUT 3
-#define RXD_OUTPUT 4
-#define TXD_OUTPUT 5
+#define RXD_OUTPUT 6
+#define TXD_OUTPUT 7
 
-const uint8_t OUTPUT_PIN[OUTPUTS] = { 9, A4, 3, A5 ,0 ,1};
+const uint8_t OUTPUT_PIN[OUTPUTS] = { 9, A4, 3, A5, A0, A1, 0, 1};
+
+struct rxSpecialPinMap rxSpecialPins[] = {
+  { 0, PINMAP_PPM},
+  { 1, PINMAP_SDA},
+  { 1, PINMAP_ANALOG}, // AIN0
+  { 2, PINMAP_RSSI},
+  { 2, PINMAP_LBEEP},
+  { 3, PINMAP_SCL},
+  { 3, PINMAP_ANALOG}, // AIN1
+  { 4, PINMAP_ANALOG},
+  { 5, PINMAP_ANALOG},
+  { 6, PINMAP_RXD},
+  { 7, PINMAP_TXD},
+};
 
 #endif
 
 #define Red_LED 6
 #define Green_LED 5
 
+#ifndef COMPILE_TX
+#define Red_LED_ON    PORTD |=  _BV(6);
+#define Red_LED_OFF   PORTD &= ~_BV(6);
+#define Green_LED_ON  PORTD |=  _BV(5);
+#define Green_LED_OFF PORTD &= ~_BV(5);
+#else
+#define Red_LED2   A0
+#define Green_LED2 A1
+#define Red_LED_ON    { PORTD |=  _BV(6); PORTC |=  _BV(0); }
+#define Red_LED_OFF   { PORTD &= ~_BV(6); PORTC &= ~_BV(0); }
+#define Green_LED_ON  { PORTD |=  _BV(5); POTRC |=  _BV(1); }
+#define Green_LED_OFF { PORTD &= ~_BV(5); PORTC &= ~_BV(1); }
+#endif
+
 #define buzzerOff(foo) buzzerOn(0)
-
-#define Red_LED_ON  PORTD |= _BV(6);
-#define Red_LED_OFF  PORTD &= ~_BV(6);
-
-#define Green_LED_ON   PORTD |= _BV(5);
-#define Green_LED_OFF  PORTD &= ~_BV(5);
 
 //## RFM22B Pinouts for Public Edition (M2)
 #define  nIRQ_1 (PIND & 0x04)==0x04 //D2
@@ -627,6 +708,8 @@ void setupRfmInterrupt()
 #ifndef COMPILE_TX
 #error TX module cannot be used as RX
 #endif
+
+#define TelemetrySerial Serial1
 
 #define USE_ICP1 // use ICP1 for PPM input for less jitter
 #define PPM_IN 4 // ICP1
@@ -718,58 +801,3 @@ ISR(PCINT0_vect)
 
 #endif
 
-// Generic defines needed by pinmapping on RX:s
-#define RX_FLYTRON8CH 0x01
-#define RX_OLRSNG4CH  0x02
-#define RX_OLRSNG12CH 0x03
-#define RX_DTFUHF10CH 0x04
-
-#define PINMAP_PPM  0x20
-#define PINMAP_RSSI 0x21
-#define PINMAP_SDA  0x22
-#define PINMAP_SCL  0x23
-#define PINMAP_RXD  0x24
-#define PINMAP_TXD  0x25
-#define PINMAP_ANALOG 0x26
-#define PINMAP_LBEEP  0x27 // packetloss beeper
-
-// RX type information used by TX
-#ifdef COMPILE_TX
-
-// Following table is used by the dialog code to
-// determine possible extra functions for each output.
-
-struct rxSpecialPinMap {
-  unsigned char rxtype;
-  unsigned char output;
-  unsigned char type;
-} rxSpecialPins[] = {
-  {RX_FLYTRON8CH,  0, PINMAP_RSSI},
-  {RX_FLYTRON8CH,  0, PINMAP_LBEEP},
-  {RX_FLYTRON8CH,  5, PINMAP_PPM},
-  {RX_FLYTRON8CH,  9, PINMAP_SDA},
-  {RX_FLYTRON8CH,  9, PINMAP_ANALOG}, // AIN0
-  {RX_FLYTRON8CH, 10, PINMAP_SCL},
-  {RX_FLYTRON8CH, 10, PINMAP_ANALOG}, // AIN1
-  {RX_FLYTRON8CH, 11, PINMAP_RXD},
-  {RX_FLYTRON8CH, 12, PINMAP_TXD},
-  {RX_OLRSNG4CH,   0, PINMAP_PPM},
-  {RX_OLRSNG4CH,   1, PINMAP_SDA},
-  {RX_OLRSNG4CH,   1, PINMAP_ANALOG}, // AIN0
-  {RX_OLRSNG4CH,   2, PINMAP_RSSI},
-  {RX_OLRSNG4CH,   2, PINMAP_LBEEP},
-  {RX_OLRSNG4CH,   3, PINMAP_SCL},
-  {RX_OLRSNG4CH,   3, PINMAP_ANALOG}, // AIN1
-  {RX_OLRSNG4CH,   4, PINMAP_RXD},
-  {RX_OLRSNG4CH,   5, PINMAP_TXD},
-  {RX_DTFUHF10CH,  8, PINMAP_RSSI},
-  {RX_DTFUHF10CH,  8, PINMAP_LBEEP},
-  {RX_DTFUHF10CH,  9, PINMAP_PPM},
-  {0,0,0},
-};
-
-static const char *specialStrs[] = { "PPM","RSSI","SDA","SCL","RXD","TXD","AIN","LBEEP"};
-
-#define SPECIALSTR(x) (specialStrs[(x)&7]) // note must be changed if not 8 strings
-
-#endif

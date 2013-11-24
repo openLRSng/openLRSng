@@ -10,8 +10,6 @@ uint32_t lastSent = 0;
 
 uint32_t lastTelemetry = 0;
 
-uint32_t lastFrSky = 0;
-
 uint8_t RSSI_rx = 0;
 uint8_t RSSI_tx = 0;
 uint8_t RX_ain0 = 0;
@@ -307,7 +305,7 @@ void setup(void)
 
   buzzerInit();
 
-  Serial.begin(SERIAL_BAUD_RATE);
+  Serial.begin(115200);
 
   if (bindReadEeprom()) {
     Serial.println("Loaded settings from EEPROM\n");
@@ -315,7 +313,6 @@ void setup(void)
     Serial.print("EEPROM data not valid, reiniting\n");
     bindInitDefaults();
     bindWriteEeprom();
-    Serial.print("EEPROM data saved\n");
   }
 
   setupPPMinput();
@@ -324,7 +321,7 @@ void setup(void)
   setupRfmInterrupt();
 
   init_rfm(0);
-  rfmSetChannel(bind_data.hopchannel[RF_channel]);
+  rfmSetChannel(RF_channel);
 
   sei();
 
@@ -339,10 +336,13 @@ void setup(void)
     Serial.read();
   }
 
-  Serial.println("OpenLRSng starting");
+  Serial.println("OpenLRSng TX starting");
 
   delay(200);
   checkBND();
+
+  // switch to userdefined baudrate here
+  TelemetrySerial.begin(bind_data.serial_baudrate);
   checkButton();
 
   Red_LED_OFF;
@@ -353,12 +353,9 @@ void setup(void)
   serial_tail=0;
   serial_okToSend=0;
 
-  if (bind_data.flags & FRSKY_ENABLED) {
-    FrSkyInit();
-    lastFrSky = micros();
-    Serial.begin(9600);
-  } else if (bind_data.flags & TELEMETRY_ENABLED) {
-    Serial.begin(bind_data.serial_baudrate);
+  if (bind_data.flags & TELEMETRY_FRSKY) {
+    frskyInit((bind_data.flags & TELEMETRY_MASK) == TELEMETRY_SMARTPORT);
+  } else if (bind_data.flags & TELEMETRY_MASK) {
   }
 
 }
@@ -374,8 +371,8 @@ void loop(void)
     Red_LED_OFF;
   }
 
-  while (Serial.available() && (((serial_tail + 1) % SERIAL_BUFSIZE) != serial_head)) {
-    serial_buffer[serial_tail] = Serial.read();
+  while (TelemetrySerial.available() && (((serial_tail + 1) % SERIAL_BUFSIZE) != serial_head)) {
+    serial_buffer[serial_tail] = TelemetrySerial.read();
     serial_tail = (serial_tail + 1) % SERIAL_BUFSIZE;
   }
 
@@ -398,10 +395,10 @@ void loop(void)
         // transparent serial data...
         for (i=0; i<=(rx_buf[0]&7);) {
           i++;
-          if (bind_data.flags & FRSKY_ENABLED) {
-            FrSkyUserData(rx_buf[i]);
+          if (bind_data.flags & TELEMETRY_FRSKY) {
+            frskyUserData(rx_buf[i]);
           } else {
-            Serial.write(rx_buf[i]);
+            TelemetrySerial.write(rx_buf[i]);
           }
         }
       } else if ((rx_buf[0] & 0x3F)==0) {
@@ -441,7 +438,9 @@ void loop(void)
       if (lastTelemetry) {
         if ((time - lastTelemetry) > getInterval(&bind_data)) {
           // telemetry lost
-          buzzerOn(BZ_FREQ);
+          if (!(bind_data.flags & MUTE_TX)) {
+            buzzerOn(BZ_FREQ);
+          }
           lastTelemetry=0;
         } else {
           // telemetry link re-established
@@ -499,7 +498,7 @@ void loop(void)
       Green_LED_ON ;
 
       // Send the data over RF
-      rfmSetChannel(bind_data.hopchannel[RF_channel]);
+      rfmSetChannel(RF_channel);
 
       tx_packet(tx_buf, getPacketSize(&bind_data));
 
@@ -511,7 +510,7 @@ void loop(void)
       }
 
       // do not switch channel as we may receive telemetry on the old channel
-      if (bind_data.flags & TELEMETRY_ENABLED) {
+      if (bind_data.flags & TELEMETRY_MASK) {
         RF_Mode = Receive;
         rx_reset();
         // tell loop to sample downlink RSSI
@@ -532,11 +531,8 @@ void loop(void)
 
   }
 
-  if (bind_data.flags & FRSKY_ENABLED) {
-    if ((micros()-lastFrSky) > FRSKY_INTERVAL) {
-      lastFrSky=micros();
-      FrSkySendFrame(RX_ain0,RX_ain1,lastTelemetry?RSSI_rx:0,lastTelemetry?RSSI_tx:0);
-    }
+  if (bind_data.flags & TELEMETRY_FRSKY) {
+    frskyUpdate(RX_ain0,RX_ain1,lastTelemetry?RSSI_rx:0,lastTelemetry?RSSI_tx:0);
   }
 
   //Green LED will be OFF

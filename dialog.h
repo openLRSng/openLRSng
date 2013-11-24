@@ -9,7 +9,14 @@ char    CLI_buffer[EDIT_BUFFER_SIZE+1];
 uint8_t CLI_buffer_position = 0;
 bool    CLI_magic_set = 0;
 
-static char hexTab[16] = {'0','1','2','3','4','5','6','7','8','9','A','B','C','D','E','F'};
+const static char hexTab[16] = {'0','1','2','3','4','5','6','7','8','9','A','B','C','D','E','F'};
+const static char *chConfStr[8] = {"N/A", "4+4", "8", "8+4", "12", "12+4", "16", "N/A"};
+
+#define RXC_MAX_SPECIAL_PINS 16
+struct rxSpecialPinMap rxcSpecialPins[RXC_MAX_SPECIAL_PINS];
+uint8_t rxcSpecialPinCount;
+uint8_t rxcNumberOfOutputs;
+uint16_t rxcVersion;
 
 void hexDump(void *in, uint16_t bytes)
 {
@@ -38,10 +45,10 @@ void hexGet(void *out, uint16_t expected)
 {
   uint32_t start = millis();
   uint16_t bytes = 0;
-  uint8_t  state=0;
-  uint16_t numin;
+  uint8_t  state = 0;
+  uint16_t numin = 0;
   uint8_t  buffer[expected];
-  uint16_t check;
+  uint16_t check = 0;
   char     ch;
   while ((millis()-start)<2000) {
     if (Serial.available()) {
@@ -159,13 +166,26 @@ void bindPrint(void)
   Serial.println(chConfStr[bind_data.flags&0x07]);
 
   Serial.print(F("8) Telemetry:       "));
-  Serial.println((bind_data.flags&TELEMETRY_ENABLED)?"Enabled":"Disabled");
+  switch (bind_data.flags & TELEMETRY_MASK) {
+  case TELEMETRY_OFF:
+    Serial.println(F("Disabled"));
+    break;
+  case TELEMETRY_PASSTHRU:
+    Serial.println(F("Transparent"));
+    break;
+  case TELEMETRY_FRSKY:
+    Serial.println(F("FrSky"));
+    break;
+  case TELEMETRY_SMARTPORT:
+    Serial.println(F("smartPort"));
+    break;
+  }
 
-  Serial.print(F("9) FrSky emulation: "));
-  Serial.println((bind_data.flags&FRSKY_ENABLED)?"Enabled":"Disabled");
-
-  Serial.print(F("0) Serial baudrate:"));
+  Serial.print(F("9) Serial baudrate:"));
   Serial.println(bind_data.serial_baudrate);
+
+  Serial.print(F("0) Mute buzzer (mostly):"));
+  Serial.println((bind_data.flags & MUTE_TX)?"Yes":"No");
 
   Serial.print(F("Calculated packet interval: "));
   Serial.print(getInterval(&bind_data));
@@ -175,21 +195,31 @@ void bindPrint(void)
 
 }
 
+void rxPrintDTime(uint8_t val)
+{
+  if (!val) {
+    Serial.println(F("Disabled"));
+  } else {
+    uint32_t ms = delayInMs(val) / 100;
+    Serial.print(ms/10);
+    Serial.print('.');
+    Serial.print(ms%10);
+    Serial.println('s');
+  }
+}
+
 void rxPrint(void)
 {
-  uint8_t i,pins;
+  uint8_t i;
   Serial.print(F("RX type: "));
   if (rx_config.rx_type == RX_FLYTRON8CH) {
-    pins=13;
     Serial.println(F("Flytron/OrangeRX UHF 8ch"));
   } else if (rx_config.rx_type == RX_OLRSNG4CH) {
-    pins=6;
-    Serial.println(F("OpenLRSngRX mini 4ch"));
+    Serial.println(F("OpenLRSngRX mini 4/6ch"));
   } else if (rx_config.rx_type == RX_DTFUHF10CH) {
-    pins=10;
     Serial.println(F("DTF UHF 32-bit 10ch"));
   }
-  for (i=0; i<pins; i++) {
+  for (i=0; i<rxcNumberOfOutputs; i++) {
     Serial.print((char)(((i+1)>9)?(i+'A'-9):(i+'1')));
     Serial.print(F(") port "));
     Serial.print(i+1);
@@ -201,19 +231,18 @@ void rxPrint(void)
       Serial.println(SPECIALSTR(rx_config.pinMapping[i]));
     }
   }
-  Serial.print(F("F) Stop PPM on failsafe : O"));
-  Serial.println((rx_config.flags & FAILSAFE_NOPPM)?"N":"FF");
-  Serial.print(F("G) Stop PWM on failsafe : O"));
-  Serial.println((rx_config.flags & FAILSAFE_NOPWM)?"N":"FF");
-  Serial.print(F("H) Failsafe speed       : "));
-  Serial.print(rx_config.failsafe_delay);
-  Serial.println(F(" x 0.1s"));
+  Serial.print(F("F) Failsafe delay       : "));
+  rxPrintDTime(rx_config.failsafeDelay);
+  Serial.print(F("G) PPM stop delay       : "));
+  rxPrintDTime(rx_config.ppmStopDelay);
+  Serial.print(F("H) PWM stop delay       : "));
+  rxPrintDTime(rx_config.pwmStopDelay);
   Serial.print(F("I) Failsafe beacon frq. : "));
   if (rx_config.beacon_frequency) {
     Serial.println(rx_config.beacon_frequency);
-    Serial.print(F("J) Failsafe beacon delay (10-65535): "));
-    Serial.println(rx_config.beacon_deadtime);
-    Serial.print(F("K) Failsafe beacon intv. (5-255): "));
+    Serial.print(F("J) Failsafe beacon delay (0-255 => 10s - 150min): "));
+    Serial.println(delayInMsLong(rx_config.beacon_deadtime));
+    Serial.print(F("K) Failsafe beacon intv. (1-255s): "));
     Serial.println(rx_config.beacon_interval);
   } else {
     Serial.println(F("DISABLED"));
@@ -232,18 +261,8 @@ void rxPrint(void)
   Serial.println((rx_config.flags & ALWAYS_BIND)?"Enabled":"Disabled");
   Serial.print(F("P) Slave mode (experimental): "));
   Serial.println((rx_config.flags & SLAVE_MODE)?"Enabled":"Disabled");
-}
-
-// Print version, either x.y or x.y.z (if z != 0)
-void print_version()
-{
-  Serial.print(version >> 8);
-  Serial.print('.');
-  Serial.print((version >> 4) & 0x0f);
-  if (version & 0x0f) {
-    Serial.print('.');
-    Serial.print(version & 0x0f);
-  }
+  Serial.print(F("Q) Output before link (=FS) : "));
+  Serial.println((rx_config.flags & IMMEDIATE_OUTPUT)?"Enabled":"Disabled");
 }
 
 void CLI_menu_headers(void)
@@ -252,7 +271,7 @@ void CLI_menu_headers(void)
   switch (CLI_menu) {
   case -1:
     Serial.println(F("\n\nopenLRSng "));
-    print_version();
+    printVersion(version);
     Serial.println(F(" - System configuration"));
     Serial.println(F("Use numbers [0-9] to edit parameters"));
     Serial.println(F("[S] save settings to EEPROM and exit menu"));
@@ -287,13 +306,7 @@ void CLI_menu_headers(void)
     Serial.println(F("Set Channel config: "));
     Serial.println(F("Valid choices: 1 - 4+4 / 2 - 8 / 3 - 8+4 / 4 - 12 / 5 - 12+4 / 6 - 16"));
     break;
-  case 8:
-    Serial.println(F("Toggled telemetry!"));
-    break;
   case 9:
-    Serial.println(F("Toggled FrSky emulation!"));
-    break;
-  case 10:
     Serial.println(F("Set serial baudrate: "));
     break;
   }
@@ -307,63 +320,39 @@ void CLI_menu_headers(void)
 
 void RX_menu_headers(void)
 {
-  unsigned char ch;
+  uint8_t ch;
   switch (CLI_menu) {
   case -1:
-    Serial.println(F("\n\nopenLRSng "));
-    print_version();
-    Serial.println(F(" - receiver configurator"));
-    Serial.println(F("Use numbers [1-D] to edit ports [E-P] for settings"));
+    Serial.print(F("\n\nopenLRSng "));
+    printVersion(version);
+    Serial.print(F(" - receiver configurator, rx sw "));
+    printVersion(rxcVersion);
+    Serial.println(F("Use numbers [1-D] to edit ports [E-Q] for settings"));
     Serial.println(F("[R] revert RX settings to defaults"));
     Serial.println(F("[S] save settings to RX"));
     Serial.println(F("[X] abort changes and exit RX config"));
     Serial.println();
     rxPrint();
     break;
-  case 13:
-  case 12:
-  case 11:
-    if (rx_config.rx_type == RX_DTFUHF10CH) {
-      break;
-    }
-    // Fallthru
-  case 10:
-  case 9:
-  case 8:
-  case 7:
-    if (rx_config.rx_type == RX_OLRSNG4CH) {
-      break;
-    }
-    // Fallthru
-  case 6:
-  case 5:
-  case 4:
-  case 3:
-  case 2:
-  case 1:
-    Serial.print(F("Set output for port "));
-    Serial.println(CLI_menu);
-    Serial.print(F("Valid choices are: [1]-[16] (channel 1-16)"));
-    ch=20;
-    for (struct rxSpecialPinMap *pm = rxSpecialPins; pm->rxtype; pm++) {
-      if ((pm->rxtype!=rx_config.rx_type) || (pm->output!=(CLI_menu-1))) {
-        continue;
+  default:
+    if ((CLI_menu > 0) && (CLI_menu<=rxcNumberOfOutputs)) {
+      Serial.print(F("Set output for port "));
+      Serial.println(CLI_menu);
+      Serial.print(F("Valid choices are: [1]-[16] (channel 1-16)"));
+      ch=20;
+      for (uint8_t i=0; i<rxcSpecialPinCount; i++) {
+        if (rxcSpecialPins[i].output == CLI_menu-1) {
+          Serial.print(", [");
+          Serial.print(ch);
+          Serial.print("] (");
+          Serial.print(SPECIALSTR(rxcSpecialPins[i].type));
+          Serial.print(")");
+          ch++;
+        }
       }
-      Serial.print(", [");
-      Serial.print(ch);
-      Serial.print("] (");
-      Serial.print(SPECIALSTR(pm->type));
-      Serial.print(")");
-      ch++;
+      Serial.println();
     }
-    Serial.println();
     break;
-  }
-
-  // Flush input
-  delay(10);
-  while (Serial.available()) {
-    Serial.read();
   }
 }
 
@@ -408,7 +397,7 @@ uint8_t CLI_inline_edit(char c)
   } else if (c == 0x1B) { // ESC
     CLI_buffer_reset();
     return 1; // signal editing done
-  } else if(c == 0x0D) { // Enter
+  } else if((c == 0x0D)||(c == 0x0A)) { // Enter/Newline
     return 1; // signal editing done
   } else {
     if (CLI_buffer_position < EDIT_BUFFER_SIZE) {
@@ -423,7 +412,7 @@ uint8_t CLI_inline_edit(char c)
 
 void handleRXmenu(char c)
 {
-  unsigned char ch;
+  uint8_t ch;
   if (CLI_menu == -1) {
     switch (c) {
     case '!':
@@ -470,7 +459,7 @@ void handleRXmenu(char c)
       if (RF_Mode == Received) {
         spiSendAddress(0x7f);   // Send the package read command
         tx_buf[0]=spiReadData();
-        for (unsigned int i=0; i<sizeof(rx_config); i++) {
+        for (uint8_t i=0; i<sizeof(rx_config); i++) {
           tx_buf[i+1]=spiReadData();
         }
         memcpy(&rx_config,tx_buf+1,sizeof(rx_config));
@@ -512,7 +501,7 @@ void handleRXmenu(char c)
     case '2':
     case '1':
       c -= '0';
-      if ( ((c > 6) & (rx_config.rx_type == RX_OLRSNG4CH)) || ((c > 10) & (rx_config.rx_type == RX_DTFUHF10CH)) ) {
+      if ( c > rxcNumberOfOutputs) {
         Serial.println("invalid selection");
         break;
       }
@@ -521,22 +510,18 @@ void handleRXmenu(char c)
       break;
     case 'f':
     case 'F':
-      Serial.println(F("Toggled 'stop PPM'"));
-      rx_config.flags ^= FAILSAFE_NOPPM;
-      CLI_menu = -1;
-      RX_menu_headers();
+      CLI_menu = 20;
+      Serial.println(F("Set failsafe delay (0 disabled, 1-255 == 0.1s - 50min)"));
       break;
     case 'g':
     case 'G':
-      Serial.println(F("Toggled 'stop PWM'"));
-      rx_config.flags ^= FAILSAFE_NOPWM;
-      CLI_menu = -1;
-      RX_menu_headers();
+      CLI_menu = 21;
+      Serial.println(F("Set PPM stop delay (0 disabled, 1-255 == 0.1s - 50min)"));
       break;
     case 'h':
     case 'H':
       CLI_menu = 22;
-      Serial.println(F("Set failsafe delay (x 0.1s)"));
+      Serial.println(F("Set PWM stop delay (0 disabled, 1-255 == 0.1s - 50min)"));
       break;
     case 'i':
     case 'I':
@@ -584,6 +569,16 @@ void handleRXmenu(char c)
       CLI_menu = -1;
       RX_menu_headers();
       break;
+    case 'q':
+    case 'Q':
+      Serial.println(F("Toggled 'immediate output'"));
+      rx_config.flags ^= IMMEDIATE_OUTPUT;
+      CLI_menu = -1;
+      RX_menu_headers();
+      break;
+    }
+    while (Serial.available()) {
+      Serial.read();
     }
   } else { // we are inside the menu
     if (CLI_inline_edit(c)) {
@@ -597,44 +592,51 @@ void handleRXmenu(char c)
         case 13:
         case 12:
         case 11:
-          if (rx_config.rx_type == RX_DTFUHF10CH) {
-            break;
-          }
-          // Fallthru
         case 10:
         case 9:
         case 8:
         case 7:
-          if (rx_config.rx_type == RX_OLRSNG4CH) {
-            break;
-          }
-          // Fallthru
         case 6:
         case 5:
         case 4:
         case 3:
         case 2:
         case 1:
+          if (CLI_menu > rxcNumberOfOutputs) {
+            break;
+          }
           if ((value > 0) && (value<=16)) {
             rx_config.pinMapping[CLI_menu-1] = value-1;
             valid_input = 1;
           } else {
             ch=20;
-            for (struct rxSpecialPinMap *pm = rxSpecialPins; pm->rxtype; pm++) {
-              if ((pm->rxtype!=rx_config.rx_type) || (pm->output!=(CLI_menu-1))) {
+            for (uint8_t i = 0; i < rxcSpecialPinCount; i++) {
+              if (rxcSpecialPins[i].output!=(CLI_menu-1)) {
                 continue;
               }
               if (ch==value) {
-                rx_config.pinMapping[CLI_menu-1] = pm->type;
+                rx_config.pinMapping[CLI_menu-1] = rxcSpecialPins[i].type;
                 valid_input = 1;
               }
               ch++;
             }
           }
           break;
+        case 20:
+          if (value <= 255) {
+            rx_config.failsafeDelay = value;
+            valid_input = 1;
+          }
+          break;
+        case 21:
+          if (value <= 255) {
+            rx_config.ppmStopDelay = value;
+            valid_input = 1;
+          }
+          break;
         case 22:
-          if ((value >= 1) && (value <= 255)) {
-            rx_config.failsafe_delay = value;
+          if (value <= 255) {
+            rx_config.pwmStopDelay = value;
             valid_input = 1;
           }
           break;
@@ -703,34 +705,79 @@ void handleRXmenu(char c)
   }
 }
 
-void CLI_RX_config()
+uint8_t rxcConnect()
 {
   uint8_t tx_buf[1+sizeof(rx_config)];
   uint32_t last_time = micros();
-  Serial.println(F("Connecting to RX, power up the RX (with bind plug if not using always bind)"));
+
   init_rfm(1);
   do {
-    tx_buf[0]='p';
+    tx_buf[0]='t';
     tx_packet(tx_buf,1);
     RF_Mode = Receive;
     rx_reset();
     delay(250);
-    Serial.print(".");
-  } while ((RF_Mode==Receive) && ((micros()-last_time)<20000000));
+  } while ((RF_Mode==Receive) && (!Serial.available()) && ((micros()-last_time)<30000000));
 
   if (RF_Mode == Receive) {
-    Serial.println("TIMEOUT");
-    return;
+    return 2;
   }
-  Serial.println("got response");
+
+  spiSendAddress(0x7f);   // Send the package read command
+  tx_buf[0]=spiReadData();
+  if (tx_buf[0]!='T') {
+    return 3;
+  }
+
+  rxcVersion = (uint16_t)spiReadData() * 256;
+  rxcVersion += spiReadData();
+
+  rxcNumberOfOutputs = spiReadData();
+  rxcSpecialPinCount = spiReadData();
+  if (rxcSpecialPinCount>RXC_MAX_SPECIAL_PINS) {
+    return 3;
+  }
+
+  for (uint8_t i = 0; i < sizeof(struct rxSpecialPinMap) * rxcSpecialPinCount; i++) {
+    *(((uint8_t*)&rxcSpecialPins) + i) = spiReadData();
+  }
+
+  tx_buf[0]='p'; // ask for config dump
+  tx_packet(tx_buf,1);
+  RF_Mode = Receive;
+  rx_reset();
+  delay(50);
+
+  if (RF_Mode == Receive) {
+    return 2;
+  }
   spiSendAddress(0x7f);   // Send the package read command
   tx_buf[0]=spiReadData();
   if (tx_buf[0]!='P') {
-    Serial.println("Invalid response");
-    return;
+    return 3;
   }
+
   for (uint8_t i = 0; i < sizeof(rx_config); i++) {
     *(((uint8_t*)&rx_config) + i) = spiReadData();
+  }
+  return 1;
+}
+
+void CLI_RX_config()
+{
+  Serial.println(F("Connecting to RX, power up the RX (with bind plug if not using always bind)"));
+  Serial.println(F("Press any key to cancel"));
+  if (Serial.available()) {
+    handleRXmenu(Serial.read());
+  }
+
+  switch (rxcConnect()) {
+  case 2:
+    Serial.println(F("Timeout when connecting to RX"));
+    return;
+  case 3:
+    Serial.println(F("Protocol error with RX"));
+    return;
   }
 
   CLI_menu = -1;
@@ -808,21 +855,23 @@ void handleCLImenu(char c)
       CLI_menu_headers();
       break;
     case '8':
-      CLI_menu = 8;
-      CLI_menu_headers();
-      bind_data.flags ^= TELEMETRY_ENABLED;
+      Serial.println(F("Toggled telemetry!"));
+      {
+        uint8_t newf = (bind_data.flags + TELEMETRY_PASSTHRU) & TELEMETRY_MASK;
+        bind_data.flags&= ~TELEMETRY_MASK;
+        bind_data.flags|= newf;
+      }
       CLI_menu = -1;
       CLI_menu_headers();
       break;
     case '9':
       CLI_menu = 9;
       CLI_menu_headers();
-      bind_data.flags ^= FRSKY_ENABLED;
-      CLI_menu = -1;
-      CLI_menu_headers();
       break;
     case '0':
-      CLI_menu = 10;
+      Serial.println(F("Toggled TX muting!"));
+      bind_data.flags^= MUTE_TX;
+      CLI_menu = -1;
       CLI_menu_headers();
       break;
     case 'z':
@@ -892,7 +941,7 @@ void handleCLImenu(char c)
             valid_input = 1;
           }
           break;
-        case 10:
+        case 9:
           if ((value >= 1200) && (value <= 115200)) {
             bind_data.serial_baudrate = value;
             valid_input = 1;
