@@ -157,7 +157,6 @@ void bindMode(void)
         scannerMode();
         break;
       case 'B':
-        Serial.println(F("Entering binary mode"));
         binaryMode();
         break;
       default:
