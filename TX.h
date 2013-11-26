@@ -16,6 +16,9 @@ uint8_t RX_ain0 = 0;
 uint8_t RX_ain1 = 0;
 uint32_t sampleRSSI = 0;
 
+uint16_t linkQuality = 0;
+uint16_t linkQualityRX = 0;
+
 volatile uint8_t ppmAge = 0; // age of PPM data
 
 volatile uint8_t ppmCounter = PPM_CHANNELS; // ignore data until first sync pulse
@@ -381,6 +384,7 @@ void loop(void)
     if (!lastTelemetry) {
       lastTelemetry=1;  //fixup rare case of zero
     }
+    linkQuality|=1;
     RF_Mode = Receive;
     spiSendAddress(0x7f);   // Send the package read command
     for (int16_t i = 0; i < 9; i++) {
@@ -404,6 +408,7 @@ void loop(void)
         RSSI_rx = rx_buf[1];
         RX_ain0 = rx_buf[2];
         RX_ain1 = rx_buf[3];
+        linkQualityRX = rx_buf[6];
       }
     }
     if (serial_okToSend==1) {
@@ -503,6 +508,7 @@ void loop(void)
 
       // do not switch channel as we may receive telemetry on the old channel
       if (bind_data.flags & TELEMETRY_MASK) {
+        linkQuality<<=1;
         RF_Mode = Receive;
         rx_reset();
         // tell loop to sample downlink RSSI
@@ -524,7 +530,15 @@ void loop(void)
   }
 
   if (bind_data.flags & TELEMETRY_FRSKY) {
-    frskyUpdate(RX_ain0,RX_ain1,lastTelemetry?RSSI_rx:0,lastTelemetry?RSSI_tx:0);
+    uint8_t quality = countSetBits(linkQuality);
+    if (quality) {
+      if (quality > 15) {
+        quality = 15;
+      }
+      quality = (quality << 4) | 0x0f;
+    }
+    frskyUpdate(RX_ain0,RX_ain1,linkQualityRX,quality);
+    //frskyUpdate(RX_ain0,RX_ain1,lastTelemetry?RSSI_rx:0,lastTelemetry?RSSI_tx:0);
   }
 
   //Green LED will be OFF

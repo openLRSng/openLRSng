@@ -16,6 +16,8 @@ uint8_t  lastRSSIvalue = 0;
 uint8_t  smoothRSSI = 0;
 uint16_t lastAFCCvalue = 0;
 
+uint16_t linkQuality = 0;
+
 uint8_t  ppmCountter = 0;
 uint16_t ppmSync = 40000;
 uint8_t  ppmChannels = 8;
@@ -504,6 +506,8 @@ void loop()
 
     lastPacketTimeUs = micros(); // record last package time
     numberOfLostPackets = 0;
+    linkQuality <<= 1;
+    linkQuality |= 1;
 
     Red_LED_OFF;
     Green_LED_ON;
@@ -594,6 +598,11 @@ void loop()
           }
           tx_buf[4] = (lastAFCCvalue >> 8);
           tx_buf[5] = lastAFCCvalue & 0xff;
+          uint8_t quality = countSetBits(linkQuality);
+          if (quality>15) {
+            quality==15;
+          }
+          tx_buf[6] = quality;
         }
       }
       tx_packet_async(tx_buf, 9);
@@ -635,6 +644,7 @@ void loop()
   if (linkAcquired) {
     if ((numberOfLostPackets < hopcount) && ((timeUs - lastPacketTimeUs) > (getInterval(&bind_data) + 1000))) {
       // we lost packet, hop to next channel
+      linkQuality <<= 1;
       willhop = 1;
       if (numberOfLostPackets==0) {
         linkLossTimeMs = millis();
@@ -653,6 +663,7 @@ void loop()
       set_RSSI_output(smoothRSSI);
     } else if ((numberOfLostPackets == hopcount) && ((timeUs - lastPacketTimeUs) > (getInterval(&bind_data) * hopcount))) {
       // hop slowly to allow resync with TX
+      linkQuality <<= 1;
       willhop = 1;
       smoothRSSI=0;
       set_RSSI_output(smoothRSSI);

@@ -139,6 +139,15 @@ uint16_t servoBits2Us(uint16_t x)
   return ret;
 }
 
+uint8_t countSetBits(uint16_t x)
+{
+  x  = x - ((x >> 1) & 0x5555);
+  x  = (x & 0x3333) + ((x >> 2) & 0x3333);
+  x  = x + (x >> 4);
+  x &= 0x0F0F;
+  return (x * 0x0101) >> 8;
+}
+
 // Halt and blink failure code
 void fatalBlink(uint8_t blinks)
 {
