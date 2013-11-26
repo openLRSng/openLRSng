@@ -598,14 +598,7 @@ void loop()
           }
           tx_buf[4] = (lastAFCCvalue >> 8);
           tx_buf[5] = lastAFCCvalue & 0xff;
-          uint8_t quality = countSetBits(linkQuality);
-          if (quality) {
-            if (quality>15) {
-              quality=15;
-            }
-            quality = (quality<<4)|0x0f;
-          }
-          tx_buf[6] = quality;
+          tx_buf[6] = countSetBits(linkQuality&0xefff);
         }
       }
       tx_packet_async(tx_buf, 9);

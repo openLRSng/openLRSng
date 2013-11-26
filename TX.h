@@ -530,14 +530,12 @@ void loop(void)
   }
 
   if (bind_data.flags & TELEMETRY_FRSKY) {
-    uint8_t quality = countSetBits(linkQuality);
-    if (quality) {
-      if (quality > 15) {
-        quality = 15;
-      }
-      quality = (quality << 4) | 0x0f;
-    }
-    frskyUpdate(RX_ain0,RX_ain1,linkQualityRX,quality);
+    uint8_t linkQualityTX = countSetBits(linkQuality & 0xfffe);
+
+    uint8_t compRX = (uint16_t)((RSSI_rx >> 2) + 192) * linkQualityRX / 15;
+    uint8_t compTX = (uint16_t)((RSSI_tx >> 2) + 192) * linkQualityTX / 15;
+
+    frskyUpdate(RX_ain0, RX_ain1, compRX, compTX);
     //frskyUpdate(RX_ain0,RX_ain1,lastTelemetry?RSSI_rx:0,lastTelemetry?RSSI_tx:0);
   }
 
