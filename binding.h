@@ -219,7 +219,7 @@ again:
 #define IMMEDIATE_OUTPUT  0x08
 
 // non linear mapping
-// 0 - disabled
+// 0 - 0
 // 1-99    - 100ms - 9900ms (100ms res)
 // 100-189 - 10s  - 99s   (1s res)
 // 190-209 - 100s - 290s (10s res)
@@ -239,6 +239,10 @@ uint32_t delayInMs(uint16_t d)
   return ms * 100UL;
 }
 
+// non linear mapping
+// 0-89    - 10s - 99s
+// 90-109  - 100s - 290s (10s res)
+// 110-255 - 5m - 150m (1m res)
 uint32_t delayInMsLong(uint8_t d)
 {
   return delayInMs((uint16_t)d+100);

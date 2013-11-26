@@ -148,13 +148,14 @@ void frskyUpdate(uint8_t a1, uint8_t a2, uint8_t rx, uint8_t tx)
 {
   uint32_t now = micros();
   if (frskyIsSmartPort) {
-    if (now - frskyLast > SMARTPORT_INTERVAL) {
+    if ((now - frskyLast) > SMARTPORT_INTERVAL) {
       smartportSendFrame(a1, a2, rx, tx);
+      frskyLast = now;
     }
   } else {
-    if (now - frskyLast > FRSKY_INTERVAL) {
+    if ((now - frskyLast) > FRSKY_INTERVAL) {
       frskySendFrame(a1, a2, rx, tx);
+      frskyLast = now;
     }
   }
-  frskyLast = now;
 }
