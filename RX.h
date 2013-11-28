@@ -627,11 +627,10 @@ void loop()
     RSSI_sum += lastRSSIvalue;    // tally up for average
     RSSI_count++;
 
-    if (RSSI_count > 20) {
+    if (RSSI_count > 8) {
       RSSI_sum /= RSSI_count;
-      RSSI_sum = map(constrain(RSSI_sum, 45, 200), 40, 200, 0, 255);
-      smoothRSSI = (uint8_t)(((uint16_t)smoothRSSI * 6 + (uint16_t)RSSI_sum * 2)/8);
-      set_RSSI_output(smoothRSSI);
+      smoothRSSI = (((uint16_t)smoothRSSI * 3 + (uint16_t)RSSI_sum * 1)/4);
+      set_RSSI_output((uint16_t)((smoothRSSI >> 2) + 192) * countSetBits(linkQuality & 0x7fff) / 15);
       RSSI_sum = 0;
       RSSI_count = 0;
     }
@@ -651,18 +650,12 @@ void loop()
       willhop = 1;
       Red_LED_ON;
       updateLBeep(true);
-      if (smoothRSSI>30) {
-        smoothRSSI-=30;
-      } else {
-        smoothRSSI=0;
-      }
-      set_RSSI_output(smoothRSSI);
+      set_RSSI_output((uint16_t)((smoothRSSI >> 2) + 192) * countSetBits(linkQuality & 0x7fff) / 15);
     } else if ((numberOfLostPackets == hopcount) && ((timeUs - lastPacketTimeUs) > (getInterval(&bind_data) * hopcount))) {
       // hop slowly to allow resync with TX
-      linkQuality <<= 1;
+      linkQuality = 0;
       willhop = 1;
-      smoothRSSI=0;
-      set_RSSI_output(smoothRSSI);
+      set_RSSI_output((uint16_t)((smoothRSSI >> 2) + 192) * countSetBits(linkQuality & 0x7fff) / 15);
       lastPacketTimeUs = timeUs;
     }
 
