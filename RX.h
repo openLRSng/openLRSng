@@ -528,7 +528,7 @@ void loop()
       cli();
       unpackChannels(bind_data.flags & 7, PPM, rx_buf + 1);
       if (rx_config.RSSIpwm < 16) {
-        PPM[rx_config.RSSIpwm] = smoothRSSI << 2;
+        PPM[rx_config.RSSIpwm] = (uint16_t)((smoothRSSI >> 2) + 192) * countSetBits(linkQuality & 0x7fff) / 15;
       }
       sei();
       if (rx_buf[0] & 0x01) {
