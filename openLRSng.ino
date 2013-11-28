@@ -52,12 +52,12 @@
 // 4 = OpenLRSngTX / HawkEye UHF TX
 // 5 = OpenLRSngRX-4ch (DTF UHF) as TX
 // 6 = DTF UHF DeluxeTX (Atmega32u4)
-#define TX_BOARD_TYPE 2
+#define TX_BOARD_TYPE 6
 
 //####### RX BOARD TYPE #######
 // 3 = Flytron OpenLRS Rx v2 / OrangeRx UHF RX / HawkEye UHF RX
 // 5 = OpenLRSngRX-4ch (DTF UHF)
-#define RX_BOARD_TYPE 5
+#define RX_BOARD_TYPE 3
 
 //### Module type selection (only for modified HW)
 //#define RFMXX_868
