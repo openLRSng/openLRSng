@@ -122,6 +122,8 @@ void failsafeSave(void)
     failsafePPM[i]=PPM[i];
   }
 
+  failsafeIsValid = 1;
+
   packChannels(6, failsafePPM, ee_buf);
   for (int16_t i = 0; i < 20; i++) {
     myEEPROMwrite(EEPROM_FAILSAFE_OFFSET + 4 +i, ee_buf[i]);
