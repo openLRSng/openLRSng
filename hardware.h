@@ -655,7 +655,7 @@ struct rxSpecialPinMap rxSpecialPins[] = {
 #define Green_LED2 A1
 #define Red_LED_ON    { PORTD |=  _BV(6); PORTC |=  _BV(0); }
 #define Red_LED_OFF   { PORTD &= ~_BV(6); PORTC &= ~_BV(0); }
-#define Green_LED_ON  { PORTD |=  _BV(5); POTRC |=  _BV(1); }
+#define Green_LED_ON  { PORTD |=  _BV(5); PORTC |=  _BV(1); }
 #define Green_LED_OFF { PORTD &= ~_BV(5); PORTC &= ~_BV(1); }
 #endif
 
