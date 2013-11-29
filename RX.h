@@ -99,7 +99,7 @@ void set_RSSI_output( uint8_t val )
 {
   if (rx_config.RSSIpwm < 16) {
     cli();
-    PPM[rx_config.RSSIpwm] = val << 2;
+    PPM[rx_config.RSSIpwm] = (uint16_t)val << 2;
     sei();
   }
   if (rx_config.pinMapping[RSSI_OUTPUT] == PINMAP_RSSI) {
@@ -528,7 +528,7 @@ void loop()
       cli();
       unpackChannels(bind_data.flags & 7, PPM, rx_buf + 1);
       if (rx_config.RSSIpwm < 16) {
-        PPM[rx_config.RSSIpwm] = (uint16_t)((smoothRSSI >> 2) + 192) * countSetBits(linkQuality & 0x7fff) / 15;
+        PPM[rx_config.RSSIpwm] = ((uint16_t)((smoothRSSI >> 2) + 192) * countSetBits(linkQuality & 0x7fff) / 15) << 2;
       }
       sei();
       if (rx_buf[0] & 0x01) {
