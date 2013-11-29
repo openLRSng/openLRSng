@@ -644,7 +644,7 @@ void loop()
       linkQuality <<= 1;
       willhop = 1;
       if (numberOfLostPackets==0) {
-        linkLossTimeMs = millis();
+        linkLossTimeMs = timeMs;
         lastBeaconTimeMs = 0;
       }
       numberOfLostPackets++;
