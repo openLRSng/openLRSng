@@ -14,6 +14,7 @@ uint8_t  RSSI_count = 0;
 uint16_t RSSI_sum = 0;
 uint8_t  lastRSSIvalue = 0;
 uint8_t  smoothRSSI = 0;
+uint8_t  compositeRSSI = 0;
 uint16_t lastAFCCvalue = 0;
 
 uint16_t linkQuality = 0;
@@ -95,19 +96,19 @@ ISR(TIMER1_OVF_vect)
   }
 }
 
-void set_RSSI_output( uint8_t val )
+void set_RSSI_output()
 {
   if (rx_config.RSSIpwm < 16) {
     cli();
-    PPM[rx_config.RSSIpwm] = (uint16_t)val << 2;
+    PPM[rx_config.RSSIpwm] = (uint16_t)compositeRSSI << 2;
     sei();
   }
   if (rx_config.pinMapping[RSSI_OUTPUT] == PINMAP_RSSI) {
-    if ((val == 0) || (val == 255)) {
+    if ((compositeRSSI == 0) || (compositeRSSI == 255)) {
       TCCR2A &= ~(1<<COM2B1); // disable RSSI PWM output
-      digitalWrite(OUTPUT_PIN[RSSI_OUTPUT], (val == 0) ? LOW : HIGH);
+      digitalWrite(OUTPUT_PIN[RSSI_OUTPUT], (compositeRSSI == 0) ? LOW : HIGH);
     } else {
-      OCR2B = val;
+      OCR2B = compositeRSSI;
       TCCR2A |= (1<<COM2B1); // enable RSSI PWM output
     }
   }
@@ -168,9 +169,11 @@ void failsafeApply()
 {
   if (failsafeIsValid) {
     for (int16_t i = 0; i < PPM_CHANNELS; i++) {
-      cli();
-      PPM[i]=failsafePPM[i];
-      sei();
+      if (i!=rx_config.RSSIpwm) {
+	cli();
+	PPM[i]=failsafePPM[i];
+	sei();
+      }
     }
   }
 }
@@ -528,7 +531,7 @@ void loop()
       cli();
       unpackChannels(bind_data.flags & 7, PPM, rx_buf + 1);
       if (rx_config.RSSIpwm < 16) {
-        PPM[rx_config.RSSIpwm] = ((uint16_t)((smoothRSSI >> 2) + 192) * countSetBits(linkQuality & 0x7fff) / 15) << 2;
+        PPM[rx_config.RSSIpwm] = (uint16_t)compositeRSSI << 2;
       }
       sei();
       if (rx_buf[0] & 0x01) {
@@ -632,7 +635,8 @@ void loop()
     if (RSSI_count > 8) {
       RSSI_sum /= RSSI_count;
       smoothRSSI = (((uint16_t)smoothRSSI * 3 + (uint16_t)RSSI_sum * 1)/4);
-      set_RSSI_output((uint16_t)((smoothRSSI >> 2) + 192) * countSetBits(linkQuality & 0x7fff) / 15);
+      compositeRSSI = (uint16_t)((smoothRSSI >> 2) + 192) * countSetBits(linkQuality & 0x7fff) / 15;
+      set_RSSI_output();
       RSSI_sum = 0;
       RSSI_count = 0;
     }
@@ -652,12 +656,14 @@ void loop()
       willhop = 1;
       Red_LED_ON;
       updateLBeep(true);
-      set_RSSI_output((uint16_t)((smoothRSSI >> 2) + 192) * countSetBits(linkQuality & 0x7fff) / 15);
+      compositeRSSI=(uint16_t)((smoothRSSI >> 2) + 192) * countSetBits(linkQuality & 0x7fff) / 15;
+      set_RSSI_output();
     } else if ((numberOfLostPackets == hopcount) && ((timeUs - lastPacketTimeUs) > (getInterval(&bind_data) * hopcount))) {
       // hop slowly to allow resync with TX
       linkQuality = 0;
       willhop = 1;
-      set_RSSI_output((uint16_t)((smoothRSSI >> 2) + 192) * countSetBits(linkQuality & 0x7fff) / 15);
+      compositeRSSI=(uint16_t)((smoothRSSI >> 2) + 192) * countSetBits(linkQuality & 0x7fff) / 15;
+      set_RSSI_output();
       lastPacketTimeUs = timeUs;
     }
 
