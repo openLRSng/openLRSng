@@ -96,11 +96,22 @@ ISR(TIMER1_OVF_vect)
   }
 }
 
+uint16_t RSSI2Bits(uint8_t rssi)
+{
+  uint16 ret = (uint16_t)rssi << 2;
+  if (ret<12) {
+    ret=12;
+  } else if (ret>1012) {
+    ret=1012;
+  }
+  return ret;
+}
+
 void set_RSSI_output()
 {
   if (rx_config.RSSIpwm < 16) {
     cli();
-    PPM[rx_config.RSSIpwm] = (uint16_t)compositeRSSI << 2;
+    PPM[rx_config.RSSIpwm] = RSSI2Bits(compositeRSSI);
     sei();
   }
   if (rx_config.pinMapping[RSSI_OUTPUT] == PINMAP_RSSI) {
@@ -170,9 +181,9 @@ void failsafeApply()
   if (failsafeIsValid) {
     for (int16_t i = 0; i < PPM_CHANNELS; i++) {
       if (i!=rx_config.RSSIpwm) {
-	cli();
-	PPM[i]=failsafePPM[i];
-	sei();
+        cli();
+        PPM[i]=failsafePPM[i];
+        sei();
       }
     }
   }
@@ -531,7 +542,7 @@ void loop()
       cli();
       unpackChannels(bind_data.flags & 7, PPM, rx_buf + 1);
       if (rx_config.RSSIpwm < 16) {
-        PPM[rx_config.RSSIpwm] = (uint16_t)compositeRSSI << 2;
+        PPM[rx_config.RSSIpwm] = RSSI2Bits(compositeRSSI);
       }
       sei();
       if (rx_buf[0] & 0x01) {
