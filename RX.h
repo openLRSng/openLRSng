@@ -98,7 +98,7 @@ ISR(TIMER1_OVF_vect)
 
 uint16_t RSSI2Bits(uint8_t rssi)
 {
-  uint16 ret = (uint16_t)rssi << 2;
+  uint16_t ret = (uint16_t)rssi << 2;
   if (ret<12) {
     ret=12;
   } else if (ret>1012) {
