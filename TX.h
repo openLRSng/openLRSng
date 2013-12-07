@@ -33,7 +33,7 @@ volatile uint8_t ppmCounter = PPM_CHANNELS; // ignore data until first sync puls
 
 static inline void processPulse(uint16_t pulse)
 {
-  if (bind_data.flags & MICROPPM) {
+  if (!(bind_data.flags & MICROPPM)) {
     pulse>>=1; // divide by 2 to get servo value on normal PPM
   }
 
