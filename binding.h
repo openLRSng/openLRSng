@@ -42,6 +42,9 @@
 
 #define MUTE_TX       0x20 // do not beep on telemetry loss
 
+#define INVERTED_PPMIN 0x40
+#define MICROPPM       0x80
+
 #define DEFAULT_FLAGS (CHANNELS_8 | TELEMETRY_PASSTHRU)
 
 // helpper macro for European PMR channels

@@ -22,8 +22,6 @@ uint16_t linkQualityRX = 0;
 volatile uint8_t ppmAge = 0; // age of PPM data
 
 volatile uint8_t ppmCounter = PPM_CHANNELS; // ignore data until first sync pulse
-volatile uint8_t ppmDetecting = 1; // countter for microPPM detection
-volatile uint8_t ppmMicroPPM = 0;  // status flag for 'Futaba microPPM mode'
 
 #ifndef BZ_FREQ
 #define BZ_FREQ 2000
@@ -35,35 +33,17 @@ volatile uint8_t ppmMicroPPM = 0;  // status flag for 'Futaba microPPM mode'
 
 static inline void processPulse(uint16_t pulse)
 {
-  if (ppmDetecting) {
-    if (ppmDetecting>50) {
-      ppmDetecting=0;
-      if (ppmMicroPPM>10) {
-        ppmMicroPPM=1;
-      } else {
-        ppmMicroPPM=0;
-      }
-      // Serial.println(ppmMicroPPM?"Futaba micro mode":"Normal PPM mode");
-    } else {
-      if (pulse<1500) {
-        ppmMicroPPM++;
-      }
-      ppmDetecting++;
-    }
+  if (bind_data.flags & MICROPPM) {
+    pulse>>=1; // divide by 2 to get servo value on normal PPM
+  }
+
+  if (pulse > 2500) {      // Verify if this is the sync pulse (2.5ms)
+    ppmCounter = 0;             // -> restart the channel counter
+    ppmAge = 0;                 // brand new PPM data received
+  } else if ((pulse > 700) && (ppmCounter < PPM_CHANNELS)) { // extra channels will get ignored here
+    PPM[ppmCounter++] = servoUs2Bits(pulse);   // Store measured pulse length (converted)
   } else {
-
-    if (!ppmMicroPPM) {
-      pulse>>=1; // divide by 2 to get servo value on normal PPM
-    }
-
-    if (pulse > 2500) {      // Verify if this is the sync pulse (2.5ms)
-      ppmCounter = 0;             // -> restart the channel counter
-      ppmAge = 0;                 // brand new PPM data received
-    } else if ((pulse > 700) && (ppmCounter < PPM_CHANNELS)) { // extra channels will get ignored here
-      PPM[ppmCounter++] = servoUs2Bits(pulse);   // Store measured pulse length (converted)
-    } else {
-      ppmCounter = PPM_CHANNELS; // glitch ignore rest of data
-    }
+    ppmCounter = PPM_CHANNELS; // glitch ignore rest of data
   }
 }
 
@@ -78,11 +58,13 @@ ISR(TIMER1_CAPT_vect)
 
 void setupPPMinput()
 {
-  ppmDetecting = 1;
-  ppmMicroPPM = 0;
-  // Setup timer1 for input capture (PSC=8 -> 0.5ms precision, falling edge)
+  // Setup timer1 for input capture (PSC=8 -> 0.5ms precision)
   TCCR1A = ((1 << WGM10) | (1 << WGM11));
-  TCCR1B = ((1 << WGM12) | (1 << WGM13) | (1 << CS11));
+  TCCR1B = ((1 << WGM12) | (1 << WGM13) | (1 << CS11) | (1 <<ICNC1));
+  // normally capture on rising edge, allow invertting via SW flag
+  if (!(bind_data.flags & INVERTED_PPM)) {
+    TCCR1B |= (1 << ICES1);
+  }
   OCR1A = 65535;
   TIMSK1 |= (1 << ICIE1);   // Enable timer1 input capture interrupt
 }
@@ -91,7 +73,7 @@ void setupPPMinput()
 ISR(PPM_Signal_Interrupt)
 {
   uint16_t pulseWidth;
-  if (!PPM_Signal_Edge_Check) {   // Falling edge detected
+  if ( (bind_data.flags & INVERTED_PPM) ^ PPM_Signal_Edge_Check) {
     pulseWidth = TCNT1; // read the timer1 value
     TCNT1 = 0; // reset the timer1 value for next
     processPulse(pulseWidth);
@@ -100,9 +82,7 @@ ISR(PPM_Signal_Interrupt)
 
 void setupPPMinput(void)
 {
-  ppmDetecting = 1;
-  ppmMicroPPM = 0;
-  // Setup timer1 for input capture (PSC=8 -> 0.5ms precision, top at 20ms)
+  // Setup timer1 for input capture (PSC=8 -> 0.5ms precision)
   TCCR1A = ((1 << WGM10) | (1 << WGM11));
   TCCR1B = ((1 << WGM12) | (1 << WGM13) | (1 << CS11));
   OCR1A = 65535;
