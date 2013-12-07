@@ -883,7 +883,7 @@ void handleCLImenu(char c)
     case 'a':
     case 'A':
       Serial.println(F("Toggled inverted PPM!"));
-      bind_data.flags ^= INVERTED_PPM;
+      bind_data.flags ^= INVERTED_PPMIN;
       CLI_menu = -1;
       CLI_menu_headers();
       break;
