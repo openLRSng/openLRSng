@@ -169,7 +169,7 @@ void checkButton(void)
     // Check the button again, If it is still down reinitialize
     if (0 == digitalRead(BTN)) {
       int8_t bzstate = HIGH;
-      uint8_t doDefaults = 0;
+      uint8_t swapProfile = 0;
 
       buzzerOn(bzstate?BZ_FREQ:0);
       loop_time = millis();
@@ -177,7 +177,7 @@ void checkButton(void)
       while (0 == digitalRead(BTN)) {     // wait for button to release
         if (loop_time > time + 9800) {
           buzzerOn(BZ_FREQ);
-          doDefaults = 1;
+          swapProfile = 1;
         } else {
           if ((millis() - loop_time) > 200) {
             loop_time = millis();
@@ -188,10 +188,20 @@ void checkButton(void)
       }
 
       buzzerOff();
-      randomSeed(micros());   // button release time in us should give us enough seed
-      if (doDefaults) {
-        bindInitDefaults();
+      if (swapProfile) {
+        profileSwap();
+        Serial.print("New profile:");
+        Serial.println(activeProfile);
+        if (bindReadEeprom()) {
+          Serial.println("Loaded settings from EEPROM\n");
+        } else {
+          Serial.print("EEPROM data not valid, reiniting\n");
+          bindInitDefaults();
+          bindWriteEeprom();
+        }
+        return;
       }
+      randomSeed(micros());   // button release time in us should give us enough seed
       bindRandomize();
       bindWriteEeprom();
       bindPrint();
@@ -288,7 +298,7 @@ void setup(void)
   buzzerInit();
 
   Serial.begin(115200);
-
+  profileInit();
   if (bindReadEeprom()) {
     Serial.println("Loaded settings from EEPROM\n");
   } else {
@@ -334,6 +344,17 @@ void setup(void)
   serial_head=0;
   serial_tail=0;
   serial_okToSend=0;
+
+  delay(300);
+  buzzerOn(BZ_FREQ);
+  delay(100);
+  buzzerOff();
+  if (activeProfile) {  
+    delay(100);
+    buzzerOn(BZ_FREQ);
+    delay(100);
+    buzzerOff();
+  }
 
   if (bind_data.flags & TELEMETRY_FRSKY) {
     frskyInit((bind_data.flags & TELEMETRY_MASK) == TELEMETRY_SMARTPORT);

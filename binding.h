@@ -66,7 +66,12 @@
 #define BINDING_POWER     0x06 // not lowest since may result fail with RFM23BP
 #define BINDING_VERSION   9
 
-#define EEPROM_OFFSET          0x100
+#define EEPROM_PROFILE_OFFSET  0x040 // profile number on TX
+#ifdef COMPILE_TX
+#define EEPROM_OFFSET(no)      (0x100 + (no)*0x40)
+#else
+#define EEPROM_OFFSET(no)      0x100
+#endif
 #define EEPROM_RX_OFFSET       0x140 // RX specific config struct
 #define EEPROM_FAILSAFE_OFFSET 0x180
 
@@ -108,7 +113,6 @@ struct bind_data {
   uint8_t flags;
 } bind_data;
 
-
 struct rfm22_modem_regs {
   uint32_t bps;
   uint8_t  r_1c, r_1d, r_1e, r_20, r_21, r_22, r_23, r_24, r_25, r_2a, r_6e, r_6f, r_70, r_71, r_72;
@@ -140,18 +144,49 @@ void myEEPROMwrite(int16_t addr, uint8_t data)
   }
 }
 
+#ifdef COMPILE_TX
+uint8_t activeProfile = 0;
+
+void profileSet()
+{
+  myEEPROMwrite(EEPROM_PROFILE_OFFSET,activeProfile);
+}
+
+void  profileInit()
+{
+  activeProfile = EEPROM.read(EEPROM_PROFILE_OFFSET);
+  if (activeProfile>1) {
+    activeProfile=0;
+    profileSet();
+  }
+  Serial.print("Active profile:");
+  Serial.println(activeProfile);
+}
+
+void profileSwap()
+{
+  profileInit();
+  if (activeProfile==0) {
+    activeProfile=1;
+  } else {
+    activeProfile=0;
+  }
+  profileSet();
+}
+#endif
+
 int16_t bindReadEeprom()
 {
   uint32_t temp = 0;
   for (uint8_t i = 0; i < 4; i++) {
-    temp = (temp<<8) + EEPROM.read(EEPROM_OFFSET + i);
+    temp = (temp<<8) + EEPROM.read(EEPROM_OFFSET(activeProfile) + i);
   }
   if (temp!=BIND_MAGIC) {
     return 0;
   }
 
   for (uint8_t i = 0; i < sizeof(bind_data); i++) {
-    *((uint8_t*)&bind_data + i) = EEPROM.read(EEPROM_OFFSET + 4 + i);
+    *((uint8_t*)&bind_data + i) = EEPROM.read(EEPROM_OFFSET(activeProfile) + 4 + i);
   }
 
   if (bind_data.version != BINDING_VERSION) {
@@ -164,11 +199,11 @@ int16_t bindReadEeprom()
 void bindWriteEeprom(void)
 {
   for (uint8_t i = 0; i < 4; i++) {
-    myEEPROMwrite(EEPROM_OFFSET + i, (BIND_MAGIC >> ((3-i) * 8))& 0xff);
+    myEEPROMwrite(EEPROM_OFFSET(activeProfile) + i, (BIND_MAGIC >> ((3-i) * 8))& 0xff);
   }
 
   for (uint8_t i = 0; i < sizeof(bind_data); i++) {
-    myEEPROMwrite(EEPROM_OFFSET + 4 + i, *((uint8_t*)&bind_data + i));
+    myEEPROMwrite(EEPROM_OFFSET(activeProfile) + 4 + i, *((uint8_t*)&bind_data + i));
   }
 }
 
