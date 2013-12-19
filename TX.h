@@ -199,6 +199,7 @@ void checkButton(void)
           bindInitDefaults();
           bindWriteEeprom();
         }
+        setupPPMinput(); // need to do this to make sure ppm polarity is correct
         return;
       }
       randomSeed(micros());   // button release time in us should give us enough seed
@@ -312,9 +313,6 @@ void setup(void)
 
   setupRfmInterrupt();
 
-  init_rfm(0);
-  rfmSetChannel(RF_channel);
-
   sei();
 
   start=millis();
@@ -339,6 +337,8 @@ void setup(void)
 
   Red_LED_OFF;
   buzzerOff();
+  init_rfm(0);
+  rfmSetChannel(RF_channel);
   rx_reset();
 
   serial_head=0;
