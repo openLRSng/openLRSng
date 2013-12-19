@@ -145,6 +145,7 @@ void myEEPROMwrite(int16_t addr, uint8_t data)
 }
 
 #ifdef COMPILE_TX
+#define TX_PROFILE_COUNT 4
 uint8_t activeProfile = 0;
 
 void profileSet()
@@ -155,23 +156,19 @@ void profileSet()
 void  profileInit()
 {
   activeProfile = EEPROM.read(EEPROM_PROFILE_OFFSET);
-  if (activeProfile>1) {
-    activeProfile=0;
+  if (activeProfile >= TX_PROFILE_COUNT) {
+    activeProfile = 0;
     profileSet();
   }
-  Serial.print("Active profile:");
-  Serial.println(activeProfile);
 }
 
-void profileSwap()
+void profileSwap(uint8_t profile)
 {
   profileInit();
-  if (activeProfile==0) {
-    activeProfile=1;
-  } else {
-    activeProfile=0;
+  if ((activeProfile != profile) && (profile < TX_PROFILE_COUNT)) {
+    activeProfile = profile;
+    profileSet();
   }
-  profileSet();
 }
 #endif
 

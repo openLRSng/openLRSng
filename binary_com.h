@@ -290,9 +290,9 @@ public:
       break;
     case PSP_SET_ACTIVE_PROFILE:
       protocol_head(PSP_SET_ACTIVE_PROFILE, 1);
-      
-      //profileSwap(data_buffer[0]); uncomment this when ready
-      
+
+      profileSwap(data_buffer[0]);
+
       serialize_uint8(0x01); // done
       break;
     case PSP_SET_EXIT:

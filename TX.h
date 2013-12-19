@@ -189,7 +189,7 @@ void checkButton(void)
 
       buzzerOff();
       if (swapProfile) {
-        profileSwap();
+        profileSwap((activeProfile+1)%TX_PROFILE_COUNT);
         Serial.print("New profile:");
         Serial.println(activeProfile);
         if (bindReadEeprom()) {
@@ -199,7 +199,6 @@ void checkButton(void)
           bindInitDefaults();
           bindWriteEeprom();
         }
-        setupPPMinput(); // need to do this to make sure ppm polarity is correct
         return;
       }
       randomSeed(micros());   // button release time in us should give us enough seed
@@ -337,6 +336,9 @@ void setup(void)
 
   Red_LED_OFF;
   buzzerOff();
+
+  setupPPMinput(); // need to do this to make sure ppm polarity is correct if profile was changed
+
   init_rfm(0);
   rfmSetChannel(RF_channel);
   rx_reset();
@@ -349,7 +351,7 @@ void setup(void)
   buzzerOn(BZ_FREQ);
   delay(100);
   buzzerOff();
-  if (activeProfile) {  
+  for (uint8_t i = 0; i < activeProfile; i++) {
     delay(100);
     buzzerOn(BZ_FREQ);
     delay(100);
@@ -536,7 +538,7 @@ void loop(void)
     uint8_t compRX = (uint16_t)((RSSI_rx >> 2) + 192) * linkQualityRX / 15;
     uint8_t compTX = (uint16_t)((RSSI_tx >> 2) + 192) * linkQualityTX / 15;
 
-    frskyUpdate(RX_ain0, RX_ain1, compRX, compTX);
+    frskyUpdate(RX_ain0, RX_ain1, compRX, compTX, activeProfile);
     //frskyUpdate(RX_ain0,RX_ain1,lastTelemetry?RSSI_rx:0,lastTelemetry?RSSI_tx:0);
   }
 
