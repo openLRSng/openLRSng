@@ -397,6 +397,20 @@ uint8_t serial_tail;
 
 uint8_t hopcount;
 
+uint8_t slaveHandler(uint8_t *data, uint8_t flags)
+{
+  if (flags & MYI2C_SLAVE_ISTX) {
+    if (flags & MYI2C_SLAVE_ISFIRST) {
+      *data = 0x5e;
+    } else {
+      return 0;
+    }
+    return 1;
+  } else {
+    return 1;
+  }
+}
+
 void setup()
 {
   //LEDs
@@ -449,15 +463,23 @@ void setup()
       }
     }
   }
-
+  
+  myI2C_init(1);
+  
   if ((rx_config.pinMapping[SDA_OUTPUT] == PINMAP_SDA) &&
       (rx_config.pinMapping[SCL_OUTPUT] == PINMAP_SCL)) {
     if (rx_config.flags & SLAVE_MODE) {
       Serial.println("I am slave");
-      fatalBlink(5); // not implemented
-      // not reached
+      myI2C_slaveSetup(32, 0, 0, slaveHandler);
+      while(1) {
+        delay(1000);
+      }
     } else {
-      Serial.println("Looking for slave, not implemented yet");
+      uint8_t ret,buf;
+      ret = myI2C_readFrom(32, &buf, 1, MYI2C_WAIT);
+      if ((ret==0) && (buf==0x5e)) {
+        Serial.println("Slave found");
+      }
     }
   }
 

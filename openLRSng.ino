@@ -81,5 +81,6 @@
 #include "frskytx.h"
 #include "TX.h"
 #else // COMPILE_RX
+#include "I2C.h"
 #include "RX.h"
 #endif
