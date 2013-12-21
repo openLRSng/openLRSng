@@ -17,6 +17,7 @@ boolean binary_mode_active = false;
 #define PSP_REQ_SPECIAL_PINS          5
 #define PSP_REQ_FW_VERSION            6
 #define PSP_REQ_NUMBER_OF_RX_OUTPUTS  7
+#define PSP_REQ_ACTIVE_PROFILE        8
 
 #define PSP_SET_BIND_DATA          101
 #define PSP_SET_RX_CONFIG          102
@@ -24,6 +25,8 @@ boolean binary_mode_active = false;
 #define PSP_SET_RX_SAVE_EEPROM     104
 #define PSP_SET_TX_RESTORE_DEFAULT 105
 #define PSP_SET_RX_RESTORE_DEFAULT 106
+#define PSP_SET_ACTIVE_PROFILE     107
+
 #define PSP_SET_EXIT               199
 
 #define PSP_INF_ACK           201
@@ -178,6 +181,12 @@ public:
         serialize_uint8(rxcNumberOfOutputs);
       }
       break;
+    case PSP_REQ_ACTIVE_PROFILE:
+      protocol_head(PSP_REQ_ACTIVE_PROFILE, 1);
+      {
+        serialize_uint8(activeProfile);
+      }
+      break;
       // SET
     case PSP_SET_BIND_DATA:
       protocol_head(PSP_SET_BIND_DATA, 1);
@@ -278,6 +287,16 @@ public:
       } else {
         serialize_uint8(0x00); // fail
       }
+      break;
+    case PSP_SET_ACTIVE_PROFILE:
+      protocol_head(PSP_SET_ACTIVE_PROFILE, 1);
+
+      profileSwap(data_buffer[0]);
+      if (!bindReadEeprom()) {
+        bindInitDefaults();
+        bindWriteEeprom();
+      }
+      serialize_uint8(0x01); // done
       break;
     case PSP_SET_EXIT:
       protocol_head(PSP_SET_EXIT, 1);

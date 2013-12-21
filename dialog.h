@@ -187,6 +187,12 @@ void bindPrint(void)
   Serial.print(F("0) Mute buzzer (mostly):"));
   Serial.println((bind_data.flags & MUTE_TX)?"Yes":"No");
 
+  Serial.print(F("A) Inverted PPM in     :"));
+  Serial.println((bind_data.flags & INVERTED_PPMIN)?"Yes":"No");
+
+  Serial.print(F("B) Micro (half) PPM    :"));
+  Serial.println((bind_data.flags & MICROPPM)?"Yes":"No");
+
   Serial.print(F("Calculated packet interval: "));
   Serial.print(getInterval(&bind_data));
   Serial.print(F(" == "));
@@ -870,7 +876,21 @@ void handleCLImenu(char c)
       break;
     case '0':
       Serial.println(F("Toggled TX muting!"));
-      bind_data.flags^= MUTE_TX;
+      bind_data.flags ^= MUTE_TX;
+      CLI_menu = -1;
+      CLI_menu_headers();
+      break;
+    case 'a':
+    case 'A':
+      Serial.println(F("Toggled inverted PPM!"));
+      bind_data.flags ^= INVERTED_PPMIN;
+      CLI_menu = -1;
+      CLI_menu_headers();
+      break;
+    case 'b':
+    case 'B':
+      Serial.println(F("Toggled microPPM"));
+      bind_data.flags ^= MICROPPM;
       CLI_menu = -1;
       CLI_menu_headers();
       break;

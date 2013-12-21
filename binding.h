@@ -42,6 +42,9 @@
 
 #define MUTE_TX       0x20 // do not beep on telemetry loss
 
+#define INVERTED_PPMIN 0x40
+#define MICROPPM       0x80
+
 #define DEFAULT_FLAGS (CHANNELS_8 | TELEMETRY_PASSTHRU)
 
 // helpper macro for European PMR channels
@@ -63,7 +66,12 @@
 #define BINDING_POWER     0x06 // not lowest since may result fail with RFM23BP
 #define BINDING_VERSION   9
 
-#define EEPROM_OFFSET          0x100
+#define EEPROM_PROFILE_OFFSET  0x040 // profile number on TX
+#ifdef COMPILE_TX
+#define EEPROM_OFFSET(no)      (0x100 + (no)*0x40)
+#else
+#define EEPROM_OFFSET(no)      0x100
+#endif
 #define EEPROM_RX_OFFSET       0x140 // RX specific config struct
 #define EEPROM_FAILSAFE_OFFSET 0x180
 
@@ -105,7 +113,6 @@ struct bind_data {
   uint8_t flags;
 } bind_data;
 
-
 struct rfm22_modem_regs {
   uint32_t bps;
   uint8_t  r_1c, r_1d, r_1e, r_20, r_21, r_22, r_23, r_24, r_25, r_2a, r_6e, r_6f, r_70, r_71, r_72;
@@ -137,18 +144,46 @@ void myEEPROMwrite(int16_t addr, uint8_t data)
   }
 }
 
+#ifdef COMPILE_TX
+#define TX_PROFILE_COUNT 4
+uint8_t activeProfile = 0;
+
+void profileSet()
+{
+  myEEPROMwrite(EEPROM_PROFILE_OFFSET,activeProfile);
+}
+
+void  profileInit()
+{
+  activeProfile = EEPROM.read(EEPROM_PROFILE_OFFSET);
+  if (activeProfile >= TX_PROFILE_COUNT) {
+    activeProfile = 0;
+    profileSet();
+  }
+}
+
+void profileSwap(uint8_t profile)
+{
+  profileInit();
+  if ((activeProfile != profile) && (profile < TX_PROFILE_COUNT)) {
+    activeProfile = profile;
+    profileSet();
+  }
+}
+#endif
+
 int16_t bindReadEeprom()
 {
   uint32_t temp = 0;
   for (uint8_t i = 0; i < 4; i++) {
-    temp = (temp<<8) + EEPROM.read(EEPROM_OFFSET + i);
+    temp = (temp<<8) + EEPROM.read(EEPROM_OFFSET(activeProfile) + i);
   }
   if (temp!=BIND_MAGIC) {
     return 0;
   }
 
   for (uint8_t i = 0; i < sizeof(bind_data); i++) {
-    *((uint8_t*)&bind_data + i) = EEPROM.read(EEPROM_OFFSET + 4 + i);
+    *((uint8_t*)&bind_data + i) = EEPROM.read(EEPROM_OFFSET(activeProfile) + 4 + i);
   }
 
   if (bind_data.version != BINDING_VERSION) {
@@ -161,11 +196,11 @@ int16_t bindReadEeprom()
 void bindWriteEeprom(void)
 {
   for (uint8_t i = 0; i < 4; i++) {
-    myEEPROMwrite(EEPROM_OFFSET + i, (BIND_MAGIC >> ((3-i) * 8))& 0xff);
+    myEEPROMwrite(EEPROM_OFFSET(activeProfile) + i, (BIND_MAGIC >> ((3-i) * 8))& 0xff);
   }
 
   for (uint8_t i = 0; i < sizeof(bind_data); i++) {
-    myEEPROMwrite(EEPROM_OFFSET + 4 + i, *((uint8_t*)&bind_data + i));
+    myEEPROMwrite(EEPROM_OFFSET(activeProfile) + 4 + i, *((uint8_t*)&bind_data + i));
   }
 }
 
@@ -219,7 +254,7 @@ again:
 #define IMMEDIATE_OUTPUT  0x08
 
 // non linear mapping
-// 0 - disabled
+// 0 - 0
 // 1-99    - 100ms - 9900ms (100ms res)
 // 100-189 - 10s  - 99s   (1s res)
 // 190-209 - 100s - 290s (10s res)
@@ -239,6 +274,10 @@ uint32_t delayInMs(uint16_t d)
   return ms * 100UL;
 }
 
+// non linear mapping
+// 0-89    - 10s - 99s
+// 90-109  - 100s - 290s (10s res)
+// 110-255 - 5m - 150m (1m res)
 uint32_t delayInMsLong(uint8_t d)
 {
   return delayInMs((uint16_t)d+100);

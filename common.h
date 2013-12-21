@@ -9,9 +9,9 @@ void tx_packet(uint8_t* pkt, uint8_t size);
 void to_rx_mode(void);
 
 #define PPM_CHANNELS 16
-volatile uint16_t PPM[PPM_CHANNELS] = { 512, 512, 512, 512, 512, 512, 512, 512 ,512,512,512,512,512,512,512,512};
+volatile uint16_t PPM[PPM_CHANNELS] = { 512, 512, 512, 512, 512, 512, 512, 512 , 512, 512, 512, 512, 512, 512, 512, 512 };
 
-const static uint8_t pktsizes[8] = {0, 7, 11, 12, 16, 17, 21, 0};
+const static uint8_t pktsizes[8] = { 0, 7, 11, 12, 16, 17, 21, 0 };
 
 
 uint8_t getPacketSize(struct bind_data *bd)
@@ -21,7 +21,7 @@ uint8_t getPacketSize(struct bind_data *bd)
 
 uint8_t getChannelCount(struct bind_data *bd)
 {
-  return (((bd->flags & 7)/2) + 1 + (bd->flags & 1)) * 4;
+  return (((bd->flags & 7) / 2) + 1 + (bd->flags & 1)) * 4;
 }
 
 uint32_t getInterval(struct bind_data *bd)
@@ -29,16 +29,16 @@ uint32_t getInterval(struct bind_data *bd)
   uint32_t ret;
   // Sending a x byte packet on bps y takes about (emperical)
   // usec = (x + 15) * 8200000 / baudrate
-#define BYTES_AT_BAUD_TO_USEC(bytes,bps) ((uint32_t)((bytes)+15) * 8200000L / (uint32_t)(bps))
+#define BYTES_AT_BAUD_TO_USEC(bytes, bps) ((uint32_t)((bytes) + 15) * 8200000L / (uint32_t)(bps))
 
-  ret = (BYTES_AT_BAUD_TO_USEC(getPacketSize(bd), modem_params[bd->modem_params].bps)+2000);
+  ret = (BYTES_AT_BAUD_TO_USEC(getPacketSize(bd), modem_params[bd->modem_params].bps) + 2000);
 
   if (bd->flags & TELEMETRY_MASK) {
-    ret += (BYTES_AT_BAUD_TO_USEC(TELEMETRY_PACKETSIZE,modem_params[bd->modem_params].bps)+1000);
+    ret += (BYTES_AT_BAUD_TO_USEC(TELEMETRY_PACKETSIZE, modem_params[bd->modem_params].bps) + 1000);
   }
 
   // round up to ms
-  ret= ((ret+999) / 1000) * 1000;
+  ret = ((ret + 999) / 1000) * 1000;
 
   // enable following to limit packet rate to 50Hz at most
 #ifdef LIMIT_RATE_TO_50HZ
@@ -51,11 +51,11 @@ uint32_t getInterval(struct bind_data *bd)
 }
 uint8_t twoBitfy(uint16_t in)
 {
-  if (in<256) {
+  if (in < 256) {
     return 0;
-  } else if (in<512) {
+  } else if (in < 512) {
     return 1;
-  } else if (in<768) {
+  } else if (in < 768) {
     return 2;
   } else {
     return 3;
@@ -65,17 +65,17 @@ uint8_t twoBitfy(uint16_t in)
 void packChannels(uint8_t config, volatile uint16_t PPM[], uint8_t *p)
 {
   uint8_t i;
-  for (i=0; i<=(config/2); i++) { // 4ch packed in 5 bytes
+  for (i = 0; i <= (config / 2); i++) { // 4ch packed in 5 bytes
     p[0] = (PPM[0] & 0xff);
     p[1] = (PPM[1] & 0xff);
     p[2] = (PPM[2] & 0xff);
     p[3] = (PPM[3] & 0xff);
     p[4] = ((PPM[0] >> 8) & 3) | (((PPM[1] >> 8) & 3) << 2) | (((PPM[2] >> 8) & 3) << 4) | (((PPM[3] >> 8) & 3) << 6);
-    p+=5;
-    PPM+=4;
+    p += 5;
+    PPM += 4;
   }
   if (config & 1) { // 4ch packed in 1 byte;
-    p[0] = (twoBitfy(PPM[0])<<6) | (twoBitfy(PPM[1])<<4) | (twoBitfy(PPM[2])<<2) | twoBitfy(PPM[3]);
+    p[0] = (twoBitfy(PPM[0]) << 6) | (twoBitfy(PPM[1]) << 4) | (twoBitfy(PPM[2]) << 2) | twoBitfy(PPM[3]);
   }
 }
 
@@ -91,10 +91,10 @@ void unpackChannels(uint8_t config, volatile uint16_t PPM[], uint8_t *p)
     PPM+=4;
   }
   if (config & 1) { // 4ch packed in 1 byte;
-    PPM[0] = (((uint16_t)p[0]>>6)&3)*333+12;
-    PPM[1] = (((uint16_t)p[0]>>4)&3)*333+12;
-    PPM[2] = (((uint16_t)p[0]>>2)&3)*333+12;
-    PPM[3] = (((uint16_t)p[0]>>0)&3)*333+12;
+    PPM[0] = (((uint16_t)p[0] >> 6) & 3) * 333 + 12;
+    PPM[1] = (((uint16_t)p[0] >> 4) & 3) * 333 + 12;
+    PPM[2] = (((uint16_t)p[0] >> 2) & 3) * 333 + 12;
+    PPM[3] = (((uint16_t)p[0] >> 0) & 3) * 333 + 12;
   }
 }
 
@@ -139,6 +139,15 @@ uint16_t servoBits2Us(uint16_t x)
   return ret;
 }
 
+uint8_t countSetBits(uint16_t x)
+{
+  x  = x - ((x >> 1) & 0x5555);
+  x  = (x & 0x3333) + ((x >> 2) & 0x3333);
+  x  = x + (x >> 4);
+  x &= 0x0F0F;
+  return (x * 0x0101) >> 8;
+}
+
 // Halt and blink failure code
 void fatalBlink(uint8_t blinks)
 {
@@ -157,7 +166,7 @@ void fatalBlink(uint8_t blinks)
 void scannerMode(void)
 {
   char c;
-  uint32_t nextConfig[4] = {0, 0, 0, 0};
+  uint32_t nextConfig[4] = { 0, 0, 0, 0 };
   uint32_t startFreq = MIN_RFM_FREQUENCY, endFreq = MAX_RFM_FREQUENCY, nrSamples = 500, stepSize = 50000;
   uint32_t currentFrequency = startFreq;
   uint32_t currentSamples = 0;
@@ -295,7 +304,6 @@ void spiSendAddress(uint8_t i);
 uint8_t spiReadData(void);
 void spiWriteData(uint8_t i);
 
-
 void to_sleep_mode(void);
 void rx_reset(void);
 
@@ -410,7 +418,7 @@ uint8_t rfmGetRSSI(void)
 
 uint16_t rfmGetAFCC(void)
 {
-  return (((uint16_t)spiReadRegister(0x2B)<<2) | ((uint16_t)spiReadRegister(0x2C)>>6));
+  return (((uint16_t)spiReadRegister(0x2B) << 2) | ((uint16_t)spiReadRegister(0x2C) >> 6));
 }
 
 void setModemRegs(struct rfm22_modem_regs* r)
@@ -445,7 +453,7 @@ void rfmSetCarrierFrequency(uint32_t f)
     fb = f / 20000000 - 24;
     fc = (f - (fb + 24) * 20000000) * 2 / 625;
   }
-  spiWriteRegister(0x75, 0x40 + (hbsel?0x20:0) + (fb & 0x1f));
+  spiWriteRegister(0x75, 0x40 + (hbsel ? 0x20 : 0) + (fb & 0x1f));
   spiWriteRegister(0x76, (fc >> 8));
   spiWriteRegister(0x77, (fc & 0xff));
 }
@@ -486,7 +494,7 @@ void init_rfm(uint8_t isbind)
   spiWriteRegister(0x39, 0x00);    // synch word 0 (not used)
 
   uint32_t magic = isbind ? BIND_MAGIC : bind_data.rf_magic;
-  for (uint8_t i=0; i<4; i++) {
+  for (uint8_t i = 0; i < 4; i++) {
     spiWriteRegister(0x3a + i, (magic >> 24) & 0xff);   // tx header
     spiWriteRegister(0x3f + i, (magic >> 24) & 0xff);   // rx header
     magic = magic << 8; // advance to next byte
@@ -558,7 +566,7 @@ void tx_packet_async(uint8_t* pkt, uint8_t size)
 void tx_packet(uint8_t* pkt, uint8_t size)
 {
   tx_packet_async(pkt, size);
-  while ((RF_Mode == Transmit) && ((micros()-tx_start)<100000));
+  while ((RF_Mode == Transmit) && ((micros() - tx_start) < 100000));
   if (RF_Mode == Transmit) {
     Serial.println("TX timeout!");
   }

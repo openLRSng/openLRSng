@@ -72,11 +72,11 @@ static const char *specialStrs[] = { "PPM","RSSI","SDA","SCL","RXD","TXD","AIN",
 
 #define TelemetrySerial Serial
 
-#define PPM_IN A5
-#define BUZZER 9
-#define BTN 10
-#define Red_LED 12
-#define Green_LED 11
+#define PPM_IN     A5
+#define BUZZER_ACT 9
+#define BTN        10
+#define Red_LED    12
+#define Green_LED  11
 
 #define Red_LED_ON  PORTB |= _BV(4);
 #define Red_LED_OFF  PORTB &= ~_BV(4);
@@ -90,16 +90,16 @@ static const char *specialStrs[] = { "PPM","RSSI","SDA","SCL","RXD","TXD","AIN",
 
 void buzzerInit()
 {
-  pinMode(BUZZER, OUTPUT);
-  digitalWrite(BUZZER, LOW);
+  pinMode(BUZZER_ACT, OUTPUT);
+  digitalWrite(BUZZER_ACT, LOW);
 }
 
 void buzzerOn(uint16_t freq)
 {
   if (freq) {
-    digitalWrite(BUZZER,HIGH);
+    digitalWrite(BUZZER_ACT,HIGH);
   } else {
-    digitalWrite(BUZZER,LOW);
+    digitalWrite(BUZZER_ACT,LOW);
   }
 }
 
@@ -155,9 +155,9 @@ void setupRfmInterrupt()
 
 #define TelemetrySerial Serial
 
-#define PPM_IN 5
-#define BUZZER 7
-#define BTN 8
+#define PPM_IN     5
+#define BUZZER_ACT 7
+#define BTN        8
 
 #define Red_LED A3
 #define Green_LED A2
@@ -174,16 +174,16 @@ void setupRfmInterrupt()
 
 void buzzerInit()
 {
-  pinMode(BUZZER, OUTPUT);
-  digitalWrite(BUZZER, LOW);
+  pinMode(BUZZER_ACT, OUTPUT);
+  digitalWrite(BUZZER_ACT, LOW);
 }
 
 void buzzerOn(uint16_t freq)
 {
   if (freq) {
-    digitalWrite(BUZZER,HIGH);
+    digitalWrite(BUZZER_ACT,HIGH);
   } else {
-    digitalWrite(BUZZER,LOW);
+    digitalWrite(BUZZER_ACT,LOW);
   }
 }
 
@@ -239,12 +239,12 @@ void setupRfmInterrupt()
 
 #define TelemetrySerial Serial
 
-#define PPM_IN 3
+#define PPM_IN           3
 #define RF_OUT_INDICATOR A0
-#define BUZZER 10
-#define BTN 11
-#define Red_LED 13
-#define Green_LED 12
+#define BUZZER_ACT       10
+#define BTN              11
+#define Red_LED          13
+#define Green_LED        12
 
 #define Red_LED_ON  PORTB |= _BV(5);
 #define Red_LED_OFF  PORTB &= ~_BV(5);
@@ -258,16 +258,16 @@ void setupRfmInterrupt()
 
 void buzzerInit()
 {
-  pinMode(BUZZER, OUTPUT);
-  digitalWrite(BUZZER, LOW);
+  pinMode(BUZZER_ACT, OUTPUT);
+  digitalWrite(BUZZER_ACT, LOW);
 }
 
 void buzzerOn(uint16_t freq)
 {
   if (freq) {
-    digitalWrite(BUZZER,HIGH);
+    digitalWrite(BUZZER_ACT,HIGH);
   } else {
-    digitalWrite(BUZZER,LOW);
+    digitalWrite(BUZZER_ACT,LOW);
   }
 }
 
@@ -324,24 +324,24 @@ void setupRfmInterrupt()
 
 #define PPM_IN 8 // ICP1
 
-#define BUZZER 6
-#define BUZZER2 3
+#define BUZZER_ACT 6
+#define BUZZER_PAS 3
 #define BTN 7
 
 void buzzerInit()
 {
-  pinMode(BUZZER, OUTPUT);
-  digitalWrite(BUZZER, LOW);
+  pinMode(BUZZER_ACT, OUTPUT);
+  digitalWrite(BUZZER_ACT, LOW);
   TCCR2A = (1<<WGM21); // mode=CTC
   TCCR2B = (1<<CS22) | (1<<CS20); // prescaler = 128
-  pinMode(BUZZER2, OUTPUT);
-  digitalWrite(BUZZER2, LOW);
+  pinMode(BUZZER_PAS, OUTPUT);
+  digitalWrite(BUZZER_PAS, LOW);
 }
 
 void buzzerOn(uint16_t freq)
 {
   if (freq) {
-    digitalWrite(BUZZER,HIGH);
+    digitalWrite(BUZZER_ACT,HIGH);
     uint32_t ocr = 125000L / freq;
     if (ocr>255) {
       ocr=255;
@@ -352,7 +352,7 @@ void buzzerOn(uint16_t freq)
     OCR2A = ocr;
     TCCR2A |= (1<<COM2B0); // enable output on buzzer2
   } else {
-    digitalWrite(BUZZER,LOW);
+    digitalWrite(BUZZER_ACT,LOW);
     TCCR2A &= ~(1<<COM2B0); // disable output buzzer2
   }
 }
@@ -467,7 +467,7 @@ void setupRfmInterrupt()
 #define USE_ICP1 // use ICP1 for PPM input for less jitter
 #define PPM_IN 8 // ICP1
 
-#define BUZZER 3 // OCR2B
+#define BUZZER_PAS 3 // OCR2B
 #define BTN A0
 #define Red_LED 6
 #define Green_LED 5
@@ -478,8 +478,8 @@ void buzzerInit()
 {
   TCCR2A = (1<<WGM21); // mode=CTC
   TCCR2B = (1<<CS22) | (1<<CS20); // prescaler = 128
-  pinMode(BUZZER, OUTPUT);
-  digitalWrite(BUZZER, LOW);
+  pinMode(BUZZER_PAS, OUTPUT);
+  digitalWrite(BUZZER_PAS, LOW);
 }
 
 void buzzerOn(uint16_t freq)
@@ -564,21 +564,25 @@ void setupRfmInterrupt()
 #define USE_ICP1 // use ICP1 for PPM input for less jitter
 #define PPM_IN 8 // ICP1
 
-#define BUZZER 3 // OCR2B
-#define BTN    A4
+#define BUZZER_PAS  3  // OCR2B
+#define BUZZER_ACT A5
+#define BTN     A4
 
 void buzzerInit()
 {
+  pinMode(BUZZER_ACT, OUTPUT);
+  digitalWrite(BUZZER_ACT, LOW);
   TCCR2A = (1<<WGM21); // mode=CTC
   TCCR2B = (1<<CS22) | (1<<CS20); // prescaler = 128
-  pinMode(BUZZER, OUTPUT);
-  digitalWrite(BUZZER, LOW);
+  pinMode(BUZZER_PAS, OUTPUT);
+  digitalWrite(BUZZER_PAS, LOW);
 }
 
 void buzzerOn(uint16_t freq)
 {
   if (freq) {
     uint32_t ocr = 125000L / freq;
+    digitalWrite(BUZZER_ACT,HIGH);
     if (ocr>255) {
       ocr=255;
     }
@@ -588,6 +592,7 @@ void buzzerOn(uint16_t freq)
     OCR2A = ocr;
     TCCR2A |= (1<<COM2B0); // enable output
   } else {
+    digitalWrite(BUZZER_ACT,LOW);
     TCCR2A &= ~(1<<COM2B0); // disable output
   }
 }
@@ -655,7 +660,7 @@ struct rxSpecialPinMap rxSpecialPins[] = {
 #define Green_LED2 A1
 #define Red_LED_ON    { PORTD |=  _BV(6); PORTC |=  _BV(0); }
 #define Red_LED_OFF   { PORTD &= ~_BV(6); PORTC &= ~_BV(0); }
-#define Green_LED_ON  { PORTD |=  _BV(5); POTRC |=  _BV(1); }
+#define Green_LED_ON  { PORTD |=  _BV(5); PORTC |=  _BV(1); }
 #define Green_LED_OFF { PORTD &= ~_BV(5); PORTC &= ~_BV(1); }
 #endif
 
@@ -714,7 +719,7 @@ void setupRfmInterrupt()
 #define USE_ICP1 // use ICP1 for PPM input for less jitter
 #define PPM_IN 4 // ICP1
 
-#define BUZZER 10 // OCR4B
+#define BUZZER_PAS 10 // OCR4B
 #define BTN A0
 #define Red_LED 6 //PD7
 #define Green_LED 5 //PC6
@@ -722,8 +727,8 @@ void setupRfmInterrupt()
 void buzzerInit()
 {
   TCCR4B = (1<<CS43); // prescaler = 128
-  pinMode(BUZZER, OUTPUT);
-  digitalWrite(BUZZER, LOW);
+  pinMode(BUZZER_PAS, OUTPUT);
+  digitalWrite(BUZZER_PAS, LOW);
 }
 
 void buzzerOn(uint16_t freq)

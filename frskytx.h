@@ -15,23 +15,23 @@ bool frskyIsSmartPort = 0;
 
 uint8_t FrSkyUserBuf[16];
 uint8_t FrSkyUserIdx = 0; // read/write indexes
-#define FRSKY_RDI (FrSkyUserIdx>>4)
-#define FRSKY_WRI (FrSkyUserIdx&0x0f)
+#define FRSKY_RDI (FrSkyUserIdx >> 4)
+#define FRSKY_WRI (FrSkyUserIdx & 0x0f)
 uint32_t frskyLast = 0;
 
 uint8_t frskySchedule = 0;
 
 void frskyInit(bool isSmartPort)
 {
-  frskyLast=micros();
+  frskyLast = micros();
   frskyIsSmartPort = isSmartPort;
   TelemetrySerial.begin(isSmartPort ? SMARTPORT_BAUDRATE : FRSKY_BAUDRATE);
 }
 
 void frskyUserData(uint8_t c)
 {
-  if ((FRSKY_WRI+1) != FRSKY_RDI) {
-    FrSkyUserBuf[FRSKY_WRI]=c;
+  if ((FRSKY_WRI + 1) != FRSKY_RDI) {
+    FrSkyUserBuf[FRSKY_WRI] = c;
     FrSkyUserIdx = (FrSkyUserIdx & 0xf0) | ((FrSkyUserIdx + 1) & 0x0f);
   }
 }
@@ -39,10 +39,10 @@ void frskyUserData(uint8_t c)
 void frskySendStuffed(uint8_t frame[])
 {
   TelemetrySerial.write(0x7e);
-  for (uint8_t i=0; i<9; i++) {
-    if ((frame[i]==0x7e) || (frame[i]==0x7d)) {
+  for (uint8_t i = 0; i < 9; i++) {
+    if ((frame[i] == 0x7e) || (frame[i] == 0x7d)) {
       TelemetrySerial.write(0x7d);
-      frame[i]^=0x20;
+      frame[i] ^= 0x20;
     }
     TelemetrySerial.write(frame[i]);
   }
@@ -55,13 +55,13 @@ void frskySendStuffed(uint8_t frame[])
 void frskySendFrame(uint8_t a1, uint8_t a2, uint8_t rx, uint8_t tx)
 {
   uint8_t frame[9];
-  if (frskySchedule==0) {
-    frame[0]=0xfe;
-    frame[1]=a1;
-    frame[2]=a2;
-    frame[3]=(rx>>1); // this needs to be 0-127
-    frame[4]=tx;      // this needs to be 0-255
-    frame[5]=frame[6]=frame[7]=frame[8]=0;
+  if (frskySchedule == 0) {
+    frame[0] = 0xfe;
+    frame[1] = a1;
+    frame[2] = a2;
+    frame[3] = (rx >> 1); // this needs to be 0-127
+    frame[4] = tx;      // this needs to be 0-255
+    frame[5] = frame[6] = frame[7] = frame[8] = 0;
     frskySendStuffed(frame);
   } else {
     if (FRSKY_RDI!=FRSKY_WRI) {
@@ -69,29 +69,29 @@ void frskySendFrame(uint8_t a1, uint8_t a2, uint8_t rx, uint8_t tx)
       frame[0] = 0xfd;
       frame[1] = 0;
       frame[2] = 0; // unused
-      while ((bytes < 6) && (FRSKY_RDI!=FRSKY_WRI)) {
+      while ((bytes < 6) && (FRSKY_RDI != FRSKY_WRI)) {
         frame[bytes + 3] = FrSkyUserBuf[FRSKY_RDI];
-        FrSkyUserIdx+=0x10;
+        FrSkyUserIdx += 0x10;
         bytes++;
       }
       frame[1] = bytes;
       frskySendStuffed(frame);
     }
   }
-  frskySchedule=(frskySchedule+1) % 6;
+  frskySchedule = (frskySchedule + 1) % 6;
 }
 
 void smartportSend(uint8_t *p)
 {
-  uint16_t crc=0;
+  uint16_t crc = 0;
   TelemetrySerial.write(0x7e);
-  for (int i=0; i<9; i++) {
-    if (i==8) {
+  for (int i = 0; i < 9; i++) {
+    if (i == 8) {
       p[i] = 0xff - crc;
     }
-    if ((p[i]==0x7e) || (p[i]==0x7d)) {
+    if ((p[i] == 0x7e) || (p[i] == 0x7d)) {
       TelemetrySerial.write(0x7d);
-      TelemetrySerial.write(0x20^p[i]);
+      TelemetrySerial.write(0x20 ^ p[i]);
     } else {
       TelemetrySerial.write(p[i]);
     }
@@ -110,32 +110,32 @@ void smartportIdle()
   TelemetrySerial.write(0x7e);
 }
 
-void smartportSendFrame(uint8_t a1, uint8_t a2 ,uint8_t rx, uint8_t tx)
+void smartportSendFrame(uint8_t a1, uint8_t a2 ,uint8_t rssi, uint8_t prof)
 {
   uint8_t buf[9];
-  frskySchedule=(frskySchedule+1) % 36;
-  buf[0]=0x98;
-  buf[1]=0x10;
+  frskySchedule = (frskySchedule + 1) % 36;
+  buf[0] = 0x98;
+  buf[1] = 0x10;
   switch (frskySchedule) {
   case 0: // SWR
-    buf[2]=0x05;
-    buf[3]=0xf1;
-    buf[4]=0x01;
+    buf[2] = 0x05;
+    buf[3] = 0xf1;
+    buf[4] = prof + 1;
     break;
   case 1: // RSSI
-    buf[2]=0x01;
-    buf[3]=0xf1;
-    buf[4]=(uint16_t)((tx<rx)?tx:rx)*100/256;
+    buf[2] = 0x01;
+    buf[3] = 0xf1;
+    buf[4] = (uint16_t)(rssi) * 100 / 256;
     break;
   case 2: //BATT
-    buf[2]=0x04;
-    buf[3]=0xf1;
-    buf[4]=a1;
+    buf[2] = 0x04;
+    buf[3] = 0xf1;
+    buf[4] = a1;
     break;
   case 3: //A2
-    buf[2]=0x03;
-    buf[3]=0xf1;
-    buf[4]=a2;
+    buf[2] = 0x03;
+    buf[3] = 0xf1;
+    buf[4] = a2;
     break;
   default:
     smartportIdle();
@@ -144,17 +144,18 @@ void smartportSendFrame(uint8_t a1, uint8_t a2 ,uint8_t rx, uint8_t tx)
   smartportSend(buf);
 }
 
-void frskyUpdate(uint8_t a1, uint8_t a2, uint8_t rx, uint8_t tx)
+void frskyUpdate(uint8_t a1, uint8_t a2, uint8_t rx, uint8_t tx, uint8_t prof)
 {
-  uint32_t now = micros()
+  uint32_t now = micros();
   if (frskyIsSmartPort) {
-    if (now - frskyLast > SMARTPORT_INTERVAL) {
-      smartportSendFrame(a1, a2, rx, tx);
+    if ((now - frskyLast) > SMARTPORT_INTERVAL) {
+      smartportSendFrame(a1, a2, (rx < tx) ? rx : tx, prof);
+      frskyLast = now;
     }
   } else {
-    if (now - frskyLast > FRSKY_INTERVAL) {
+    if ((now - frskyLast) > FRSKY_INTERVAL) {
       frskySendFrame(a1, a2, rx, tx);
+      frskyLast = now;
     }
   }
-  frskyLast = now;
 }
