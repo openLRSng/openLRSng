@@ -5,12 +5,12 @@
 #define EDIT_BUFFER_SIZE 100
 
 int8_t  CLI_menu = 0;
-char    CLI_buffer[EDIT_BUFFER_SIZE+1];
+char    CLI_buffer[EDIT_BUFFER_SIZE + 1];
 uint8_t CLI_buffer_position = 0;
 bool    CLI_magic_set = 0;
 
-const static char hexTab[16] = {'0','1','2','3','4','5','6','7','8','9','A','B','C','D','E','F'};
-const static char *chConfStr[8] = {"N/A", "4+4", "8", "8+4", "12", "12+4", "16", "N/A"};
+const static char hexTab[16] = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F' };
+const static char *chConfStr[8] = { "N/A", "4+4", "8", "8+4", "12", "12+4", "16", "N/A" };
 
 #define RXC_MAX_SPECIAL_PINS 16
 struct rxSpecialPinMap rxcSpecialPins[RXC_MAX_SPECIAL_PINS];
@@ -50,13 +50,13 @@ void hexGet(void *out, uint16_t expected)
   uint8_t  buffer[expected];
   uint16_t check = 0;
   char     ch;
-  while ((millis()-start)<2000) {
+  while ((millis() - start) < 2000) {
     if (Serial.available()) {
       ch=Serial.read();
       switch (state) {
       case 0: // wait for S
-        if (ch=='S') {
-          state=1;
+        if (ch == 'S') {
+          state = 1;
         } else {
           goto fail;
         }
@@ -64,7 +64,7 @@ void hexGet(void *out, uint16_t expected)
       case 1: // wait for ':'
       case 3: // -"-
       case 6: // -"-
-        if (ch==':') {
+        if (ch == ':') {
           state++;
         } else {
           goto fail;
@@ -72,13 +72,13 @@ void hexGet(void *out, uint16_t expected)
         break;
       case 2: // bytecount receving (decimal number)
         if ((ch >= '0') && (ch <= '9')) {
-          bytes = bytes * 10 + (ch-'0');
+          bytes = bytes * 10 + (ch -'0');
         } else if (ch == 'H') {
           if (bytes == expected) {
             state = 3;
-            numin=0;
-            bytes=0;
-            check=0;
+            numin = 0;
+            bytes = 0;
+            check = 0;
           } else {
             goto fail;
           }
@@ -87,7 +87,7 @@ void hexGet(void *out, uint16_t expected)
         }
         break;
       case 4: // reading bytes (hex)
-        if ((ch>='0') && (ch <= '9')) {
+        if ((ch >= '0') && (ch <= '9')) {
           numin = numin * 16 + (ch - '0');
         } else if ((ch >= 'A') && (ch <= 'F')) {
           numin = numin * 16 + (ch - 'A' + 10);
@@ -104,22 +104,22 @@ void hexGet(void *out, uint16_t expected)
         }
         break;
       case 5:
-        if (ch=='T') {
-          state=6;
+        if (ch == 'T') {
+          state = 6;
           numin = 0;
         } else {
           goto fail;
         }
         break;
       case 7:
-        if ((ch>='0') && (ch <= '9')) {
+        if ((ch >= '0') && (ch <= '9')) {
           numin = numin * 16 + (ch - '0');
         } else if ((ch >= 'A') && (ch <= 'F')) {
           numin = numin * 16 + (ch - 'A' + 10);
         } else if (ch == ':') {
           if (check == numin) {
             Serial.println("BINARY LOAD OK");
-            memcpy(out,buffer,expected);
+            memcpy(out, buffer, expected);
             return;
           }
           goto fail;
@@ -151,7 +151,7 @@ void bindPrint(void)
   Serial.println(bind_data.rf_channel_spacing);
 
   Serial.print(F("5) Hop channels:     "));
-  for (uint8_t c = 0; (c < MAXHOPS) && (bind_data.hopchannel[c]!=0); c++) {
+  for (uint8_t c = 0; (c < MAXHOPS) && (bind_data.hopchannel[c] != 0); c++) {
     if (c) {
       Serial.print(",");
     }
@@ -163,7 +163,7 @@ void bindPrint(void)
   Serial.println(bind_data.modem_params);
 
   Serial.print(F("7) Channel config:  "));
-  Serial.println(chConfStr[bind_data.flags&0x07]);
+  Serial.println(chConfStr[bind_data.flags & 0x07]);
 
   Serial.print(F("8) Telemetry:       "));
   switch (bind_data.flags & TELEMETRY_MASK) {
@@ -185,20 +185,19 @@ void bindPrint(void)
   Serial.println(bind_data.serial_baudrate);
 
   Serial.print(F("0) Mute buzzer (mostly):"));
-  Serial.println((bind_data.flags & MUTE_TX)?"Yes":"No");
+  Serial.println((bind_data.flags & MUTE_TX) ? "Yes" : "No");
 
   Serial.print(F("A) Inverted PPM in     :"));
-  Serial.println((bind_data.flags & INVERTED_PPMIN)?"Yes":"No");
+  Serial.println((bind_data.flags & INVERTED_PPMIN) ? "Yes" : "No");
 
   Serial.print(F("B) Micro (half) PPM    :"));
-  Serial.println((bind_data.flags & MICROPPM)?"Yes":"No");
+  Serial.println((bind_data.flags & MICROPPM) ? "Yes" : "No");
 
   Serial.print(F("Calculated packet interval: "));
   Serial.print(getInterval(&bind_data));
   Serial.print(F(" == "));
-  Serial.print(1000000L/getInterval(&bind_data));
+  Serial.print(1000000L / getInterval(&bind_data));
   Serial.println(F("Hz"));
-
 }
 
 void rxPrintDTime(uint8_t val)
@@ -207,9 +206,9 @@ void rxPrintDTime(uint8_t val)
     Serial.println(F("Disabled"));
   } else {
     uint32_t ms = delayInMs(val) / 100;
-    Serial.print(ms/10);
+    Serial.print(ms / 10);
     Serial.print('.');
-    Serial.print(ms%10);
+    Serial.print(ms % 10);
     Serial.println('s');
   }
 }
@@ -225,14 +224,14 @@ void rxPrint(void)
   } else if (rx_config.rx_type == RX_DTFUHF10CH) {
     Serial.println(F("DTF UHF 32-bit 10ch"));
   }
-  for (i=0; i<rxcNumberOfOutputs; i++) {
-    Serial.print((char)(((i+1)>9)?(i+'A'-9):(i+'1')));
+  for (i=0; i < rxcNumberOfOutputs; i++) {
+    Serial.print((char)(((i + 1) > 9) ? (i + 'A' - 9) : (i + '1')));
     Serial.print(F(") port "));
-    Serial.print(i+1);
+    Serial.print(i + 1);
     Serial.print(F("function: "));
-    if (rx_config.pinMapping[i]<16) {
+    if (rx_config.pinMapping[i] < 16) {
       Serial.print(F("PWM channel "));
-      Serial.println(rx_config.pinMapping[i]+1);
+      Serial.println(rx_config.pinMapping[i] + 1);
     } else {
       Serial.println(SPECIALSTR(rx_config.pinMapping[i]));
     }
@@ -256,19 +255,19 @@ void rxPrint(void)
   Serial.print(F("L) PPM minimum sync (us)  : "));
   Serial.println(rx_config.minsync);
   Serial.print(F("M) PPM RSSI to channel    : "));
-  if (rx_config.RSSIpwm<16) {
+  if (rx_config.RSSIpwm < 16) {
     Serial.println(rx_config.RSSIpwm + 1);
   } else {
     Serial.println(F("DISABLED"));
   }
   Serial.print(F("N) PPM output limited     : "));
-  Serial.println((rx_config.flags & PPM_MAX_8CH)?"8ch":"N/A");
+  Serial.println((rx_config.flags & PPM_MAX_8CH) ? "8ch" : "N/A");
   Serial.print(F("O) Timed BIND at startup  : "));
-  Serial.println((rx_config.flags & ALWAYS_BIND)?"Enabled":"Disabled");
+  Serial.println((rx_config.flags & ALWAYS_BIND) ? "Enabled" : "Disabled");
   Serial.print(F("P) Slave mode (experimental): "));
-  Serial.println((rx_config.flags & SLAVE_MODE)?"Enabled":"Disabled");
+  Serial.println((rx_config.flags & SLAVE_MODE) ? "Enabled" : "Disabled");
   Serial.print(F("Q) Output before link (=FS) : "));
-  Serial.println((rx_config.flags & IMMEDIATE_OUTPUT)?"Enabled":"Disabled");
+  Serial.println((rx_config.flags & IMMEDIATE_OUTPUT) ? "Enabled" : "Disabled");
 }
 
 void CLI_menu_headers(void)
@@ -341,13 +340,13 @@ void RX_menu_headers(void)
     rxPrint();
     break;
   default:
-    if ((CLI_menu > 0) && (CLI_menu<=rxcNumberOfOutputs)) {
+    if ((CLI_menu > 0) && (CLI_menu <= rxcNumberOfOutputs)) {
       Serial.print(F("Set output for port "));
       Serial.println(CLI_menu);
       Serial.print(F("Valid choices are: [1]-[16] (channel 1-16)"));
       ch=20;
-      for (uint8_t i=0; i<rxcSpecialPinCount; i++) {
-        if (rxcSpecialPins[i].output == CLI_menu-1) {
+      for (uint8_t i = 0; i < rxcSpecialPinCount; i++) {
+        if (rxcSpecialPins[i].output == CLI_menu - 1) {
           Serial.print(", [");
           Serial.print(ch);
           Serial.print("] (");
@@ -364,7 +363,7 @@ void RX_menu_headers(void)
 
 void showFrequencies()
 {
-  for (uint8_t ch=0; (ch < MAXHOPS) && (bind_data.hopchannel[ch]!=0) ; ch++ ) {
+  for (uint8_t ch = 0; (ch < MAXHOPS) && (bind_data.hopchannel[ch] != 0) ; ch++) {
     Serial.print("Hop channel ");
     Serial.print(ch);
     Serial.print(" @ ");
@@ -403,7 +402,7 @@ uint8_t CLI_inline_edit(char c)
   } else if (c == 0x1B) { // ESC
     CLI_buffer_reset();
     return 1; // signal editing done
-  } else if((c == 0x0D)||(c == 0x0A)) { // Enter/Newline
+  } else if (c == 0x0D || c == 0x0A) { // Enter/Newline
     return 1; // signal editing done
   } else {
     if (CLI_buffer_position < EDIT_BUFFER_SIZE) {
@@ -422,30 +421,30 @@ void handleRXmenu(char c)
   if (CLI_menu == -1) {
     switch (c) {
     case '!':
-      hexDump(&rx_config,sizeof(rx_config));
+      hexDump(&rx_config, sizeof(rx_config));
       break;
     case '\n':
     case '\r':
       RX_menu_headers();
       break;
     case '@':
-      hexGet(&rx_config,sizeof(rx_config));
+      hexGet(&rx_config, sizeof(rx_config));
       RX_menu_headers();
       break;
     case 's':
     case 'S': {
       Serial.println("Sending settings to RX\n");
-      uint8_t tx_buf[1+sizeof(rx_config)];
-      tx_buf[0]='u';
-      memcpy(tx_buf+1, &rx_config, sizeof(rx_config));
-      tx_packet(tx_buf,sizeof(rx_config)+1);
+      uint8_t tx_buf[1 + sizeof(rx_config)];
+      tx_buf[0] = 'u';
+      memcpy(tx_buf + 1, &rx_config, sizeof(rx_config));
+      tx_packet(tx_buf, sizeof(rx_config) + 1);
       rx_reset();
       RF_Mode = Receive;
       delay(200);
       if (RF_Mode == Received) {
         spiSendAddress(0x7f);   // Send the package read command
-        tx_buf[0]=spiReadData();
-        if (tx_buf[0]=='U') {
+        tx_buf[0] = spiReadData();
+        if (tx_buf[0] == 'U') {
           Serial.println(F("*****************************"));
           Serial.println(F("RX Acked - update successful!"));
           Serial.println(F("*****************************"));
@@ -456,19 +455,19 @@ void handleRXmenu(char c)
     case 'r':
     case 'R': {
       Serial.println("Resetting settings on RX\n");
-      uint8_t tx_buf[1+sizeof(rx_config)];
-      tx_buf[0]='i';
-      tx_packet(tx_buf,1);
+      uint8_t tx_buf[1 + sizeof(rx_config)];
+      tx_buf[0] = 'i';
+      tx_packet(tx_buf, 1);
       rx_reset();
       RF_Mode = Receive;
       delay(200);
       if (RF_Mode == Received) {
-        spiSendAddress(0x7f);   // Send the package read command
-        tx_buf[0]=spiReadData();
-        for (uint8_t i=0; i<sizeof(rx_config); i++) {
-          tx_buf[i+1]=spiReadData();
+        spiSendAddress(0x7f); // Send the package read command
+        tx_buf[0] = spiReadData();
+        for (uint8_t i = 0; i < sizeof(rx_config); i++) {
+          tx_buf[i + 1] = spiReadData();
         }
-        memcpy(&rx_config,tx_buf+1,sizeof(rx_config));
+        memcpy(&rx_config, tx_buf + 1, sizeof(rx_config));
         if (tx_buf[0]=='I') {
           Serial.println(F("*****************************"));
           Serial.println(F("RX Acked - revert successful!"));
@@ -489,7 +488,7 @@ void handleRXmenu(char c)
     case 'b':
     case 'c':
     case 'd':
-      c -= 'a'-'A';
+      c -= 'a' - 'A';
       // Fallthru
     case 'A':
     case 'B':
@@ -611,17 +610,17 @@ void handleRXmenu(char c)
           if (CLI_menu > rxcNumberOfOutputs) {
             break;
           }
-          if ((value > 0) && (value<=16)) {
-            rx_config.pinMapping[CLI_menu-1] = value-1;
+          if ((value > 0) && (value <= 16)) {
+            rx_config.pinMapping[CLI_menu - 1] = value - 1;
             valid_input = 1;
           } else {
             ch=20;
             for (uint8_t i = 0; i < rxcSpecialPinCount; i++) {
-              if (rxcSpecialPins[i].output!=(CLI_menu-1)) {
+              if (rxcSpecialPins[i].output != (CLI_menu - 1)) {
                 continue;
               }
-              if (ch==value) {
-                rx_config.pinMapping[CLI_menu-1] = rxcSpecialPins[i].type;
+              if (ch == value) {
+                rx_config.pinMapping[CLI_menu - 1] = rxcSpecialPins[i].type;
                 valid_input = 1;
               }
               ch++;
@@ -647,19 +646,19 @@ void handleRXmenu(char c)
           }
           break;
         case 23:
-          if ((CLI_buffer[0]|0x20)=='p') {
-            value = strtoul(CLI_buffer+1, NULL, 0);
-            if ((value>=1) && (value<=8)) {
+          if ((CLI_buffer[0] | 0x20) == 'p') {
+            value = strtoul(CLI_buffer + 1, NULL, 0);
+            if ((value >= 1) && (value <= 8)) {
               value=EU_PMR_CH(value);
             } else {
-              value=1; //invalid
+              value = 1; //invalid
             }
-          } else if ((CLI_buffer[0]|0x20)=='f') {
-            value = strtoul(CLI_buffer+1, NULL, 0);
-            if ((value>=1) && (value<=7)) {
-              value=US_FRS_CH(value);
+          } else if ((CLI_buffer[0] | 0x20) == 'f') {
+            value = strtoul(CLI_buffer + 1, NULL, 0);
+            if ((value >= 1) && (value <= 7)) {
+              value = US_FRS_CH(value);
             } else {
-              value=1; //invalid
+              value = 1; //invalid
             }
           }
           if ((value == 0) || ((value >= MIN_RFM_FREQUENCY) && (value <= MAX_RFM_FREQUENCY))) {
@@ -713,25 +712,25 @@ void handleRXmenu(char c)
 
 uint8_t rxcConnect()
 {
-  uint8_t tx_buf[1+sizeof(rx_config)];
+  uint8_t tx_buf[1 + sizeof(rx_config)];
   uint32_t last_time = micros();
 
   init_rfm(1);
   do {
-    tx_buf[0]='t';
-    tx_packet(tx_buf,1);
+    tx_buf[0] = 't';
+    tx_packet(tx_buf, 1);
     RF_Mode = Receive;
     rx_reset();
     delay(250);
-  } while ((RF_Mode==Receive) && (!Serial.available()) && ((micros()-last_time)<30000000));
+  } while ((RF_Mode == Receive) && (!Serial.available()) && ((micros() - last_time) < 30000000));
 
   if (RF_Mode == Receive) {
     return 2;
   }
 
   spiSendAddress(0x7f);   // Send the package read command
-  tx_buf[0]=spiReadData();
-  if (tx_buf[0]!='T') {
+  tx_buf[0] = spiReadData();
+  if (tx_buf[0] != 'T') {
     return 3;
   }
 
@@ -740,7 +739,7 @@ uint8_t rxcConnect()
 
   rxcNumberOfOutputs = spiReadData();
   rxcSpecialPinCount = spiReadData();
-  if (rxcSpecialPinCount>RXC_MAX_SPECIAL_PINS) {
+  if (rxcSpecialPinCount > RXC_MAX_SPECIAL_PINS) {
     return 3;
   }
 
@@ -748,8 +747,8 @@ uint8_t rxcConnect()
     *(((uint8_t*)&rxcSpecialPins) + i) = spiReadData();
   }
 
-  tx_buf[0]='p'; // ask for config dump
-  tx_packet(tx_buf,1);
+  tx_buf[0] = 'p'; // ask for config dump
+  tx_packet(tx_buf, 1);
   RF_Mode = Receive;
   rx_reset();
   delay(50);
@@ -758,8 +757,8 @@ uint8_t rxcConnect()
     return 2;
   }
   spiSendAddress(0x7f);   // Send the package read command
-  tx_buf[0]=spiReadData();
-  if (tx_buf[0]!='P') {
+  tx_buf[0] = spiReadData();
+  if (tx_buf[0] != 'P') {
     return 3;
   }
 
@@ -794,7 +793,6 @@ void CLI_RX_config()
       handleRXmenu(Serial.read());
     }
   }
-
 }
 
 void handleCLImenu(char c)
@@ -802,14 +800,14 @@ void handleCLImenu(char c)
   if (CLI_menu == -1) {
     switch (c) {
     case '!':
-      hexDump(&bind_data,sizeof(bind_data));
+      hexDump(&bind_data, sizeof(bind_data));
       break;
     case '\n':
     case '\r':
       CLI_menu_headers();
       break;
     case '@':
-      hexGet(&bind_data,sizeof(bind_data));
+      hexGet(&bind_data, sizeof(bind_data));
       CLI_menu_headers();
       break;
     case 's':
@@ -864,8 +862,8 @@ void handleCLImenu(char c)
       Serial.println(F("Toggled telemetry!"));
       {
         uint8_t newf = (bind_data.flags + TELEMETRY_PASSTHRU) & TELEMETRY_MASK;
-        bind_data.flags&= ~TELEMETRY_MASK;
-        bind_data.flags|= newf;
+        bind_data.flags &= ~TELEMETRY_MASK;
+        bind_data.flags |= newf;
       }
       CLI_menu = -1;
       CLI_menu_headers();
@@ -928,7 +926,7 @@ void handleCLImenu(char c)
           }
           break;
         case 4:
-          if ((value > 0) && (value<11)) {
+          if ((value > 0) && (value < 11)) {
             bind_data.rf_channel_spacing = value;
             valid_input = 1;
           }
