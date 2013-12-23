@@ -40,7 +40,7 @@ volatile uint8_t myI2C_dataCnt;  // data countter
 #define MYI2C_BUSY     0x04 // transfer ongoing
 volatile uint8_t myI2C_flags;
 volatile uint8_t myI2C_error;
-uint16_t myI2C_timeout = 2000; // default 2ms
+uint16_t myI2C_timeout = 5000; // default 2ms
 
 void myI2C_init(uint8_t enablePullup)
 {

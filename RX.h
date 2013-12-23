@@ -33,7 +33,7 @@ uint8_t  failsafeIsValid = 0;
 uint8_t linkAcquired = 0;
 uint8_t numberOfLostPackets = 0;
 
-uint8_t slaveState = 0; // 0 - no slave, 1 - slave initializing, 2 - slave running, 3- errored
+volatile uint8_t slaveState = 0; // 0 - no slave, 1 - slave initializing, 2 - slave running, 3- errored
 
 boolean willhop = 0, fs_saved = 0;
 
@@ -412,7 +412,6 @@ uint8_t slaveHandler(uint8_t *data, uint8_t flags)
     } else {
       if (slaveCnt < getPacketSize(&bind_data)) {
         *data = rx_buf[slaveCnt++];
-        return 1;
       } else {
         return 0;
       }
@@ -422,21 +421,24 @@ uint8_t slaveHandler(uint8_t *data, uint8_t flags)
     if (flags & MYI2C_SLAVE_ISFIRST) {
       slaveAct = *data;
       slaveCnt = 0;
-      return 1;
-    } else {
-      if ((slaveAct & 0x60) == 0x60) {
+      if ((slaveAct & 0xe0) == 0x60) {
         if (slaveState >= 2) {
           RF_channel = (*data & 0x1f);
-          rfmSetChannel(RF_channel);
           slaveState=3; // to RX mode
         }
         return 0;
-      } else if (slaveAct==0xff) {
+      } else if (slaveAct==0xfe) {
+        // deinitialize
+        slaveState=0;
+        return 0;
+      }
+      return 1;
+    } else {
+      if (slaveAct==0xff) {
         // load bind_data
         if (slaveCnt<sizeof(bind_data)) {
-          (uint8_t *)(&bind_data)[slaveCnt++] = *data;
+          ((uint8_t *)(&bind_data))[slaveCnt++] = *data;
           if (slaveCnt == sizeof(bind_data)) {
-            Serial.println("BIND loaded");
             slaveState=1;
             return 0;
           }
@@ -444,10 +446,6 @@ uint8_t slaveHandler(uint8_t *data, uint8_t flags)
         } else {
           return 0;
         }
-      } else if (slaveAct==0xfe) {
-        // deinitialize
-        slaveState=0;
-        return 0;
       }
     }
   }
@@ -455,15 +453,16 @@ uint8_t slaveHandler(uint8_t *data, uint8_t flags)
 
 void slaveLoop()
 {
+  myI2C_slaveSetup(32, 0, 0, slaveHandler);
   slaveState=0;
   while(1) {
     if (slaveState == 1) {
       init_rfm(0);   // Configure the RFM22B's registers for normal operation
-      Serial.println("RFM init done");
       slaveState = 2; // BIND applied
     } else if (slaveState == 3) {
+      rfmSetChannel(RF_channel);
       RF_Mode = Receive;
-      to_rx_mode();
+      rx_reset();
       slaveState = 4; // in RX mode
     } else if (slaveState == 4) {
       if (RF_Mode == Received) {
@@ -474,7 +473,7 @@ void slaveLoop()
         }
 
         slaveState = 5;
-        Serial.println("RXd");
+        Serial.print("R");
       }
     }
   }
@@ -544,12 +543,11 @@ void setup()
     myI2C_init(1);
     if (rx_config.flags & SLAVE_MODE) {
       Serial.println("I am slave");
-      myI2C_slaveSetup(32, 0, 0, slaveHandler);
-      while(1) {
-        delay(1000);
-      }
+      slaveLoop();
     } else {
       uint8_t ret,buf;
+      Serial.println("Checking for slave");
+      delay(20);
       ret = myI2C_readFrom(32, &buf, 1, MYI2C_WAIT);
       if (ret==0) {
         Serial.println("Slave found");
@@ -568,18 +566,18 @@ void setup()
     uint8_t ret, buf[sizeof(bind_data)+1];
     buf[0] = 0xff;
     memcpy(buf+1,&bind_data,sizeof(bind_data));
-    ret = myI2C_sendTo(32, buf, sizeof(bind_data)+1);
+    ret = myI2C_writeTo(32, buf, sizeof(bind_data)+1, MYI2C_WAIT);
     if (ret==0) {
       ret = myI2C_readFrom(32, buf, 1, MYI2C_WAIT);
-      if ((ret==0) && (buf[0]&0x80)) {
+      if ((ret==0)) {
         slaveState = 2;
       } else {
         slaveState = 255;
       }
     } else {
+      Serial.println("timeout");
       slaveState = 255;
     }
-
   }
 
   // Count hopchannels as we need it later
@@ -591,6 +589,15 @@ void setup()
   //################### RX SYNC AT STARTUP #################
   RF_Mode = Receive;
   to_rx_mode();
+
+  if (slaveState == 2) {
+    uint8_t ret, buf;
+    buf = 0x60 + RF_channel;
+    ret = myI2C_writeTo(32, &buf, 1, MYI2C_WAIT);
+    if (ret) {
+      slaveState = 255;
+    }
+  }
 
   if ((bind_data.flags & TELEMETRY_MASK) == TELEMETRY_FRSKY) {
     Serial.begin(9600);
@@ -838,6 +845,14 @@ void loop()
       RF_channel = 0;
     }
     rfmSetChannel(RF_channel);
+    if (slaveState == 2) {
+      uint8_t ret, buf;
+      buf = 0x60 + RF_channel;
+      ret = myI2C_writeTo(32, &buf, 1, MYI2C_WAIT);
+      if (ret) {
+        slaveState = 255;
+      }
+    }
     willhop = 0;
   }
 
