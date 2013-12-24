@@ -64,7 +64,7 @@ void frskySendFrame(uint8_t a1, uint8_t a2, uint8_t rx, uint8_t tx)
     frame[5] = frame[6] = frame[7] = frame[8] = 0;
     frskySendStuffed(frame);
   } else {
-    if (FRSKY_RDI!=FRSKY_WRI) {
+    if (FRSKY_RDI != FRSKY_WRI) {
       uint8_t bytes = 0;
       frame[0] = 0xfd;
       frame[1] = 0;

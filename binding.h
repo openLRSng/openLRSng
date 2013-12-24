@@ -47,10 +47,10 @@
 
 #define DEFAULT_FLAGS (CHANNELS_8 | TELEMETRY_PASSTHRU)
 
-// helpper macro for European PMR channels
+// helper macro for European PMR channels
 #define EU_PMR_CH(x) (445993750L + 12500L * (x)) // valid for ch1-ch8
 
-// helpper macro for US FRS channels 1-7
+// helper macro for US FRS channels 1-7
 #define US_FRS_CH(x) (462537500L + 25000L * (x)) // valid for ch1-ch7
 
 #define DEFAULT_BEACON_FREQUENCY 0 // disable beacon
@@ -119,12 +119,12 @@ struct rfm22_modem_regs {
 } modem_params[] = {
   { 4800, 0x1a, 0x40, 0x0a, 0xa1, 0x20, 0x4e, 0xa5, 0x00, 0x1b, 0x1e, 0x27, 0x52, 0x2c, 0x23, 0x30 }, // 50000 0x00
   { 9600, 0x05, 0x40, 0x0a, 0xa1, 0x20, 0x4e, 0xa5, 0x00, 0x20, 0x24, 0x4e, 0xa5, 0x2c, 0x23, 0x30 }, // 25000 0x00
-  { 19200,0x06, 0x40, 0x0a, 0xd0, 0x00, 0x9d, 0x49, 0x00, 0x7b, 0x28, 0x9d, 0x49, 0x2c, 0x23, 0x30 },  // 25000 0x01
-  { 57600,0x05, 0x40, 0x0a, 0x45, 0x01, 0xd7, 0xdc, 0x03, 0xb8, 0x1e, 0x0e, 0xbf, 0x00, 0x23, 0x2e },
-  {125000,0x8a, 0x40, 0x0a, 0x60, 0x01, 0x55, 0x55, 0x02, 0xad, 0x1e, 0x20, 0x00, 0x00, 0x23, 0xc8 },
+  { 19200, 0x06, 0x40, 0x0a, 0xd0, 0x00, 0x9d, 0x49, 0x00, 0x7b, 0x28, 0x9d, 0x49, 0x2c, 0x23, 0x30 }, // 25000 0x01
+  { 57600, 0x05, 0x40, 0x0a, 0x45, 0x01, 0xd7, 0xdc, 0x03, 0xb8, 0x1e, 0x0e, 0xbf, 0x00, 0x23, 0x2e },
+  { 125000, 0x8a, 0x40, 0x0a, 0x60, 0x01, 0x55, 0x55, 0x02, 0xad, 0x1e, 0x20, 0x00, 0x00, 0x23, 0xc8 },
 };
 
-#define DATARATE_COUNT (sizeof(modem_params)/sizeof(modem_params[0]))
+#define DATARATE_COUNT (sizeof(modem_params) / sizeof(modem_params[0]))
 
 struct rfm22_modem_regs bind_params =
 { 9600, 0x05, 0x40, 0x0a, 0xa1, 0x20, 0x4e, 0xa5, 0x00, 0x20, 0x24, 0x4e, 0xa5, 0x2c, 0x23, 0x30 };
@@ -137,7 +137,7 @@ void myEEPROMwrite(int16_t addr, uint8_t data)
 {
   uint8_t retries = 5;
   while ((--retries) && (data != EEPROM.read(addr))) {
-    EEPROM.write(addr,data);
+    EEPROM.write(addr, data);
   }
   if (!retries) {
     fatalBlink(2);
@@ -150,7 +150,7 @@ uint8_t activeProfile = 0;
 
 void profileSet()
 {
-  myEEPROMwrite(EEPROM_PROFILE_OFFSET,activeProfile);
+  myEEPROMwrite(EEPROM_PROFILE_OFFSET, activeProfile);
 }
 
 void  profileInit()
@@ -176,9 +176,9 @@ int16_t bindReadEeprom()
 {
   uint32_t temp = 0;
   for (uint8_t i = 0; i < 4; i++) {
-    temp = (temp<<8) + EEPROM.read(EEPROM_OFFSET(activeProfile) + i);
+    temp = (temp << 8) + EEPROM.read(EEPROM_OFFSET(activeProfile) + i);
   }
-  if (temp!=BIND_MAGIC) {
+  if (temp != BIND_MAGIC) {
     return 0;
   }
 
@@ -196,7 +196,7 @@ int16_t bindReadEeprom()
 void bindWriteEeprom(void)
 {
   for (uint8_t i = 0; i < 4; i++) {
-    myEEPROMwrite(EEPROM_OFFSET(activeProfile) + i, (BIND_MAGIC >> ((3-i) * 8))& 0xff);
+    myEEPROMwrite(EEPROM_OFFSET(activeProfile) + i, (BIND_MAGIC >> ((3 - i) * 8)) & 0xff);
   }
 
   for (uint8_t i = 0; i < sizeof(bind_data); i++) {
@@ -265,11 +265,11 @@ uint32_t delayInMs(uint16_t d)
   if (d < 100) {
     ms = d;
   } else if (d < 190) {
-    ms = (d-90) * 10UL;
+    ms = (d - 90) * 10UL;
   } else if (d < 210) {
-    ms = (d-180) * 100UL;
+    ms = (d - 180) * 100UL;
   } else {
-    ms = (d-205) * 600UL;
+    ms = (d - 205) * 600UL;
   }
   return ms * 100UL;
 }
@@ -280,7 +280,7 @@ uint32_t delayInMs(uint16_t d)
 // 110-255 - 5m - 150m (1m res)
 uint32_t delayInMsLong(uint8_t d)
 {
-  return delayInMs((uint16_t)d+100);
+  return delayInMs((uint16_t)d + 100);
 }
 
 struct RX_config {
@@ -302,7 +302,7 @@ struct RX_config {
 void rxWriteEeprom()
 {
   for (uint8_t i = 0; i < 4; i++) {
-    myEEPROMwrite(EEPROM_RX_OFFSET + i, (BIND_MAGIC >> ((3-i) * 8))& 0xff);
+    myEEPROMwrite(EEPROM_RX_OFFSET + i, (BIND_MAGIC >> ((3 - i) * 8)) & 0xff);
   }
 
   for (uint8_t i = 0; i < sizeof(rx_config); i++) {
@@ -316,8 +316,8 @@ void rxInitDefaults(bool save)
 #if (BOARD_TYPE == 3)
   rx_config.rx_type = RX_FLYTRON8CH;
   rx_config.pinMapping[0] = PINMAP_RSSI; // the CH0 on 8ch RX
-  for (i=1; i < 9; i++) {
-    rx_config.pinMapping[i] = i-1; // default to PWM out
+  for (i = 1; i < 9; i++) {
+    rx_config.pinMapping[i] = i - 1; // default to PWM out
   }
   rx_config.pinMapping[9] = PINMAP_ANALOG;
   rx_config.pinMapping[10] = PINMAP_ANALOG;
@@ -325,8 +325,8 @@ void rxInitDefaults(bool save)
   rx_config.pinMapping[12] = PINMAP_TXD;
 #elif (BOARD_TYPE == 5)
   rx_config.rx_type = RX_OLRSNG4CH;
-  for (i=0; i<4; i++) {
-    rx_config.pinMapping[i]=i; // default to PWM out
+  for (i = 0; i < 4; i++) {
+    rx_config.pinMapping[i] = i; // default to PWM out
   }
   rx_config.pinMapping[4] = 4;
   rx_config.pinMapping[5] = 5;
@@ -357,10 +357,10 @@ void rxReadEeprom()
   uint32_t temp = 0;
 
   for (uint8_t i = 0; i < 4; i++) {
-    temp = (temp<<8) + EEPROM.read(EEPROM_RX_OFFSET + i);
+    temp = (temp << 8) + EEPROM.read(EEPROM_RX_OFFSET + i);
   }
 
-  if (temp!=BIND_MAGIC) {
+  if (temp != BIND_MAGIC) {
     rxInitDefaults(1);
   } else {
     for (uint8_t i = 0; i < sizeof(rx_config); i++) {
