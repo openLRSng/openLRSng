@@ -359,6 +359,17 @@ void setup(void)
   }
 }
 
+uint8_t compositeRSSI(uint8_t rssi, uint8_t linkq)
+{
+  if (linkq >= 15) {
+    // RSSI 0 - 255 mapped to 192 - ((255>>2)+192) == 192-255
+    return (rssi >> 2) + 192;
+  } else {
+    // linkquality gives 0 to 14*13 == 182
+    return linkq * 13;
+  }
+}
+
 void loop(void)
 {
   if (spiReadRegister(0x0C) == 0) {     // detect the locked module and reboot
@@ -522,8 +533,8 @@ void loop(void)
   if (bind_data.flags & TELEMETRY_FRSKY) {
     uint8_t linkQualityTX = countSetBits(linkQuality & 0xfffe);
 
-    uint8_t compRX = (uint16_t)((RSSI_rx >> 2) + 192) * linkQualityRX / 15;
-    uint8_t compTX = (uint16_t)((RSSI_tx >> 2) + 192) * linkQualityTX / 15;
+    uint8_t compRX = compositeRSSI(RSSI_rx, linkQualityRX);
+    uint8_t compTX = compositeRSSI(RSSI_tx, linkQualityTX);
 
     frskyUpdate(RX_ain0, RX_ain1, compRX, compTX, activeProfile);
     //frskyUpdate(RX_ain0,RX_ain1,lastTelemetry?RSSI_rx:0,lastTelemetry?RSSI_tx:0);
