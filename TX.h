@@ -319,7 +319,7 @@ void setup(void)
     Serial.read();
   }
 
-  Serial.print("OpenLRSng TX starting");
+  Serial.print("OpenLRSng TX starting ");
   printVersion(version);
   Serial.print(" on HW ");
   Serial.println(BOARD_TYPE);
