@@ -111,6 +111,14 @@ uint16_t RSSI2Bits(uint8_t rssi)
 
 void set_RSSI_output()
 {
+  uint8_t linkq = countSetBits(linkQuality & 0x7fff);
+  if (linkq == 15) {
+    // RSSI 0 - 255 mapped to 192 - ((255>>2)+192) == 192-255
+    compositeRSSI = (smoothRSSI >> 2) + 192;
+  } else {
+    // linkquality gives 0 to 14*13 == 182
+    compositeRSSI = linkq * 13;
+  }
   if (rx_config.RSSIpwm < 16) {
     cli();
     PPM[rx_config.RSSIpwm] = RSSI2Bits(compositeRSSI);
@@ -735,7 +743,7 @@ void loop()
           }
           tx_buf[4] = (lastAFCCvalue >> 8);
           tx_buf[5] = lastAFCCvalue & 0xff;
-          tx_buf[6] = countSetBits(linkQuality & 0xefff);
+          tx_buf[6] = countSetBits(linkQuality & 0x7fff);
         }
       }
 #ifdef TEST_NO_ACK_BY_CH0
@@ -775,7 +783,6 @@ void loop()
     if (RSSI_count > 8) {
       RSSI_sum /= RSSI_count;
       smoothRSSI = (((uint16_t)smoothRSSI * 3 + (uint16_t)RSSI_sum * 1) / 4);
-      compositeRSSI = (uint16_t)((smoothRSSI >> 2) + 192) * countSetBits(linkQuality & 0x7fff) / 15;
       set_RSSI_output();
       RSSI_sum = 0;
       RSSI_count = 0;
@@ -796,13 +803,11 @@ void loop()
       willhop = 1;
       Red_LED_ON;
       updateLBeep(true);
-      compositeRSSI=(uint16_t)((smoothRSSI >> 2) + 192) * countSetBits(linkQuality & 0x7fff) / 15;
       set_RSSI_output();
     } else if ((numberOfLostPackets == hopcount) && ((timeUs - lastPacketTimeUs) > (getInterval(&bind_data) * hopcount))) {
       // hop slowly to allow resync with TX
       linkQuality = 0;
       willhop = 1;
-      compositeRSSI=(uint16_t)((smoothRSSI >> 2) + 192) * countSetBits(linkQuality & 0x7fff) / 15;
       set_RSSI_output();
       lastPacketTimeUs = timeUs;
     }

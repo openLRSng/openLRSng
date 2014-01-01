@@ -4,3 +4,10 @@
 *.cppproj
 *.atsln
 *.atsuo
+*.d
+*.eep
+*.elf
+*.o
+*.hex
+libraries/*
+out

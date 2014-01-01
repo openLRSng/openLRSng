@@ -1,9 +1,3 @@
-#if defined(COMPILE_TX)
-#define BOARD_TYPE TX_BOARD_TYPE
-#else
-#define BOARD_TYPE RX_BOARD_TYPE
-#endif
-
 // Generic definitions needed always
 
 #define Available 0
