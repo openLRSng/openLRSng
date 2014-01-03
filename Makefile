@@ -77,6 +77,12 @@ SIZE=$(EXEPATH)/$(EXEPREFIX)size
 OBJCOPY=$(EXEPATH)/$(EXEPREFIX)objcopy
 
 #
+# Styling
+#
+ASTYLE=astyle
+ASTYLEOPTIONS=--style=1tbs --indent=spaces=2 --suffix=none
+
+#
 # Compile flags
 #
 COPTFLAGS= -g -Os
@@ -170,7 +176,7 @@ clean:
 	rm -f *.[aod] libraries/*.[aod] *.elf *.eep *.d *.hex
 
 openLRSng.hex: $(OBJS)
-	@$(CC) -Os -Wl,--gc-sections -mmcu=atmega328p -o openLRSng.elf $(OBJS) -Llibraries -lm 
+	@$(CC) -Os -Wl,--gc-sections -mmcu=$(CPU) -o openLRSng.elf $(OBJS) -Llibraries -lm 
 	@$(OBJCOPY) -O ihex -j .eeprom --set-section-flags=.eeprom=alloc,load \
 		--no-change-warnings --change-section-lma .eeprom=0 \
 		openLRSng.elf openLRSng.eep 
@@ -181,3 +187,5 @@ openLRSng.hex: $(OBJS)
 libraries/libcore.a: $(ARDUINO_CORELIB_OBJS)
 	$(AR) rcs libraries/libcore.a $(ARDUINO_CORELIB_OBJS)
 
+astyle:
+	$(ASTYLE) $(ASTYLEOPTIONS) openLRSng.ino *.h
