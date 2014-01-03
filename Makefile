@@ -77,6 +77,12 @@ SIZE=$(EXEPATH)/$(EXEPREFIX)size
 OBJCOPY=$(EXEPATH)/$(EXEPREFIX)objcopy
 
 #
+# Styling
+#
+ASTYLE=astyle
+ASTYLEOPTIONS=--style=1tbs --indent=spaces=2 --suffix=none
+
+#
 # Compile flags
 #
 COPTFLAGS= -g -Os
@@ -170,7 +176,7 @@ clean:
 	rm -f *.[aod] libraries/*.[aod] *.elf *.eep *.d *.hex
 
 openLRSng.hex: $(OBJS)
-	@$(CC) -Os -Wl,--gc-sections -mmcu=atmega328p -o openLRSng.elf $(OBJS) -Llibraries -lm 
+	@$(CC) -Os -Wl,--gc-sections -mmcu=$(CPU) -o openLRSng.elf $(OBJS) -Llibraries -lm 
 	@$(OBJCOPY) -O ihex -j .eeprom --set-section-flags=.eeprom=alloc,load \
 		--no-change-warnings --change-section-lma .eeprom=0 \
 		openLRSng.elf openLRSng.eep 
@@ -180,4 +186,19 @@ openLRSng.hex: $(OBJS)
 
 libraries/libcore.a: $(ARDUINO_CORELIB_OBJS)
 	$(AR) rcs libraries/libcore.a $(ARDUINO_CORELIB_OBJS)
+
+astyle:
+	$(ASTYLE) $(ASTYLEOPTIONS) openLRSng.ino *.h
+
+allfw:
+	mkdir -p out
+	rm -f out/*.hex
+	make COMPILE_TX= BOARD_TYPE=3 clean all && cp openLRSng.hex out/RX-3.hex
+	make COMPILE_TX= BOARD_TYPE=5 clean all && cp openLRSng.hex out/RX-5.hex
+	make COMPILE_TX=1 BOARD_TYPE=2 clean all && cp openLRSng.hex out/TX-2.hex
+	make COMPILE_TX=1 BOARD_TYPE=3 clean all && cp openLRSng.hex out/TX-3.hex
+	make COMPILE_TX=1 BOARD_TYPE=4 clean all && cp openLRSng.hex out/TX-4.hex
+	make COMPILE_TX=1 BOARD_TYPE=5 clean all && cp openLRSng.hex out/TX-5.hex
+	make COMPILE_TX=1 BOARD_TYPE=6 clean all && cp openLRSng.hex out/TX-6.hex
+	ls -l out
 

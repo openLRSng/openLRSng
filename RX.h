@@ -506,7 +506,10 @@ void setup()
   Serial.begin(115200);
   rxReadEeprom();
   failsafeLoad();
-  Serial.println("OpenLRSng RX starting");
+  Serial.print("OpenLRSng RX starting ");
+  printVersion(version);
+  Serial.print(" on HW ");
+  Serial.println(BOARD_TYPE);
 
   setupRfmInterrupt();
 
