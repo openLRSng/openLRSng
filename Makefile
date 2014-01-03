@@ -189,3 +189,16 @@ libraries/libcore.a: $(ARDUINO_CORELIB_OBJS)
 
 astyle:
 	$(ASTYLE) $(ASTYLEOPTIONS) openLRSng.ino *.h
+
+allfw:
+	mkdir -p out
+	rm -f out/*.hex
+	make COMPILE_TX= BOARD_TYPE=3 clean all && cp openLRSng.hex out/RX-3.hex
+	make COMPILE_TX= BOARD_TYPE=5 clean all && cp openLRSng.hex out/RX-5.hex
+	make COMPILE_TX=1 BOARD_TYPE=2 clean all && cp openLRSng.hex out/TX-2.hex
+	make COMPILE_TX=1 BOARD_TYPE=3 clean all && cp openLRSng.hex out/TX-3.hex
+	make COMPILE_TX=1 BOARD_TYPE=4 clean all && cp openLRSng.hex out/TX-4.hex
+	make COMPILE_TX=1 BOARD_TYPE=5 clean all && cp openLRSng.hex out/TX-5.hex
+	make COMPILE_TX=1 BOARD_TYPE=6 clean all && cp openLRSng.hex out/TX-6.hex
+	ls -l out
+
