@@ -424,7 +424,6 @@ uint8_t slaveHandler(uint8_t *data, uint8_t flags)
         return 0;
       }
     }
-    return 1;
   } else {
     if (flags & MYI2C_SLAVE_ISFIRST) {
       slaveAct = *data;
@@ -440,7 +439,6 @@ uint8_t slaveHandler(uint8_t *data, uint8_t flags)
         slaveState=0;
         return 0;
       }
-      return 1;
     } else {
       if (slaveAct==0xff) {
         // load bind_data
@@ -450,13 +448,13 @@ uint8_t slaveHandler(uint8_t *data, uint8_t flags)
             slaveState=1;
             return 0;
           }
-          return 1;
         } else {
           return 0;
         }
       }
     }
   }
+  return 1;
 }
 
 void slaveLoop()
@@ -468,6 +466,7 @@ void slaveLoop()
       init_rfm(0);   // Configure the RFM22B's registers for normal operation
       slaveState = 2; // BIND applied
     } else if (slaveState == 3) {
+      Green_LED_OFF;
       rfmSetChannel(RF_channel);
       RF_Mode = Receive;
       rx_reset();
@@ -475,13 +474,11 @@ void slaveLoop()
     } else if (slaveState == 4) {
       if (RF_Mode == Received) {
         spiSendAddress(0x7f);   // Send the package read command
-
         for (int16_t i = 0; i < getPacketSize(&bind_data); i++) {
           rx_buf[i] = spiReadData();
         }
-
         slaveState = 5;
-        Serial.print("R");
+        Green_LED_ON;
       }
     }
   }
@@ -650,7 +647,20 @@ void loop()
 
   timeUs = micros();
 
-  if (RF_Mode == Received) {   // RFM22B int16_t pin Enabled by received Data
+  uint8_t slaveReceived = 0;
+  if (slaveState == 2) {
+    uint8_t ret, buf;
+    ret = myI2C_readFrom(32, &buf, 1, MYI2C_WAIT);
+    if (ret) {
+      slaveState = 255;
+    } else {
+      if (buf==5) {
+        slaveReceived = 1;
+      }
+    }
+  }
+
+  if ((RF_Mode == Received) || (slaveReceived)) {
 
     lastPacketTimeUs = micros(); // record last package time
     numberOfLostPackets = 0;
@@ -662,13 +672,23 @@ void loop()
 
     updateLBeep(false);
 
-    spiSendAddress(0x7f);   // Send the package read command
+    if (RF_Mode == Received) {
+      spiSendAddress(0x7f);   // Send the package read command
 
-    for (int16_t i = 0; i < getPacketSize(&bind_data); i++) {
-      rx_buf[i] = spiReadData();
+      for (int16_t i = 0; i < getPacketSize(&bind_data); i++) {
+        rx_buf[i] = spiReadData();
+      }
+
+      lastAFCCvalue = rfmGetAFCC();
+    } else {
+      uint8_t ret, slave_buf[22];
+      ret = myI2C_readFrom(32, slave_buf, getPacketSize(&bind_data) + 1, MYI2C_WAIT);
+      if (ret) {
+        slaveState = 255;
+      } else {
+        memcpy(rx_buf, slave_buf + 1, getPacketSize(&bind_data));
+      }
     }
-
-    lastAFCCvalue = rfmGetAFCC();
 
     if ((rx_buf[0] & 0x3e) == 0x00) {
       cli();
