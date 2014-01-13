@@ -70,7 +70,6 @@
 //####################
 
 #include <Arduino.h>
-#include <EEPROM.h>
 
 #include "version.h"
 #include "hardware.h"
