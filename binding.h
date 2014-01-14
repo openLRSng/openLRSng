@@ -132,12 +132,14 @@ struct rfm22_modem_regs bind_params =
 // prototype
 void fatalBlink(uint8_t blinks);
 
+#include <avr/eeprom.h>
+
 // Save EEPROM by writing just changed data
 void myEEPROMwrite(int16_t addr, uint8_t data)
 {
   uint8_t retries = 5;
-  while ((--retries) && (data != EEPROM.read(addr))) {
-    EEPROM.write(addr, data);
+  while ((--retries) && (data != eeprom_read_byte((uint8_t *)addr))) {
+    eeprom_write_byte((uint8_t *)addr, data);
   }
   if (!retries) {
     fatalBlink(2);
@@ -155,7 +157,7 @@ void profileSet()
 
 void  profileInit()
 {
-  activeProfile = EEPROM.read(EEPROM_PROFILE_OFFSET);
+  activeProfile = eeprom_read_byte((uint8_t *)EEPROM_PROFILE_OFFSET);
   if (activeProfile >= TX_PROFILE_COUNT) {
     activeProfile = 0;
     profileSet();
@@ -176,14 +178,14 @@ int16_t bindReadEeprom()
 {
   uint32_t temp = 0;
   for (uint8_t i = 0; i < 4; i++) {
-    temp = (temp << 8) + EEPROM.read(EEPROM_OFFSET(activeProfile) + i);
+    temp = (temp << 8) + eeprom_read_byte((uint8_t *)(EEPROM_OFFSET(activeProfile) + i));
   }
   if (temp != BIND_MAGIC) {
     return 0;
   }
 
   for (uint8_t i = 0; i < sizeof(bind_data); i++) {
-    *((uint8_t*)&bind_data + i) = EEPROM.read(EEPROM_OFFSET(activeProfile) + 4 + i);
+    *((uint8_t*)&bind_data + i) = eeprom_read_byte((uint8_t *)(EEPROM_OFFSET(activeProfile) + 4 + i));
   }
 
   if (bind_data.version != BINDING_VERSION) {
@@ -357,14 +359,14 @@ void rxReadEeprom()
   uint32_t temp = 0;
 
   for (uint8_t i = 0; i < 4; i++) {
-    temp = (temp << 8) + EEPROM.read(EEPROM_RX_OFFSET + i);
+    temp = (temp << 8) + eeprom_read_byte((uint8_t *)(EEPROM_RX_OFFSET + i));
   }
 
   if (temp != BIND_MAGIC) {
     rxInitDefaults(1);
   } else {
     for (uint8_t i = 0; i < sizeof(rx_config); i++) {
-      *((uint8_t*)&rx_config + i) = EEPROM.read(EEPROM_RX_OFFSET + 4 + i);
+      *((uint8_t*)&rx_config + i) = eeprom_read_byte((uint8_t *)(EEPROM_RX_OFFSET + 4 + i));
     }
 #if (BOARD_TYPE == 3)
     if (rx_config.rx_type != RX_FLYTRON8CH) {

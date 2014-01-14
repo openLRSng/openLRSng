@@ -93,7 +93,7 @@ CXXFLAGS=-fno-exceptions
 #
 # Arduino libraries used, compilation settings.
 #
-ARDUINO_LIBS=EEPROM
+ARDUINO_LIBS=
 ARDUINO_LIB_PATH=$(ARDUINO_PATH)/libraries/
 ARDUINO_LIB_DIRS=$(addprefix $(ARDUINO_LIB_PATH),$(ARDUINO_LIBS))
 ARDUINO_LIB_INCL=$(addsuffix $(ARDUINO_LIBS),-I$(ARDUINO_LIB_PATH))
