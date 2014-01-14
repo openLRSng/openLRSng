@@ -2,6 +2,8 @@
  * OpenLRSng receiver code
  ****************************************************/
 
+#include <avr/eeprom.h>
+
 uint8_t RF_channel = 0;
 
 uint32_t lastPacketTimeUs = 0;
@@ -172,12 +174,12 @@ void failsafeLoad(void)
   uint8_t ee_buf[20];
 
   for (int16_t i = 0; i < 4; i++) {
-    ee_buf[i] = EEPROM.read(EEPROM_FAILSAFE_OFFSET + i);
+    ee_buf[i] = eeprom_read_byte((uint8_t *)(EEPROM_FAILSAFE_OFFSET + i));
   }
 
   if ((ee_buf[0] == 0xFA) && (ee_buf[1] == 0x11) && (ee_buf[2] == 0x5A) && (ee_buf[3] == 0xFE)) {
     for (int16_t i = 0; i < 20; i++) {
-      ee_buf[i] = EEPROM.read(EEPROM_FAILSAFE_OFFSET + 4 + i);
+      ee_buf[i] = eeprom_read_byte((uint8_t *)(EEPROM_FAILSAFE_OFFSET + 4 + i));
     }
     unpackChannels(6, failsafePPM, ee_buf);
     failsafeIsValid = 1;
