@@ -82,5 +82,6 @@
 #include "frskytx.h"
 #include "TX.h"
 #else // COMPILE_RX
+#include "spektrum.h"
 #include "RX.h"
 #endif

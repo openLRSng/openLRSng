@@ -37,6 +37,7 @@ typedef struct pinMask {
 #define PINMAP_TXD    0x25
 #define PINMAP_ANALOG 0x26
 #define PINMAP_LBEEP  0x27 // packetloss beeper
+#define PINMAP_SPKTRM 0x28 // spektrum satellit output
 
 // Following table is used by the dialog code to
 // determine possible extra functions for each output.
@@ -49,8 +50,10 @@ struct rxSpecialPinMap {
 
 #ifdef COMPILE_TX
 // Needed by dialog code
-static const char *specialStrs[] = { "PPM","RSSI","SDA","SCL","RXD","TXD","AIN","LBEEP"};
-#define SPECIALSTR(x) (specialStrs[(x)&7]) // note must be changed if not 8 strings
+static const char *specialStrs[] = { "PPM","RSSI","SDA","SCL","RXD","TXD","AIN","LBEEP",
+                                     "SPKTRM", "", "", "", "", "", "", ""
+                                   };
+#define SPECIALSTR(x) (specialStrs[(x)&0x0f]) // note must be changed if not 16 strings
 #endif
 
 //####### Board Pinouts #########
@@ -387,6 +390,7 @@ struct rxSpecialPinMap rxSpecialPins[] = {
   { 10, PINMAP_ANALOG}, // AIN1
   { 11, PINMAP_RXD},
   { 12, PINMAP_TXD},
+  { 12, PINMAP_SPKTRM},
 };
 
 #endif
@@ -637,6 +641,7 @@ struct rxSpecialPinMap rxSpecialPins[] = {
   { 5, PINMAP_ANALOG},
   { 6, PINMAP_RXD},
   { 7, PINMAP_TXD},
+  { 7, PINMAP_SPKTRM},
 };
 
 #endif
