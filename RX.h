@@ -722,7 +722,7 @@ void loop()
     }
   }
 
-  if (!disablePPM) {
+  if ((rx_config.pinMapping[TXD_OUTPUT] == PINMAP_SPKTRM) && (!disablePPM)) {
     sendSpektrumFrame();
   }
 
