@@ -64,8 +64,12 @@ endif
 #
 # AVR GCC info
 #
-EXEPATH=$(ARDUINO_PATH)/hardware/tools/avr/bin
 EXEPREFIX=avr-
+ifneq (,$(wildcard $(ARDUINO_PATH)/hardware/tools/avr/bin/avr-gcc))
+	EXEPATH=$(ARDUINO_PATH)/hardware/tools/avr/bin
+else ifneq (,$(wildcard /usr/bin/avr-gcc))
+	EXEPATH=/usr/bin
+endif
 
 #
 # AVR gcc and binutils
@@ -190,7 +194,7 @@ libraries/libcore.a: $(ARDUINO_CORELIB_OBJS)
 astyle:
 	$(ASTYLE) $(ASTYLEOPTIONS) openLRSng.ino *.h
 
-allfw:
+fw:
 	mkdir -p out
 	rm -f out/*.hex
 	make COMPILE_TX= BOARD_TYPE=3 clean all && cp openLRSng.hex out/RX-3.hex
@@ -200,5 +204,23 @@ allfw:
 	make COMPILE_TX=1 BOARD_TYPE=4 clean all && cp openLRSng.hex out/TX-4.hex
 	make COMPILE_TX=1 BOARD_TYPE=5 clean all && cp openLRSng.hex out/TX-5.hex
 	make COMPILE_TX=1 BOARD_TYPE=6 clean all && cp openLRSng.hex out/TX-6.hex
+	ls -l out
+
+allfw:  fw
+	make RFMXX_868=1 COMPILE_TX= BOARD_TYPE=3 clean all && cp openLRSng.hex out/RX868-3.hex
+	make RFMXX_868=1 COMPILE_TX= BOARD_TYPE=5 clean all && cp openLRSng.hex out/RX868-5.hex
+	make RFMXX_868=1 COMPILE_TX=1 BOARD_TYPE=2 clean all && cp openLRSng.hex out/TX868-2.hex
+	make RFMXX_868=1 COMPILE_TX=1 BOARD_TYPE=3 clean all && cp openLRSng.hex out/TX868-3.hex
+	make RFMXX_868=1 COMPILE_TX=1 BOARD_TYPE=4 clean all && cp openLRSng.hex out/TX868-4.hex
+	make RFMXX_868=1 COMPILE_TX=1 BOARD_TYPE=5 clean all && cp openLRSng.hex out/TX868-5.hex
+	make RFMXX_868=1 COMPILE_TX=1 BOARD_TYPE=6 clean all && cp openLRSng.hex out/TX868-6.hex
+
+	make RFMXX_915=1 COMPILE_TX= BOARD_TYPE=3 clean all && cp openLRSng.hex out/RX915-3.hex
+	make RFMXX_915=1 COMPILE_TX= BOARD_TYPE=5 clean all && cp openLRSng.hex out/RX915-5.hex
+	make RFMXX_915=1 COMPILE_TX=1 BOARD_TYPE=2 clean all && cp openLRSng.hex out/TX915-2.hex
+	make RFMXX_915=1 COMPILE_TX=1 BOARD_TYPE=3 clean all && cp openLRSng.hex out/TX915-3.hex
+	make RFMXX_915=1 COMPILE_TX=1 BOARD_TYPE=4 clean all && cp openLRSng.hex out/TX915-4.hex
+	make RFMXX_915=1 COMPILE_TX=1 BOARD_TYPE=5 clean all && cp openLRSng.hex out/TX915-5.hex
+	make RFMXX_915=1 COMPILE_TX=1 BOARD_TYPE=6 clean all && cp openLRSng.hex out/TX915-6.hex
 	ls -l out
 
