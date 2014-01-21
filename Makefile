@@ -64,8 +64,12 @@ endif
 #
 # AVR GCC info
 #
-EXEPATH=$(ARDUINO_PATH)/hardware/tools/avr/bin
 EXEPREFIX=avr-
+ifneq (,$(wildcard $(ARDUINO_PATH)/hardware/tools/avr/bin/avr-gcc))
+	EXEPATH=$(ARDUINO_PATH)/hardware/tools/avr/bin
+else ifneq (,$(wildcard /usr/bin/avr-gcc))
+	EXEPATH=/usr/bin
+endif
 
 #
 # AVR gcc and binutils
