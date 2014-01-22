@@ -304,6 +304,6 @@ uint8_t myI2C_readFrom(uint8_t address, uint8_t* data, uint8_t length, uint8_t f
       return ret;
     }
   }
-   return 0;
+  return 0;
 }
 
