@@ -227,9 +227,11 @@ void bindInitDefaults(void)
 void bindRandomize(void)
 {
   uint8_t c;
-
-  if (micros() != 0)
-    srandom(micros());
+  uint32_t t=0;
+  while (t==0) {
+    t = micros();
+  }
+  srandom(t);
 
   bind_data.rf_magic = 0;
   for (c = 0; c < 4; c++) {

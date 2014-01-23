@@ -201,8 +201,6 @@ void checkButton(void)
         }
         return;
       }
-      if (micros() != 0)
-        srandom(micros()); // button release time in us should give us enough seed
       bindRandomize();
       bindWriteEeprom();
       bindPrint();
