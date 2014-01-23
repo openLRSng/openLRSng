@@ -606,6 +606,8 @@ void setup()
 
   if (rx_config.pinMapping[TXD_OUTPUT] == PINMAP_SPKTRM) {
     Serial.begin(115200);
+  } else if (rx_config.pinMapping[TXD_OUTPUT] == PINMAP_SBUS) {
+    Serial.begin(100000);
   } else if ((bind_data.flags & TELEMETRY_MASK) == TELEMETRY_FRSKY) {
     Serial.begin(9600);
   } else {
@@ -755,7 +757,7 @@ retry:
           // We got new data... (not retransmission)
           uint8_t i;
           tx_buf[0] ^= 0x80; // signal that we got it
-          if (rx_config.pinMapping[TXD_OUTPUT] != PINMAP_SPKTRM) {
+          if (rx_config.pinMapping[TXD_OUTPUT] == PINMAP_TXD) {
             for (i = 0; i <= (rx_buf[0] & 7);) {
               i++;
               Serial.write(rx_buf[i]);
@@ -911,8 +913,12 @@ retry:
     }
   }
 
-  if ((rx_config.pinMapping[TXD_OUTPUT] == PINMAP_SPKTRM) && (!disablePPM)) {
-    sendSpektrumFrame();
+  if (!disablePPM) {
+    if (rx_config.pinMapping[TXD_OUTPUT] == PINMAP_SPKTRM) {
+      sendSpektrumFrame();
+    } else if (rx_config.pinMapping[TXD_OUTPUT] == PINMAP_SBUS) {
+      sendSBUSFrame(failsafeActive);
+    }
   }
 
   if (willhop == 1) {
