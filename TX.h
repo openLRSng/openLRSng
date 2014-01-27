@@ -23,6 +23,8 @@ volatile uint8_t ppmAge = 0; // age of PPM data
 
 volatile uint8_t ppmCounter = PPM_CHANNELS; // ignore data until first sync pulse
 
+uint8_t serialMode = 0; // 0 normal, 1 spektrum 1024 , 2 spektrum 2048, 3 SBUS
+
 #ifndef BZ_FREQ
 #define BZ_FREQ 2000
 #endif
@@ -33,6 +35,10 @@ volatile uint8_t ppmCounter = PPM_CHANNELS; // ignore data until first sync puls
 
 static inline void processPulse(uint16_t pulse)
 {
+  if (serialMode) {
+    return;
+  }
+
   if (!(bind_data.flags & MICROPPM)) {
     pulse >>= 1; // divide by 2 to get servo value on normal PPM
   }
@@ -326,8 +332,13 @@ void setup(void)
   delay(200);
   checkBND();
 
-  // switch to userdefined baudrate here
-  TelemetrySerial.begin(bind_data.serial_baudrate);
+  if (bind_data.serial_baudrate && (bind_data.serial_baudrate < 4)) {
+    serialMode = bind_data.serial_baudrate;
+    TelemetrySerial.begin((serialMode == 3) ? 100000 : 115200);
+  } else {
+    // switch to userdefined baudrate here
+    TelemetrySerial.begin(bind_data.serial_baudrate);
+  }
   checkButton();
 
   Red_LED_OFF;
@@ -372,6 +383,105 @@ uint8_t compositeRSSI(uint8_t rssi, uint8_t linkq)
   }
 }
 
+#define SBUS_SYNC 0x0f
+#define SBUS_TAIL 0x00
+struct sbus_dat {
+  uint16_t ch0 : 11;
+  uint16_t ch1 : 11;
+  uint16_t ch2 : 11;
+  uint16_t ch3 : 11;
+  uint16_t ch4 : 11;
+  uint16_t ch5 : 11;
+  uint16_t ch6 : 11;
+  uint16_t ch7 : 11;
+  uint16_t ch8 : 11;
+  uint16_t ch9 : 11;
+  uint16_t ch10 : 11;
+  uint16_t ch11 : 11;
+  uint16_t ch12 : 11;
+  uint16_t ch13 : 11;
+  uint16_t ch14 : 11;
+  uint16_t ch15 : 11;
+  uint16_t res  : 15;
+  uint8_t  status;
+} __attribute__ ((__packed__));
+
+union serial_msg {
+  uint8_t  bytes[24];
+  uint16_t words[24];
+  struct sbus_dat sbus;
+} frame;
+
+#define SPKTRM_SYNC1 0x03
+#define SPKTRM_SYNC2 0x01
+
+uint8_t frameIndex=0;
+
+void processChannelsFromSerial(uint8_t c) {
+  if ((serialMode == 1) || (serialMode == 2)) { // SPEKTRUM
+    if (frameIndex == 0) {
+      if (c == SPKTRM_SYNC1) {
+	frameIndex++;
+      }
+    } else if (frameIndex == 1) {
+      if (c == SPKTRM_SYNC2) {
+	frameIndex++;
+      } else {
+	frameIndex = 0;
+      }
+    } else if (frameIndex < 16) {
+      frame.bytes[frameIndex++] = c;
+      if (frameIndex==16) { // frameComplete
+	for (uint8_t i=1; i<8; i++) {
+	  uint8_t ch,v;
+	  if (serialMode == 1) {
+	    ch = frame.words[i] >> 10;
+	    v = frame.words[i] & 0x3ff;
+	  } else {
+	    ch = frame.words[i] >> 11;
+	    v = (frame.words[i] & 0x7ff)>>1;
+	  }
+	  if (ch<16) {
+	    PPM[ch] = v;
+	  }
+	  ppmAge=0;
+	}
+      }
+    } else {
+      frameIndex=0;
+    }
+  } else if (serialMode==2) { // SBUS
+    if (frameIndex == 0) {
+      if (c == SBUS_SYNC) {
+	frameIndex++;
+      }
+    } else if (frameIndex < 24) {
+      frame.bytes[(frameIndex++)-1] = c;
+    } else {
+      if ((frameIndex == 24) && (c==SBUS_TAIL)) {
+	PPM[0] = frame.sbus.ch0;
+	PPM[1] = frame.sbus.ch1;
+	PPM[2] = frame.sbus.ch2;
+	PPM[3] = frame.sbus.ch3;
+	PPM[4] = frame.sbus.ch4;
+	PPM[5] = frame.sbus.ch5;
+	PPM[6] = frame.sbus.ch6;
+	PPM[7] = frame.sbus.ch7;
+	PPM[8] = frame.sbus.ch8;
+	PPM[9] = frame.sbus.ch9;
+	PPM[10] = frame.sbus.ch10;
+	PPM[11] = frame.sbus.ch11;
+	PPM[12] = frame.sbus.ch12;
+	PPM[13] = frame.sbus.ch13;
+	PPM[14] = frame.sbus.ch14;
+	PPM[15] = frame.sbus.ch15;
+	ppmAge=0;
+      }
+      frameIndex = 0;
+    }
+  }
+}
+
 void loop(void)
 {
   if (spiReadRegister(0x0C) == 0) {     // detect the locked module and reboot
@@ -382,9 +492,13 @@ void loop(void)
     Red_LED_OFF;
   }
 
-  while (TelemetrySerial.available() && (((serial_tail + 1) % SERIAL_BUFSIZE) != serial_head)) {
-    serial_buffer[serial_tail] = TelemetrySerial.read();
-    serial_tail = (serial_tail + 1) % SERIAL_BUFSIZE;
+  while (TelemetrySerial.available()) {
+    if (serialMode) {
+      processChannelsFromSerial(TelemetrySerial.read());
+    } else if (((serial_tail + 1) % SERIAL_BUFSIZE) != serial_head) {
+      serial_buffer[serial_tail] = TelemetrySerial.read();
+      serial_tail = (serial_tail + 1) % SERIAL_BUFSIZE;
+    }
   }
 
   if (RF_Mode == Received) {
