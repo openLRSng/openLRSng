@@ -417,68 +417,79 @@ union serial_msg {
 
 uint8_t frameIndex=0;
 
-void processChannelsFromSerial(uint8_t c) {
-  if ((serialMode == 1) || (serialMode == 2)) { // SPEKTRUM
-    if (frameIndex == 0) {
-      if (c == SPKTRM_SYNC1) {
-	frameIndex++;
-      }
-    } else if (frameIndex == 1) {
-      if (c == SPKTRM_SYNC2) {
-	frameIndex++;
-      } else {
-	frameIndex = 0;
-      }
-    } else if (frameIndex < 16) {
-      frame.bytes[frameIndex++] = c;
-      if (frameIndex==16) { // frameComplete
-	for (uint8_t i=1; i<8; i++) {
-	  uint8_t ch,v;
-	  if (serialMode == 1) {
-	    ch = frame.words[i] >> 10;
-	    v = frame.words[i] & 0x3ff;
-	  } else {
-	    ch = frame.words[i] >> 11;
-	    v = (frame.words[i] & 0x7ff)>>1;
-	  }
-	  if (ch<16) {
-	    PPM[ch] = v;
-	  }
-	  ppmAge=0;
-	}
-      }
-    } else {
-      frameIndex=0;
+void processSpektrum(uint8_t c)
+{
+  if (frameIndex == 0) {
+    if (c == SPKTRM_SYNC1) {
+      frameIndex++;
     }
-  } else if (serialMode==2) { // SBUS
-    if (frameIndex == 0) {
-      if (c == SBUS_SYNC) {
-	frameIndex++;
-      }
-    } else if (frameIndex < 24) {
-      frame.bytes[(frameIndex++)-1] = c;
+  } else if (frameIndex == 1) {
+    if (c == SPKTRM_SYNC2) {
+      frameIndex++;
     } else {
-      if ((frameIndex == 24) && (c==SBUS_TAIL)) {
-	PPM[0] = frame.sbus.ch0;
-	PPM[1] = frame.sbus.ch1;
-	PPM[2] = frame.sbus.ch2;
-	PPM[3] = frame.sbus.ch3;
-	PPM[4] = frame.sbus.ch4;
-	PPM[5] = frame.sbus.ch5;
-	PPM[6] = frame.sbus.ch6;
-	PPM[7] = frame.sbus.ch7;
-	PPM[8] = frame.sbus.ch8;
-	PPM[9] = frame.sbus.ch9;
-	PPM[10] = frame.sbus.ch10;
-	PPM[11] = frame.sbus.ch11;
-	PPM[12] = frame.sbus.ch12;
-	PPM[13] = frame.sbus.ch13;
-	PPM[14] = frame.sbus.ch14;
-	PPM[15] = frame.sbus.ch15;
-	ppmAge=0;
-      }
       frameIndex = 0;
     }
+  } else if (frameIndex < 16) {
+    frame.bytes[frameIndex++] = c;
+    if (frameIndex==16) { // frameComplete
+      for (uint8_t i=1; i<8; i++) {
+        uint8_t ch,v;
+        if (serialMode == 1) {
+          ch = frame.words[i] >> 10;
+          v = frame.words[i] & 0x3ff;
+        } else {
+          ch = frame.words[i] >> 11;
+          v = (frame.words[i] & 0x7ff)>>1;
+        }
+        if (ch<16) {
+          PPM[ch] = v;
+        }
+        ppmAge=0;
+      }
+    }
+  } else {
+    frameIndex=0;
+  }
+}
+
+void processSBUS(uint8_t c)
+{
+  if (frameIndex == 0) {
+    if (c == SBUS_SYNC) {
+      frameIndex++;
+    }
+  } else if (frameIndex < 24) {
+    frame.bytes[(frameIndex++)-1] = c;
+  } else {
+    if ((frameIndex == 24) && (c==SBUS_TAIL)) {
+      PPM[0] = frame.sbus.ch0;
+      PPM[1] = frame.sbus.ch1;
+      PPM[2] = frame.sbus.ch2;
+      PPM[3] = frame.sbus.ch3;
+      PPM[4] = frame.sbus.ch4;
+      PPM[5] = frame.sbus.ch5;
+      PPM[6] = frame.sbus.ch6;
+      PPM[7] = frame.sbus.ch7;
+      PPM[8] = frame.sbus.ch8;
+      PPM[9] = frame.sbus.ch9;
+      PPM[10] = frame.sbus.ch10;
+      PPM[11] = frame.sbus.ch11;
+      PPM[12] = frame.sbus.ch12;
+      PPM[13] = frame.sbus.ch13;
+      PPM[14] = frame.sbus.ch14;
+      PPM[15] = frame.sbus.ch15;
+      ppmAge=0;
+    }
+    frameIndex = 0;
+  }
+}
+
+void processChannelsFromSerial(uint8_t c)
+{
+  if ((serialMode == 1) || (serialMode == 2)) { // SPEKTRUM
+    processSpektrum(c);
+  } else if (serialMode==2) { // SBUS
+    processSBUS(c);
   }
 }
 
