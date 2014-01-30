@@ -28,7 +28,7 @@ union sbus_msg {
 
 uint32_t sbusLast = 0;
 
-void sendSBUSFrame(uint8_t failsafe)
+void sendSBUSFrame(uint8_t failsafe, uint8_t lostpack)
 {
   uint32_t now = micros();
   if ((now - sbusLast) > 10000) {
@@ -50,7 +50,7 @@ void sendSBUSFrame(uint8_t failsafe)
     sbus.msg.ch14 = PPM[14]<<1;
     sbus.msg.ch15 = PPM[15]<<1;
     sbus.msg.res = 0;
-    sbus.msg.status = failsafe ? 0x08 : 0;
+    sbus.msg.status = (failsafe ? 0x10 : 0) || (lostpack ? 0x08: 0);
     Serial.write(SBUS_SYNC);
     for (uint8_t i = 0; i<23; i++) {
       Serial.write(sbus.bytes[i]);
