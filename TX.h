@@ -402,7 +402,6 @@ struct sbus_dat {
   uint16_t ch13 : 11;
   uint16_t ch14 : 11;
   uint16_t ch15 : 11;
-  uint16_t res  : 15;
   uint8_t  status;
 } __attribute__ ((__packed__));
 
@@ -416,9 +415,14 @@ union serial_msg {
 #define SPKTRM_SYNC2 0x01
 
 uint8_t frameIndex=0;
-
+uint32_t srxLast=0;
 void processSpektrum(uint8_t c)
 {
+  uint32_t now = micros();
+  if ((now - srxLast) > 5000) {
+    frameIndex=0;
+  }
+  srxLast=now;
   if (frameIndex == 0) {
     if (c == SPKTRM_SYNC1) {
       frameIndex++;
@@ -454,6 +458,11 @@ void processSpektrum(uint8_t c)
 
 void processSBUS(uint8_t c)
 {
+  uint32_t now = micros();
+  if ((now - srxLast) > 5000) {
+    frameIndex=0;
+  }
+  srxLast=now;
   if (frameIndex == 0) {
     if (c == SBUS_SYNC) {
       frameIndex++;
@@ -462,23 +471,25 @@ void processSBUS(uint8_t c)
     frame.bytes[(frameIndex++)-1] = c;
   } else {
     if ((frameIndex == 24) && (c==SBUS_TAIL)) {
-      PPM[0] = frame.sbus.ch0;
-      PPM[1] = frame.sbus.ch1;
-      PPM[2] = frame.sbus.ch2;
-      PPM[3] = frame.sbus.ch3;
-      PPM[4] = frame.sbus.ch4;
-      PPM[5] = frame.sbus.ch5;
-      PPM[6] = frame.sbus.ch6;
-      PPM[7] = frame.sbus.ch7;
-      PPM[8] = frame.sbus.ch8;
-      PPM[9] = frame.sbus.ch9;
-      PPM[10] = frame.sbus.ch10;
-      PPM[11] = frame.sbus.ch11;
-      PPM[12] = frame.sbus.ch12;
-      PPM[13] = frame.sbus.ch13;
-      PPM[14] = frame.sbus.ch14;
-      PPM[15] = frame.sbus.ch15;
-      ppmAge=0;
+      PPM[0] = frame.sbus.ch0>>1;
+      PPM[1] = frame.sbus.ch1>>1;
+      PPM[2] = frame.sbus.ch2>>1;
+      PPM[3] = frame.sbus.ch3>>1;
+      PPM[4] = frame.sbus.ch4>>1;
+      PPM[5] = frame.sbus.ch5>>1;
+      PPM[6] = frame.sbus.ch6>>1;
+      PPM[7] = frame.sbus.ch7>>1;
+      PPM[8] = frame.sbus.ch8>>1;
+      PPM[9] = frame.sbus.ch9>>1;
+      PPM[10] = frame.sbus.ch10>>1;
+      PPM[11] = frame.sbus.ch11>>1;
+      PPM[12] = frame.sbus.ch12>>1;
+      PPM[13] = frame.sbus.ch13>>1;
+      PPM[14] = frame.sbus.ch14>>1;
+      PPM[15] = frame.sbus.ch15>>1;
+      if ((frame.sbus.status & 0x08)==0) {
+	ppmAge=0;
+      }
     }
     frameIndex = 0;
   }
@@ -488,7 +499,7 @@ void processChannelsFromSerial(uint8_t c)
 {
   if ((serialMode == 1) || (serialMode == 2)) { // SPEKTRUM
     processSpektrum(c);
-  } else if (serialMode==2) { // SBUS
+  } else if (serialMode==3) { // SBUS
     processSBUS(c);
   }
 }
@@ -634,7 +645,7 @@ void loop(void)
       // Send the data over RF
       rfmSetChannel(RF_channel);
 
-      tx_packet(tx_buf, getPacketSize(&bind_data));
+      tx_packet_async(tx_buf, getPacketSize(&bind_data));
 
       //Hop to the next frequency
       RF_channel++;
@@ -643,23 +654,23 @@ void loop(void)
         RF_channel = 0;
       }
 
-      // do not switch channel as we may receive telemetry on the old channel
-      if (bind_data.flags & TELEMETRY_MASK) {
-        linkQuality <<= 1;
-        RF_Mode = Receive;
-        rx_reset();
-        // tell loop to sample downlink RSSI
-        sampleRSSI = micros();
-        if (sampleRSSI == 0) {
-          sampleRSSI = 1;
-        }
-      }
-    } else {
+     } else {
       if (ppmAge == 8) {
         Red_LED_ON
       }
       ppmAge = 9;
       // PPM data outdated - do not send packets
+    }
+  }
+
+  if ((bind_data.flags & TELEMETRY_MASK) && (RF_Mode == Transmitted)) {
+    linkQuality <<= 1;
+    RF_Mode = Receive;
+    rx_reset();
+    // tell loop to sample downlink RSSI
+    sampleRSSI = micros();
+    if (sampleRSSI == 0) {
+      sampleRSSI = 1;
     }
   }
 

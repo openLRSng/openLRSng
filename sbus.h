@@ -17,7 +17,6 @@ struct sbus_dat {
   uint16_t ch13 : 11;
   uint16_t ch14 : 11;
   uint16_t ch15 : 11;
-  uint16_t res  : 15;
   uint8_t  status;
 } __attribute__ ((__packed__));
 
@@ -49,8 +48,7 @@ void sendSBUSFrame(uint8_t failsafe, uint8_t lostpack)
     sbus.msg.ch13 = PPM[13]<<1;
     sbus.msg.ch14 = PPM[14]<<1;
     sbus.msg.ch15 = PPM[15]<<1;
-    sbus.msg.res = 0;
-    sbus.msg.status = (failsafe ? 0x10 : 0) || (lostpack ? 0x08: 0);
+    sbus.msg.status = (failsafe ? 0x08 : 0) | (lostpack ? 0x04: 0);
     Serial.write(SBUS_SYNC);
     for (uint8_t i = 0; i<23; i++) {
       Serial.write(sbus.bytes[i]);
