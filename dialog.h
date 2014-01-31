@@ -980,7 +980,7 @@ void handleCLImenu(char c)
           }
           break;
         case 9:
-          if ((value >= 1200) && (value <= 115200)) {
+          if ((value >0) && (value <= 115200)) {
             bind_data.serial_baudrate = value;
             valid_input = 1;
           }
