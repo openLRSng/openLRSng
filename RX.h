@@ -465,6 +465,7 @@ void slaveLoop()
     if (slaveState == 1) {
       init_rfm(0);   // Configure the RFM22B's registers for normal operation
       slaveState = 2; // BIND applied
+      Red_LED_OFF;
     } else if (slaveState == 3) {
       Green_LED_OFF;
       rfmSetChannel(RF_channel);
