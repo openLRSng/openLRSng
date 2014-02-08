@@ -77,9 +77,9 @@ static inline void processPulse(uint16_t pulse)
       for (i=0; i < ppmCounter; i++) {
 	PPM[i] = ppmWork.words[i];
       }
+      ppmAge = 0;                 // brand new PPM data received
     }  
     ppmCounter = 0;             // -> restart the channel counter
-    ppmAge = 0;                 // brand new PPM data received
   } else if ((pulse > 700) && (ppmCounter < PPM_CHANNELS)) { // extra channels will get ignored here
     ppmWork.words[ppmCounter++] = servoUs2Bits(pulse);   // Store measured pulse length (converted)
   } else {
