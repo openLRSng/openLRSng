@@ -613,7 +613,11 @@ void setup()
   } else if ((bind_data.flags & TELEMETRY_MASK) == TELEMETRY_FRSKY) {
     Serial.begin(9600);
   } else {
-    Serial.begin(bind_data.serial_baudrate);
+    if (bind_data.serial_baudrate < 10) {
+      Serial.begin(9600);
+    } else {
+      Serial.begin(bind_data.serial_baudrate);
+    }
   }
 
   while (Serial.available()) {
