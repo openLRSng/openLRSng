@@ -89,7 +89,7 @@ ASTYLEOPTIONS=--style=1tbs --indent=spaces=2 --suffix=none
 #
 # Compile flags
 #
-COPTFLAGS= -g -Os
+COPTFLAGS= -g -Os -fno-inline-small-functions
 CFLAGS=-Wall -ffunction-sections -fdata-sections -mmcu=$(CPU) -DF_CPU=$(CLOCK) -MMD \
 	-DUSB_VID=$(USB_VID) -DUSB_PID=$(USB_PID) -DARDUINO=105 -D__PROG_TYPES_COMPAT__ $(DEFINES)
 CXXFLAGS=-fno-exceptions
