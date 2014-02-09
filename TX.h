@@ -71,10 +71,10 @@ static inline void processPulse(uint16_t pulse)
     if ((ppmCounter>5) && (ppmCounter!=255)) {
       uint8_t i;
       for (i=0; i < ppmCounter; i++) {
-	PPM[i] = ppmWork.words[i];
+        PPM[i] = ppmWork.words[i];
       }
       ppmAge = 0;                 // brand new PPM data received
-    }  
+    }
     ppmCounter = 0;             // -> restart the channel counter
   } else if ((pulse > 700) && (ppmCounter < PPM_CHANNELS)) { // extra channels will get ignored here
     ppmWork.words[ppmCounter++] = servoUs2Bits(pulse);   // Store measured pulse length (converted)
@@ -472,17 +472,17 @@ void processSBUS(uint8_t c)
     if ((frameIndex == 24) && (c == SBUS_TAIL)) {
       uint8_t set;
       for (set = 0; set < 2; set++) {
-	PPM[(set<<3)] = ppmWork.sbus.ch[set].ch0 >> 1;
-	PPM[(set<<3)+1] = ppmWork.sbus.ch[set].ch1 >> 1;
-	PPM[(set<<3)+2] = ppmWork.sbus.ch[set].ch2 >> 1;
-	PPM[(set<<3)+3] = ppmWork.sbus.ch[set].ch3 >> 1;
-	PPM[(set<<3)+4] = ppmWork.sbus.ch[set].ch4 >> 1;
-	PPM[(set<<3)+5] = ppmWork.sbus.ch[set].ch5 >> 1;
-	PPM[(set<<3)+6] = ppmWork.sbus.ch[set].ch6 >> 1;
-	PPM[(set<<3)+7] = ppmWork.sbus.ch[set].ch7 >> 1;
+        PPM[(set<<3)] = ppmWork.sbus.ch[set].ch0 >> 1;
+        PPM[(set<<3)+1] = ppmWork.sbus.ch[set].ch1 >> 1;
+        PPM[(set<<3)+2] = ppmWork.sbus.ch[set].ch2 >> 1;
+        PPM[(set<<3)+3] = ppmWork.sbus.ch[set].ch3 >> 1;
+        PPM[(set<<3)+4] = ppmWork.sbus.ch[set].ch4 >> 1;
+        PPM[(set<<3)+5] = ppmWork.sbus.ch[set].ch5 >> 1;
+        PPM[(set<<3)+6] = ppmWork.sbus.ch[set].ch6 >> 1;
+        PPM[(set<<3)+7] = ppmWork.sbus.ch[set].ch7 >> 1;
       }
       if ((ppmWork.sbus.status & 0x08)==0) {
-	ppmAge=0;
+        ppmAge=0;
       }
     }
     frameIndex = 0;
@@ -494,7 +494,7 @@ void sumdCRC16(uint8_t c)
   uint8_t i;
   srxCRC ^= (uint16_t)c<<8;
   for (i = 0; i < 8; i++) {
-   if (srxCRC & 0x8000) {
+    if (srxCRC & 0x8000) {
       srxCRC = (srxCRC << 1) ^ 0x1021;
     } else {
       srxCRC = (srxCRC << 1);
@@ -504,7 +504,7 @@ void sumdCRC16(uint8_t c)
 
 void processSUMD(uint8_t c)
 {
-  if ((frameIndex == 0) && (c == SUMD_HEAD)){
+  if ((frameIndex == 0) && (c == SUMD_HEAD)) {
     srxCRC=0;
     sumdCRC16(c);
     frameIndex=1;
@@ -522,13 +522,13 @@ void processSUMD(uint8_t c)
   } else if (frameIndex == (3 + (srxChannels << 1))) {
     srxCRC ^= (uint16_t)c << 8;
   } else {
-    if ((srxCRC == c) && (srxFlags == 0x01)){
+    if ((srxCRC == c) && (srxFlags == 0x01)) {
       uint8_t ch;
       if (srxChannels > 16) {
-	srxChannels = 16;
+        srxChannels = 16;
       }
       for (ch = 0; ch < srxChannels; ch++) {
-	PPM[ch] = servoUs2Bits(ppmWork.words[ch] >> 3);
+        PPM[ch] = servoUs2Bits(ppmWork.words[ch] >> 3);
       }
       ppmAge = 0;
     }
@@ -707,7 +707,7 @@ void loop(void)
         RF_channel = 0;
       }
 
-     } else {
+    } else {
       if (ppmAge == 8) {
         Red_LED_ON
       }

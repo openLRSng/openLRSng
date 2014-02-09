@@ -190,10 +190,10 @@ void scannerMode(void)
         Serial.print(MAX_RFM_FREQUENCY);
         Serial.println(',');
         break;
-        
+
       case 'S':
-          currentFrequency = startFreq;
-          currentSamples = 0;
+        currentFrequency = startFreq;
+        currentSamples = 0;
         break;
 
       case '#':
