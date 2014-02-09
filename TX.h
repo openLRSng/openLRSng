@@ -470,19 +470,17 @@ void processSBUS(uint8_t c)
     ppmWork.bytes[(frameIndex++)-1] = c;
   } else {
     if ((frameIndex == 24) && (c == SBUS_TAIL)) {
-      uint8_t ch=0;
-      uint8_t set=0;
-      do {
-	PPM[ch++] = ppmWork.sbus.ch[set].ch0 >> 1;
-	PPM[ch++] = ppmWork.sbus.ch[set].ch1 >> 1;
-	PPM[ch++] = ppmWork.sbus.ch[set].ch2 >> 1;
-	PPM[ch++] = ppmWork.sbus.ch[set].ch3 >> 1;
-	PPM[ch++] = ppmWork.sbus.ch[set].ch4 >> 1;
-	PPM[ch++] = ppmWork.sbus.ch[set].ch5 >> 1;
-	PPM[ch++] = ppmWork.sbus.ch[set].ch6 >> 1;
-	PPM[ch++] = ppmWork.sbus.ch[set].ch7 >> 1;
-	set++;
-      } while (set < 2);
+      uint8_t set;
+      for (set = 0; set < 2; set++) {
+	PPM[(set<<3)] = ppmWork.sbus.ch[set].ch0 >> 1;
+	PPM[(set<<3)+1] = ppmWork.sbus.ch[set].ch1 >> 1;
+	PPM[(set<<3)+2] = ppmWork.sbus.ch[set].ch2 >> 1;
+	PPM[(set<<3)+3] = ppmWork.sbus.ch[set].ch3 >> 1;
+	PPM[(set<<3)+4] = ppmWork.sbus.ch[set].ch4 >> 1;
+	PPM[(set<<3)+5] = ppmWork.sbus.ch[set].ch5 >> 1;
+	PPM[(set<<3)+6] = ppmWork.sbus.ch[set].ch6 >> 1;
+	PPM[(set<<3)+7] = ppmWork.sbus.ch[set].ch7 >> 1;
+      }
       if ((ppmWork.sbus.status & 0x08)==0) {
 	ppmAge=0;
       }
