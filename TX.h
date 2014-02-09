@@ -25,7 +25,7 @@ volatile uint8_t ppmCounter = 255; // ignore data until first sync pulse
 
 uint8_t serialMode = 0; // 0 normal, 1 spektrum 1024 , 2 spektrum 2048, 3 SBUS, 4 SUMD
 
-struct sbus_dat {
+struct sbus_help {
   uint16_t ch0 : 11;
   uint16_t ch1 : 11;
   uint16_t ch2 : 11;
@@ -34,22 +34,18 @@ struct sbus_dat {
   uint16_t ch5 : 11;
   uint16_t ch6 : 11;
   uint16_t ch7 : 11;
-  uint16_t ch8 : 11;
-  uint16_t ch9 : 11;
-  uint16_t ch10 : 11;
-  uint16_t ch11 : 11;
-  uint16_t ch12 : 11;
-  uint16_t ch13 : 11;
-  uint16_t ch14 : 11;
-  uint16_t ch15 : 11;
-  uint8_t  status;
 } __attribute__ ((__packed__));
+
+struct sbus {
+  struct sbus_help ch[2];
+  uint8_t status;
+}  __attribute__ ((__packed__));
 
 // This is common temporary buffer used by all PPM input methods
 union ppm_msg {
   uint8_t  bytes[32];
   uint16_t words[16];
-  struct sbus_dat sbus;
+  struct sbus sbus;
 } ppmWork;
 
 
@@ -473,23 +469,20 @@ void processSBUS(uint8_t c)
   } else if (frameIndex < 24) {
     ppmWork.bytes[(frameIndex++)-1] = c;
   } else {
-    if ((frameIndex == 24) && (c==SBUS_TAIL)) {
-      PPM[0] = ppmWork.sbus.ch0>>1;
-      PPM[1] = ppmWork.sbus.ch1>>1;
-      PPM[2] = ppmWork.sbus.ch2>>1;
-      PPM[3] = ppmWork.sbus.ch3>>1;
-      PPM[4] = ppmWork.sbus.ch4>>1;
-      PPM[5] = ppmWork.sbus.ch5>>1;
-      PPM[6] = ppmWork.sbus.ch6>>1;
-      PPM[7] = ppmWork.sbus.ch7>>1;
-      PPM[8] = ppmWork.sbus.ch8>>1;
-      PPM[9] = ppmWork.sbus.ch9>>1;
-      PPM[10] = ppmWork.sbus.ch10>>1;
-      PPM[11] = ppmWork.sbus.ch11>>1;
-      PPM[12] = ppmWork.sbus.ch12>>1;
-      PPM[13] = ppmWork.sbus.ch13>>1;
-      PPM[14] = ppmWork.sbus.ch14>>1;
-      PPM[15] = ppmWork.sbus.ch15>>1;
+    if ((frameIndex == 24) && (c == SBUS_TAIL)) {
+      uint8_t ch=0;
+      uint8_t set=0;
+      do {
+	PPM[ch++] = ppmWork.sbus.ch[set].ch0 >> 1;
+	PPM[ch++] = ppmWork.sbus.ch[set].ch1 >> 1;
+	PPM[ch++] = ppmWork.sbus.ch[set].ch2 >> 1;
+	PPM[ch++] = ppmWork.sbus.ch[set].ch3 >> 1;
+	PPM[ch++] = ppmWork.sbus.ch[set].ch4 >> 1;
+	PPM[ch++] = ppmWork.sbus.ch[set].ch5 >> 1;
+	PPM[ch++] = ppmWork.sbus.ch[set].ch6 >> 1;
+	PPM[ch++] = ppmWork.sbus.ch[set].ch7 >> 1;
+	set++;
+      } while (set < 2);
       if ((ppmWork.sbus.status & 0x08)==0) {
 	ppmAge=0;
       }
