@@ -139,6 +139,8 @@ void bindMode(void)
     Serial.read();    // flush serial
   }
 
+  Red_LED_OFF;
+  
   while (1) {
     if (sendBinds & (millis() - prevsend > 200)) {
       prevsend = millis();
@@ -166,6 +168,8 @@ void bindMode(void)
     }
 
     while (Serial.available()) {
+      Red_LED_ON;
+      Green_LED_ON;
       switch (Serial.read()) {
       case '\n':
       case '\r':
@@ -181,6 +185,8 @@ void bindMode(void)
       default:
         break;
       }
+      Red_LED_OFF;
+      Green_LED_OFF;
     }
   }
 }
