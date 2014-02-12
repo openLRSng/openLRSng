@@ -291,10 +291,13 @@ void setupOutputs()
   }
 }
 
-void updateLBeep(boolean packetlost)
+void updateLBeep(boolean packetLost)
 {
+  if (rx_config.pinMapping[LLIND_OUTPUT] == PINMAP_LLIND) {
+    digitalWrite(LLIND_OUTPUT,packetLost);
+  }
   if (rx_config.pinMapping[RSSI_OUTPUT] == PINMAP_LBEEP) {
-    if (packetlost) {
+    if (packetLost) {
       TCCR2A |= (1 << COM2B0); // enable tone
     } else {
       TCCR2A &= ~(1 << COM2B0); // disable tone

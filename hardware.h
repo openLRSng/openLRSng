@@ -39,6 +39,8 @@ typedef struct pinMask {
 #define PINMAP_LBEEP  0x27 // packetloss beeper
 #define PINMAP_SPKTRM 0x28 // spektrum satellite output
 #define PINMAP_SBUS   0x29 // SBUS output
+#define PINMAP_SUMD   0x2a // SUMD output
+#define PINMAP_LLIND  0x2b // LinkLoss indication (digital output)
 
 // Following table is used by the dialog code to
 // determine possible extra functions for each output.
@@ -52,7 +54,7 @@ struct rxSpecialPinMap {
 #ifdef COMPILE_TX
 // Needed by dialog code
 static const char *specialStrs[] = { "PPM","RSSI","SDA","SCL","RXD","TXD","AIN","LBEEP",
-                                     "SPKTRM", "SBUS", "", "", "", "", "", ""
+                                     "SPKTRM", "SBUS", "LLIND", "", "", "", "", ""
                                    };
 #define SPECIALSTR(x) (specialStrs[(x)&0x0f]) // note must be changed if not 16 strings
 #endif
@@ -374,6 +376,7 @@ const uint8_t OUTPUT_PIN[OUTPUTS] = { 3, 5, 6, 7, 8, 9, 10, 11, 12 , A4, A5, 0, 
 
 #define PPM_OUTPUT  5
 #define RSSI_OUTPUT 0
+#define LLIND_OUTPUT 8
 #define ANALOG0_OUTPUT 9
 #define ANALOG1_OUTPUT 10
 #define SDA_OUTPUT 9
@@ -385,6 +388,7 @@ struct rxSpecialPinMap rxSpecialPins[] = {
   {  0, PINMAP_RSSI},
   {  0, PINMAP_LBEEP},
   {  5, PINMAP_PPM},
+  {  8, PINMAP_LLIND},
   {  9, PINMAP_SDA},
   {  9, PINMAP_ANALOG}, // AIN0
   { 10, PINMAP_SCL},
@@ -626,6 +630,7 @@ const pinMask_t OUTPUT_MASKS[OUTPUTS] = {
 #define ANALOG1_OUTPUT_ALT 5 // actually input
 #define SDA_OUTPUT 1
 #define SCL_OUTPUT 3
+#define LLIND_OUTPUT 5
 #define RXD_OUTPUT 6
 #define TXD_OUTPUT 7
 
@@ -641,6 +646,7 @@ struct rxSpecialPinMap rxSpecialPins[] = {
   { 3, PINMAP_ANALOG}, // AIN1
   { 4, PINMAP_ANALOG},
   { 5, PINMAP_ANALOG},
+  { 5, PINMAP_LLIND},
   { 6, PINMAP_RXD},
   { 7, PINMAP_TXD},
   { 7, PINMAP_SPKTRM},
