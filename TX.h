@@ -514,35 +514,36 @@ void processSUMD(uint8_t c)
     srxCRC=0;
     sumdCRC16(c);
     frameIndex=1;
-  } else if (frameIndex == 1) {
-    srxFlags = c;
-    sumdCRC16(c);
-  } else if (frameIndex == 2) {
-    srxChannels = c;
-    sumdCRC16(c);
-  } else if (frameIndex < (3 + (srxChannels << 1))) {
-    if (frameIndex < 35) {
-      ppmWork.bytes[frameIndex-3] = c;
-    }
-    sumdCRC16(c);
-  } else if (frameIndex == (3 + (srxChannels << 1))) {
-    srxCRC ^= (uint16_t)c << 8;
   } else {
-    if ((srxCRC == c) && (srxFlags == 0x01)) {
-      uint8_t ch;
-      if (srxChannels > 16) {
-        srxChannels = 16;
+    if (frameIndex == 1) {
+      srxFlags = c;
+      sumdCRC16(c);
+    } else if (frameIndex == 2) {
+      srxChannels = c;
+      sumdCRC16(c);
+    } else if (frameIndex < (3 + (srxChannels << 1))) {
+      if (frameIndex < 35) {
+	ppmWork.bytes[frameIndex-3] = c;
       }
-      for (ch = 0; ch < srxChannels; ch++) {
-        PPM[ch] = servoUs2Bits(ppmWork.words[ch] >> 3);
+      sumdCRC16(c);
+    } else if (frameIndex == (3 + (srxChannels << 1))) {
+      srxCRC ^= (uint16_t)c << 8;
+    } else {
+      if ((srxCRC == c) && (srxFlags == 0x01)) {
+	uint8_t ch;
+	if (srxChannels > 16) {
+	  srxChannels = 16;
+	}
+	for (ch = 0; ch < srxChannels; ch++) {
+	  PPM[ch] = servoUs2Bits(ppmWork.words[ch] >> 3);
+	}
+	ppmAge = 0;
       }
-      ppmAge = 0;
+      frameIndex = 0;
     }
-    frameIndex = 0;
-  }
-
-  if (frameIndex > 1) {
-    frameIndex++;
+    if (frameIndex > 0) {
+      frameIndex++;
+    }
   }
 }
 
