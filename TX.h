@@ -535,7 +535,8 @@ void processSUMD(uint8_t c)
 	  srxChannels = 16;
 	}
 	for (ch = 0; ch < srxChannels; ch++) {
-	  PPM[ch] = servoUs2Bits(ppmWork.words[ch] >> 3);
+	  uint16_t val = (uint16_t)ppmWork.bytes[ch*2]<<8 | (uint16_t)ppmWork.bytes[ch*2+1];
+	  PPM[ch] = servoUs2Bits(val >> 3);
 	}
 	ppmAge = 0;
       }
