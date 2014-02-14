@@ -1,3 +1,25 @@
+#define SPKTRM_SYNC1 0x03
+#define SPKTRM_SYNC2 0x01
+
+uint32_t sOutLast = 0;
+uint8_t  spektrumSendHi = 0;
+
+void sendSpektrumFrame()
+{
+  uint32_t now = micros();
+  if ((now - sOutLast) > 10000) {
+    uint8_t  ch = ((spektrumSendHi++) & 1) ? 7 : 0;
+    sOutLast = now;
+    Serial.write(SPKTRM_SYNC1);
+    Serial.write(SPKTRM_SYNC2);
+    for (uint8_t i = 0; i < 7; i++) {
+      Serial.write((ch << 2) | ((PPM[ch] >> 8) & 0x03));
+      Serial.write(PPM[ch] & 0xff);
+      ch++;
+    }
+  }
+}
+
 #define SBUS_SYNC 0x0f
 #define SBUS_TAIL 0x00
 struct sbus_dat {
@@ -25,13 +47,11 @@ union sbus_msg {
   struct sbus_dat msg;
 } sbus;
 
-uint32_t sbusLast = 0;
-
 void sendSBUSFrame(uint8_t failsafe, uint8_t lostpack)
 {
   uint32_t now = micros();
-  if ((now - sbusLast) > 10000) {
-    sbusLast = now;
+  if ((now - sOutLast) > 10000) {
+    sOutLast = now;
     sbus.msg.ch0 = PPM[0]<<1;
     sbus.msg.ch1 = PPM[1]<<1;
     sbus.msg.ch2 = PPM[2]<<1;
@@ -57,3 +77,38 @@ void sendSBUSFrame(uint8_t failsafe, uint8_t lostpack)
   }
 }
 
+#define SUMD_HEAD 0xa8
+uint16_t sumdCRC;
+
+void sumdWriteCRC(uint8_t c)
+{
+  uint8_t i;
+  Serial.write(c);
+  sumdCRC ^= (uint16_t)c<<8;
+  for (i = 0; i < 8; i++) {
+    if (sumdCRC & 0x8000) {
+      sumdCRC = (sumdCRC << 1) ^ 0x1021;
+    } else {
+      sumdCRC = (sumdCRC << 1);
+    }
+  }
+}
+
+void sendSUMDFrame(uint8_t failsafe)
+{
+  uint32_t now = micros();
+  if ((now - sOutLast) > 10000) {
+    sOutLast = now;
+    sumdCRC = 0;
+    sumdWriteCRC(SUMD_HEAD);
+    sumdWriteCRC(failsafe ? 0x81 : 0x01);
+    sumdWriteCRC(16);
+    for (uint8_t i = 0; i < 16; i++) {
+      uint16_t val = servoBits2Us(PPM[i]) << 3;
+      sumdWriteCRC(val >> 8);
+      sumdWriteCRC(val & 0xff);
+    }
+    Serial.write(sumdCRC >> 8);
+    Serial.write(sumdCRC & 0xff);
+  }
+}

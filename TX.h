@@ -140,7 +140,7 @@ void bindMode(void)
   }
 
   Red_LED_OFF;
-  
+
   while (1) {
     if (sendBinds & (millis() - prevsend > 200)) {
       prevsend = millis();
@@ -523,22 +523,22 @@ void processSUMD(uint8_t c)
       sumdCRC16(c);
     } else if (frameIndex < (3 + (srxChannels << 1))) {
       if (frameIndex < 35) {
-	ppmWork.bytes[frameIndex-3] = c;
+        ppmWork.bytes[frameIndex-3] = c;
       }
       sumdCRC16(c);
     } else if (frameIndex == (3 + (srxChannels << 1))) {
       srxCRC ^= (uint16_t)c << 8;
     } else {
       if ((srxCRC == c) && (srxFlags == 0x01)) {
-	uint8_t ch;
-	if (srxChannels > 16) {
-	  srxChannels = 16;
-	}
-	for (ch = 0; ch < srxChannels; ch++) {
-	  uint16_t val = (uint16_t)ppmWork.bytes[ch*2]<<8 | (uint16_t)ppmWork.bytes[ch*2+1];
-	  PPM[ch] = servoUs2Bits(val >> 3);
-	}
-	ppmAge = 0;
+        uint8_t ch;
+        if (srxChannels > 16) {
+          srxChannels = 16;
+        }
+        for (ch = 0; ch < srxChannels; ch++) {
+          uint16_t val = (uint16_t)ppmWork.bytes[ch*2]<<8 | (uint16_t)ppmWork.bytes[ch*2+1];
+          PPM[ch] = servoUs2Bits(val >> 3);
+        }
+        ppmAge = 0;
       }
       frameIndex = 0;
     }

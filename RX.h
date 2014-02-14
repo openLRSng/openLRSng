@@ -609,7 +609,7 @@ void setup()
   }
 
   if ((rx_config.pinMapping[TXD_OUTPUT] == PINMAP_SPKTRM) ||
-      (rx_config.pinMapping[TXD_OUTPUT] == PINMAP_SUMD)){
+      (rx_config.pinMapping[TXD_OUTPUT] == PINMAP_SUMD)) {
     Serial.begin(115200);
   } else if (rx_config.pinMapping[TXD_OUTPUT] == PINMAP_SBUS) {
     Serial.begin(100000);
