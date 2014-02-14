@@ -397,6 +397,7 @@ struct rxSpecialPinMap rxSpecialPins[] = {
   { 12, PINMAP_TXD},
   { 12, PINMAP_SPKTRM},
   { 12, PINMAP_SBUS},
+  { 12, PINMAP_SUMD},
 };
 
 #endif
@@ -651,6 +652,7 @@ struct rxSpecialPinMap rxSpecialPins[] = {
   { 7, PINMAP_TXD},
   { 7, PINMAP_SPKTRM},
   { 7, PINMAP_SBUS},
+  { 7, PINMAP_SUMD},
 };
 
 #endif
