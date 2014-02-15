@@ -305,6 +305,18 @@ void updateLBeep(boolean packetLost)
   }
 }
 
+void updateSwitches()
+{
+  uint8_t i;
+  for (i = 0; i < OUTPUTS; i++) {
+    uint8_t map = rx_config.pinMapping[i];
+    if ((map & 0x10) == 0x10) { // 16-31
+      digitalWrite(i, (PPM[map & 0x0f] > 255) ? HIGH : LOW);
+    }
+  }
+}
+
+
 uint8_t bindReceive(uint32_t timeout)
 {
   uint32_t start = millis();
@@ -839,6 +851,7 @@ retry:
         checkSerial();
       }
 #endif
+      updateSwitches();
     }
 
     RF_Mode = Receive;

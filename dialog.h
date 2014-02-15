@@ -238,9 +238,12 @@ void rxPrint(void)
     Serial.print(F(") port "));
     Serial.print(i + 1);
     Serial.print(F("function: "));
-    if (rx_config.pinMapping[i] < 16) {
+    if (rx_config.pinMapping[i] < 32) {
       Serial.print(F("PWM channel "));
-      Serial.println(rx_config.pinMapping[i] + 1);
+      if (rx_config.pinMapping[i] > 15) {
+	Serial.print("S");
+      }
+      Serial.println((rx_config.pinMapping[i] & 0x0f) + 1);
     } else {
       Serial.println(SPECIALSTR(rx_config.pinMapping[i]));
     }
@@ -353,7 +356,7 @@ void RX_menu_headers(void)
       Serial.print(F("Set output for port "));
       Serial.println(CLI_menu);
       Serial.print(F("Valid choices are: [1]-[16] (channel 1-16)"));
-      ch=20;
+      ch=40;
       for (uint8_t i = 0; i < rxcSpecialPinCount; i++) {
         if (rxcSpecialPins[i].output == CLI_menu - 1) {
           Serial.print(", [");
@@ -627,11 +630,11 @@ void handleRXmenu(char c)
           if (CLI_menu > rxcNumberOfOutputs) {
             break;
           }
-          if ((value > 0) && (value <= 16)) {
+          if ((value > 0) && (value <= 32)) {
             rx_config.pinMapping[CLI_menu - 1] = value - 1;
             valid_input = 1;
           } else {
-            ch=20;
+            ch=40;
             for (uint8_t i = 0; i < rxcSpecialPinCount; i++) {
               if (rxcSpecialPins[i].output != (CLI_menu - 1)) {
                 continue;
