@@ -553,6 +553,8 @@ void setup()
 
   if (checkIfConnected(OUTPUT_PIN[2], OUTPUT_PIN[3])) { // ch1 - ch2 --> force scannerMode
     while (1) {
+      Red_LED_OFF;
+      Green_LED_OFF;
       scannerMode();
     }
   }

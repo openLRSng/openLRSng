@@ -173,8 +173,6 @@ void scannerMode(void)
   uint8_t nextIndex = 0;
   uint8_t rssiMin = 0, rssiMax = 0;
   uint32_t rssiSum = 0;
-  Red_LED_OFF;
-  Green_LED_OFF;
   Serial.println("scanner mode");
   to_rx_mode();
 
@@ -284,8 +282,6 @@ void scannerMode(void)
       currentSamples = 0;
     }
   }
-
-  //never exit!!
 }
 
 #define NOP() __asm__ __volatile__("nop")
