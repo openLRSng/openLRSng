@@ -43,23 +43,18 @@
 // To compile with Arduino select TX/RX and BOARD_TYPE setting as needed below
 
 //####### COMPILATION TARGET #######
-// Enable to compile transmitter code, default is RX
+// Enable to compile transmitter code, default is RX (remove leading //)
 //#define COMPILE_TX
 
 //####### TX BOARD TYPE #######
-// 0 = Flytron OpenLRS M1 Tx Board (not verified)
-// 1 = Flytron OpenLRS M1 Rx Board as TX (not verified)
-// 2 = Flytron OpenLRS M2/M3 Tx Board / OrangeRx UHF TX
-// 3 = Flytron OpenLRS Rx v2 Board / OrangeRx UHF RX / HawkEye UHF RX workking as TX
-// 4 = OpenLRSngTX / HawkEye UHF TX
-// 5 = OpenLRSngRX-4ch (DTF UHF) as TX
-// 6 = DTF UHF DeluxeTX (Atmega32u4)
-//#define BOARD_TYPE 6
-
-//####### RX BOARD TYPE #######
-// 3 = Flytron OpenLRS Rx v2 / OrangeRx UHF RX / HawkEye UHF RX
-// 5 = OpenLRSngRX-4ch (DTF UHF)
-//#define BOARD_TYPE 3
+// Enable one of the lines below (remove leading //)
+//#define BOARD_TYPE 0 // 0 = Flytron OpenLRS M1 Tx Board (not verified)
+//#define BOARD_TYPE 1 // 1 = Flytron OpenLRS M1 Rx Board as TX (not verified)
+//#define BOARD_TYPE 2 // 2 = Flytron OpenLRS M2/M3 Tx Board / OrangeRx UHF TX
+//#define BOARD_TYPE 3 // 3 = Flytron OpenLRS Rx v2 Board / OrangeRx UHF RX / HawkEye UHF RX (RX and TX supported)
+//#define BOARD_TYPE 4 // 4 = OpenLRSngTX / HawkEye UHF TX
+//#define BOARD_TYPE 5 // 5 = OpenLRSngRX-4/6ch (DTF UHF/HawkEye) (RX and TX supported)
+//#define BOARD_TYPE 6 // 6 = DTF UHF/HawkEye DeluxeTX (Atmega32u4)
 
 //### Module type selection (only for modified HW)
 //#define RFMXX_868

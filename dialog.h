@@ -241,7 +241,7 @@ void rxPrint(void)
     if (rx_config.pinMapping[i] < 32) {
       Serial.print(F("PWM channel "));
       if (rx_config.pinMapping[i] > 15) {
-	Serial.print("S");
+        Serial.print("S");
       }
       Serial.println((rx_config.pinMapping[i] & 0x0f) + 1);
     } else {
