@@ -148,6 +148,26 @@ uint8_t countSetBits(uint16_t x)
   return (x * 0x0101) >> 8;
 }
 
+static uint16_t CRC16_value;
+
+inline void CRC16_reset()
+{
+  CRC16_value = 0;
+}
+
+void CRC16_add(uint8_t c) // CCITT polynome
+{
+  uint8_t i;
+  CRC16_value ^= (uint16_t)c << 8;
+  for (i = 0; i < 8; i++) {
+    if (CRC16_value & 0x8000) {
+      CRC16_value = (CRC16_value << 1) ^ 0x1021;
+    } else {
+      CRC16_value = (CRC16_value << 1);
+    }
+  }
+}
+
 // Halt and blink failure code
 void fatalBlink(uint8_t blinks)
 {

@@ -78,20 +78,11 @@ void sendSBUSFrame(uint8_t failsafe, uint8_t lostpack)
 }
 
 #define SUMD_HEAD 0xa8
-uint16_t sumdCRC;
 
 void sumdWriteCRC(uint8_t c)
 {
-  uint8_t i;
   Serial.write(c);
-  sumdCRC ^= (uint16_t)c<<8;
-  for (i = 0; i < 8; i++) {
-    if (sumdCRC & 0x8000) {
-      sumdCRC = (sumdCRC << 1) ^ 0x1021;
-    } else {
-      sumdCRC = (sumdCRC << 1);
-    }
-  }
+  CRC16_add(c);
 }
 
 void sendSUMDFrame(uint8_t failsafe)
@@ -99,7 +90,7 @@ void sendSUMDFrame(uint8_t failsafe)
   uint32_t now = micros();
   if ((now - sOutLast) > 10000) {
     sOutLast = now;
-    sumdCRC = 0;
+    CRC16_reset();
     sumdWriteCRC(SUMD_HEAD);
     sumdWriteCRC(failsafe ? 0x81 : 0x01);
     sumdWriteCRC(16);
@@ -108,7 +99,7 @@ void sendSUMDFrame(uint8_t failsafe)
       sumdWriteCRC(val >> 8);
       sumdWriteCRC(val & 0xff);
     }
-    Serial.write(sumdCRC >> 8);
-    Serial.write(sumdCRC & 0xff);
+    Serial.write(CRC16_value >> 8);
+    Serial.write(CRC16_value & 0xff);
   }
 }

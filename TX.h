@@ -427,7 +427,6 @@ uint8_t compositeRSSI(uint8_t rssi, uint8_t linkq)
 
 uint8_t frameIndex=0;
 uint32_t srxLast=0;
-uint16_t srxCRC=0;
 uint8_t srxFlags=0;
 uint8_t srxChannels=0;
 
@@ -495,41 +494,28 @@ void processSBUS(uint8_t c)
   }
 }
 
-void sumdCRC16(uint8_t c)
-{
-  uint8_t i;
-  srxCRC ^= (uint16_t)c<<8;
-  for (i = 0; i < 8; i++) {
-    if (srxCRC & 0x8000) {
-      srxCRC = (srxCRC << 1) ^ 0x1021;
-    } else {
-      srxCRC = (srxCRC << 1);
-    }
-  }
-}
-
 void processSUMD(uint8_t c)
 {
   if ((frameIndex == 0) && (c == SUMD_HEAD)) {
-    srxCRC=0;
-    sumdCRC16(c);
+    CRC16_reset();
+    CRC16_add(c);
     frameIndex=1;
   } else {
     if (frameIndex == 1) {
       srxFlags = c;
-      sumdCRC16(c);
+      CRC16_add(c);
     } else if (frameIndex == 2) {
       srxChannels = c;
-      sumdCRC16(c);
+      CRC16_add(c);
     } else if (frameIndex < (3 + (srxChannels << 1))) {
       if (frameIndex < 35) {
         ppmWork.bytes[frameIndex-3] = c;
       }
-      sumdCRC16(c);
+      CRC16_add(c);
     } else if (frameIndex == (3 + (srxChannels << 1))) {
-      srxCRC ^= (uint16_t)c << 8;
+      CRC16_value ^= (uint16_t)c << 8;
     } else {
-      if ((srxCRC == c) && (srxFlags == 0x01)) {
+      if ((CRC16_value == c) && (srxFlags == 0x01)) {
         uint8_t ch;
         if (srxChannels > 16) {
           srxChannels = 16;
