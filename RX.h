@@ -294,7 +294,7 @@ void setupOutputs()
 void updateLBeep(boolean packetLost)
 {
   if (rx_config.pinMapping[LLIND_OUTPUT] == PINMAP_LLIND) {
-    digitalWrite(LLIND_OUTPUT,packetLost);
+    digitalWrite(OUTPUT_PIN[LLIND_OUTPUT],packetLost);
   }
   if (rx_config.pinMapping[RSSI_OUTPUT] == PINMAP_LBEEP) {
     if (packetLost) {
@@ -310,8 +310,8 @@ void updateSwitches()
   uint8_t i;
   for (i = 0; i < OUTPUTS; i++) {
     uint8_t map = rx_config.pinMapping[i];
-    if ((map & 0x10) == 0x10) { // 16-31
-      digitalWrite(i, (PPM[map & 0x0f] > 255) ? HIGH : LOW);
+    if ((map & 0xf0) == 0x10) { // 16-31
+      digitalWrite(OUTPUT_PIN[i], (PPM[map & 0x0f] > 255) ? HIGH : LOW);
     }
   }
 }
