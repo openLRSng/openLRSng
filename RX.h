@@ -394,7 +394,7 @@ uint8_t bindReceive(uint32_t timeout)
           uint16_t val;
           val = (uint16_t)spiReadData() << 8;
           val += spiReadData();
-          failsafePPM[i] = val;
+          PPM[i] = val;
         }
         failsafeSave();
         rxb = 'G';
