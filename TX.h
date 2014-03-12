@@ -433,15 +433,9 @@ uint8_t srxChannels=0;
 void processSpektrum(uint8_t c)
 {
   if (frameIndex == 0) {
-    if (c == SPKTRM_SYNC1) {
-      frameIndex++;
-    }
+    frameIndex++;
   } else if (frameIndex == 1) {
-    if (c == SPKTRM_SYNC2) {
-      frameIndex++;
-    } else {
-      frameIndex = 0;
-    }
+    frameIndex++;
   } else if (frameIndex < 16) {
     ppmWork.bytes[frameIndex++] = c;
     if (frameIndex==16) { // frameComplete
@@ -551,8 +545,28 @@ void processChannelsFromSerial(uint8_t c)
   }
 }
 
+#ifdef DEBUG_DUMP_PPM
+uint32_t lastTMP;
+#endif
+
 void loop(void)
 {
+#ifdef DEBUG_DUMP_PPM
+  {
+    uint32_t timeTMP=micros();
+    if ((timeTMP-lastTMP)>1000000) {
+      lastTMP=timeTMP;
+      TelemetrySerial.print(ppmAge);
+      TelemetrySerial.print(',');
+      for (uint8_t i=0; i<8; i++) {
+        TelemetrySerial.print(PPM[i]);
+        TelemetrySerial.print(',');
+      }
+      TelemetrySerial.println();
+    }
+  }
+#endif
+
   if (spiReadRegister(0x0C) == 0) {     // detect the locked module and reboot
     Serial.println("module locked?");
     Red_LED_ON;
