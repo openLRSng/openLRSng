@@ -190,19 +190,19 @@ public:
       }
       break;
     case PSP_REQ_RX_FAILSAFE: {
-      uint8_t rxtx_buf[21];
-      rxtx_buf[0] = 'f';
-      tx_packet(rxtx_buf, 1);
+      uint8_t rxtx_buf;
+      rxtx_buf = 'f';
+      tx_packet(&rxtx_buf, 1);
       rx_reset();
       RF_Mode = Receive;
       delay(200);
 
       if (RF_Mode == Received) {
         spiSendAddress(0x7f);
-        rxtx_buf[0] = spiReadData();
-        if (rxtx_buf[0]=='F') {
+        rxtx_buf = spiReadData();
+        if (rxtx_buf=='F') {
           protocol_head(PSP_REQ_RX_FAILSAFE, 32);
-          for (uint8_t i = 0; i < 20; i++) {
+          for (uint8_t i = 0; i < 32; i++) {
             serialize_uint8(spiReadData());
           }
         } else {
