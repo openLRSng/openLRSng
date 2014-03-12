@@ -396,9 +396,9 @@ uint8_t bindReceive(uint32_t timeout)
           val += spiReadData();
           PPM[i] = val;
         }
-        failsafeSave();
         rxb = 'G';
         tx_packet(&rxb, 1);
+        failsafeSave();
       } else if (rxb == 'G') {
         failsafeInvalidate();
         rxb = 'G';
