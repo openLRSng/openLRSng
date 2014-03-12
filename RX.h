@@ -138,6 +138,12 @@ void set_RSSI_output()
   }
 }
 
+void failsafeInvalidate(void)
+{
+  failsafeIsValid = 0;
+  myEEPROMwrite(EEPROM_FAILSAFE_OFFSET, 0);
+}
+
 void failsafeSave(void)
 {
   uint32_t start = millis();
@@ -371,10 +377,31 @@ uint8_t bindReceive(uint32_t timeout)
         rxWriteEeprom();
         rxb = 'U';
         tx_packet(&rxb, 1); // ACK that we updated settings
+      } else if (rxb == 'f') {
+        uint8_t rxc_buf[21];
+        if (failsafeIsValid) {
+          rxc_buf[0]='F';
+          packChannels(6, failsafePPM, rxc_buf + 1);
+        } else {
+          rxc_buf[0]='f';
+        }
+        tx_packet(rxc_buf, 21);
+      } else if (rxb == 'g') {
+        uint8_t rxc_buf[21];
+        for (uint8_t i = 0; i < 20 ; i++) {
+          rxc_buf[i] = spiReadData();
+        }
+        unpackChannels(6, failsafePPM, rxc_buf);
+        failsafeSave();
+        rxb = 'G';
+        tx_packet(&rxb, 1);
+      } else if (rxb == 'G') {
+        failsafeInvalidate();
+        rxb = 'G';
+        tx_packet(&rxb, 1);
       }
       RF_Mode = Receive;
       rx_reset();
-
     }
   }
   return 0;
@@ -762,6 +789,13 @@ retry:
     if ((rx_buf[0] & 0x3e) == 0x00) {
       cli();
       unpackChannels(bind_data.flags & 7, PPM, rx_buf + 1);
+#if DEBUG_DUMP_PPM
+      for (uint8_t i=0; i<8; i++) {
+        Serial.print(PPM[i]);
+        Serial.print(',');
+      }
+      Serial.println();
+#endif
       if (rx_config.RSSIpwm < 16) {
         PPM[rx_config.RSSIpwm] = RSSI2Bits(compositeRSSI);
       }

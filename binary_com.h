@@ -18,6 +18,7 @@ boolean binary_mode_active = false;
 #define PSP_REQ_FW_VERSION            6
 #define PSP_REQ_NUMBER_OF_RX_OUTPUTS  7
 #define PSP_REQ_ACTIVE_PROFILE        8
+#define PSP_REQ_RX_FAILSAFE           9
 
 #define PSP_SET_BIND_DATA          101
 #define PSP_SET_RX_CONFIG          102
@@ -26,6 +27,7 @@ boolean binary_mode_active = false;
 #define PSP_SET_TX_RESTORE_DEFAULT 105
 #define PSP_SET_RX_RESTORE_DEFAULT 106
 #define PSP_SET_ACTIVE_PROFILE     107
+#define PSP_SET_RX_FAILSAFE        108
 
 #define PSP_SET_EXIT               199
 
@@ -187,6 +189,33 @@ public:
         serialize_uint8(activeProfile);
       }
       break;
+    case PSP_REQ_RX_FAILSAFE:
+      {
+        uint8_t rxtx_buf[21];
+        rxtx_buf[0] = 'f';
+        tx_packet(rxtx_buf, 1);
+        rx_reset();
+        RF_Mode = Receive;
+        delay(200);
+
+        if (RF_Mode == Received) {
+          spiSendAddress(0x7f);
+          rxtx_buf[0] = spiReadData();
+          if (rxtx_buf[0]=='F') {
+	    protocol_head(PSP_REQ_RX_FAILSAFE, 20);
+	    for (uint8_t i = 0; i < 20; i++) {
+	      serialize_uint8(spiReadData());
+	    }
+	  } else {
+	    protocol_head(PSP_REQ_RX_FAILSAFE, 1);
+            serialize_uint8(0x01); // failsafe not set
+          }
+        } else {
+	  protocol_head(PSP_REQ_RX_FAILSAFE, 1);
+	  serialize_uint8(0x00); // fail
+        }
+      }
+      break;
       // SET
     case PSP_SET_BIND_DATA:
       protocol_head(PSP_SET_BIND_DATA, 1);
@@ -297,6 +326,34 @@ public:
         bindWriteEeprom();
       }
       serialize_uint8(0x01); // done
+      break;
+    case PSP_SET_RX_FAILSAFE:
+      protocol_head(PSP_SET_RX_FAILSAFE, 1);
+      {
+        uint8_t rxtx_buf[21];
+	if (payload_length_received == 20) {
+	  rxtx_buf[0] = 'g';
+	  memcpy(rxtx_buf + 1, data_buffer, 20);
+	  tx_packet(rxtx_buf, 21);
+	} else {
+	  rxtx_buf[0] = 'G';
+	  tx_packet(rxtx_buf, 1);
+	}
+	rx_reset();
+        RF_Mode = Receive;
+        delay(200);
+
+        if (RF_Mode == Received) {
+          spiSendAddress(0x7f);
+          if (spiReadData() == 'G') {
+	    serialize_uint8(0x01);
+	  } else {
+            serialize_uint8(0x00);
+          }
+        } else {
+	  serialize_uint8(0x00);
+        }
+      }
       break;
     case PSP_SET_EXIT:
       protocol_head(PSP_SET_EXIT, 1);
