@@ -189,34 +189,33 @@ public:
         serialize_uint8(activeProfile);
       }
       break;
-    case PSP_REQ_RX_FAILSAFE:
-      {
-        uint8_t rxtx_buf[21];
-        rxtx_buf[0] = 'f';
-        tx_packet(rxtx_buf, 1);
-        rx_reset();
-        RF_Mode = Receive;
-        delay(200);
+    case PSP_REQ_RX_FAILSAFE: {
+      uint8_t rxtx_buf[21];
+      rxtx_buf[0] = 'f';
+      tx_packet(rxtx_buf, 1);
+      rx_reset();
+      RF_Mode = Receive;
+      delay(200);
 
-        if (RF_Mode == Received) {
-          spiSendAddress(0x7f);
-          rxtx_buf[0] = spiReadData();
-          if (rxtx_buf[0]=='F') {
-	    protocol_head(PSP_REQ_RX_FAILSAFE, 20);
-	    for (uint8_t i = 0; i < 20; i++) {
-	      serialize_uint8(spiReadData());
-	    }
-	  } else {
-	    protocol_head(PSP_REQ_RX_FAILSAFE, 1);
-            serialize_uint8(0x01); // failsafe not set
+      if (RF_Mode == Received) {
+        spiSendAddress(0x7f);
+        rxtx_buf[0] = spiReadData();
+        if (rxtx_buf[0]=='F') {
+          protocol_head(PSP_REQ_RX_FAILSAFE, 32);
+          for (uint8_t i = 0; i < 20; i++) {
+            serialize_uint8(spiReadData());
           }
         } else {
-	  protocol_head(PSP_REQ_RX_FAILSAFE, 1);
-	  serialize_uint8(0x00); // fail
+          protocol_head(PSP_REQ_RX_FAILSAFE, 1);
+          serialize_uint8(0x01); // failsafe not set
         }
+      } else {
+        protocol_head(PSP_REQ_RX_FAILSAFE, 1);
+        serialize_uint8(0x00); // fail
       }
-      break;
-      // SET
+    }
+    break;
+    // SET
     case PSP_SET_BIND_DATA:
       protocol_head(PSP_SET_BIND_DATA, 1);
 
@@ -330,28 +329,28 @@ public:
     case PSP_SET_RX_FAILSAFE:
       protocol_head(PSP_SET_RX_FAILSAFE, 1);
       {
-        uint8_t rxtx_buf[21];
-	if (payload_length_received == 20) {
-	  rxtx_buf[0] = 'g';
-	  memcpy(rxtx_buf + 1, data_buffer, 20);
-	  tx_packet(rxtx_buf, 21);
-	} else {
-	  rxtx_buf[0] = 'G';
-	  tx_packet(rxtx_buf, 1);
-	}
-	rx_reset();
+        uint8_t rxtx_buf[33];
+        if (payload_length_received == 32) {
+          rxtx_buf[0] = 'g';
+          memcpy(rxtx_buf + 1, data_buffer, 32);
+          tx_packet(rxtx_buf, 33);
+        } else {
+          rxtx_buf[0] = 'G';
+          tx_packet(rxtx_buf, 1);
+        }
+        rx_reset();
         RF_Mode = Receive;
         delay(200);
 
         if (RF_Mode == Received) {
           spiSendAddress(0x7f);
           if (spiReadData() == 'G') {
-	    serialize_uint8(0x01);
-	  } else {
+            serialize_uint8(0x01);
+          } else {
             serialize_uint8(0x00);
           }
         } else {
-	  serialize_uint8(0x00);
+          serialize_uint8(0x00);
         }
       }
       break;

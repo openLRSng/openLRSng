@@ -378,20 +378,24 @@ uint8_t bindReceive(uint32_t timeout)
         rxb = 'U';
         tx_packet(&rxb, 1); // ACK that we updated settings
       } else if (rxb == 'f') {
-        uint8_t rxc_buf[21];
+        uint8_t rxc_buf[33];
         if (failsafeIsValid) {
           rxc_buf[0]='F';
-          packChannels(6, failsafePPM, rxc_buf + 1);
+          for (uint8_t i = 0; i < 16; i++) {
+            rxc_buf[i * 2] = (failsafePPM[i] >> 8);
+            rxc_buf[i * 2 + 1] = (failsafePPM[i] & 0xff);
+          }
         } else {
           rxc_buf[0]='f';
         }
-        tx_packet(rxc_buf, 21);
+        tx_packet(rxc_buf, 33);
       } else if (rxb == 'g') {
-        uint8_t rxc_buf[21];
-        for (uint8_t i = 0; i < 20 ; i++) {
-          rxc_buf[i] = spiReadData();
+        for (uint8_t i = 0; i < 16 ; i++) {
+          uint16_t val;
+          val = (uint16_t)spiReadData() << 8;
+          val += spiReadData();
+          failsafePPM[i] = val;
         }
-        unpackChannels(6, failsafePPM, rxc_buf);
         failsafeSave();
         rxb = 'G';
         tx_packet(&rxb, 1);
