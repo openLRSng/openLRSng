@@ -927,9 +927,11 @@ retry:
       }
 #endif
 
+#ifdef HALT_RX_BY_CH2
       if (PPM[1]>1013) {
-	fatalBlink(3); // freeze XXX remove this XXX
+        fatalBlink(3);
       }
+#endif
 
       updateSwitches();
     }
