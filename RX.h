@@ -3,7 +3,7 @@
  ****************************************************/
 
 #include <avr/eeprom.h>
-
+#include "wd.h"
 uint8_t RF_channel = 0;
 
 uint32_t lastPacketTimeUs = 0;
@@ -555,6 +555,8 @@ void reinitSlave()
 
 void setup()
 {
+  watchdogReset();
+  watchdogConfig(WATCHDOG_OFF);
   //LEDs
   pinMode(Green_LED, OUTPUT);
   pinMode(Red_LED, OUTPUT);
@@ -634,6 +636,11 @@ void setup()
   }
 
   Serial.print("Entering normal mode");
+  cli();
+  watchdogReset();
+  watchdogConfig(WATCHDOG_4S);
+  watchdogReset();
+  sei();
 
   init_rfm(0);   // Configure the RFM22B's registers for normal operation
   RF_channel = 0;
@@ -729,6 +736,8 @@ uint32_t rxStatsMs = 0;
 void loop()
 {
   uint32_t timeUs, timeMs;
+
+  watchdogReset();
 
   if (spiReadRegister(0x0C) == 0) {     // detect the locked module and reboot
     Serial.println("RX hang");
@@ -891,6 +900,11 @@ retry:
         checkSerial();
       }
 #endif
+
+      if (PPM[1]>1013) {
+	fatalBlink(3); // freeze XXX remove this XXX
+      }
+
       updateSwitches();
     }
 
