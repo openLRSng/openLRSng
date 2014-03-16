@@ -573,7 +573,7 @@ void reinitSlave()
 
 void setup()
 {
-  if (boot_lock_fuse_bits_get(2) == 0xfd) {
+  if ((boot_lock_fuse_bits_get(3)&0x06) == 0x6) {
     watchdogReset();
     watchdogConfig(WATCHDOG_OFF);
     useWD=1;
