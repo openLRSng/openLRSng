@@ -360,6 +360,11 @@ uint8_t bindReceive(uint32_t timeout)
           rxInitDefaults(1);
           rxc_buf[0] = 'I';
         }
+	if (useWD) {
+	  rx_config.flags|=WATCHDOG_USED;
+	} else {
+	  rx_config.flags&=~WATCHDOG_USED;
+	}
         memcpy(rxc_buf + 1, &rx_config, sizeof(rx_config));
         tx_packet(rxc_buf, sizeof(rx_config) + 1);
       } else if (rxb == 't') {

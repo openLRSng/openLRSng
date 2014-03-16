@@ -257,6 +257,7 @@ again:
 #define ALWAYS_BIND       0x02
 #define SLAVE_MODE        0x04
 #define IMMEDIATE_OUTPUT  0x08
+#define WATCHDOG_USED     0x80 // read only flag, only sent to configurator
 
 // non linear mapping
 // 0 - 0
