@@ -40,6 +40,8 @@ uint32_t slaveFailedMs = 0;
 
 boolean willhop = 0, fs_saved = 0;
 
+bool useWD = 0;
+
 pinMask_t chToMask[PPM_CHANNELS];
 pinMask_t clearMask;
 
@@ -553,10 +555,30 @@ void reinitSlave()
   }
 }
 
+#define boot_lock_fuse_bits_get(address)                \
+(__extension__({                                        \
+    uint8_t __result;                                   \
+    __asm__ __volatile__                                \
+    (                                                   \
+        "sts %1, %2\n\t"                                \
+        "lpm %0, Z\n\t"                                 \
+        : "=r" (__result)                               \
+        : "i" (_SFR_MEM_ADDR(SPMCSR)),                  \
+          "r" ((uint8_t)(_BV(SELFPRGEN) | _BV(BLBSET))),\
+          "z" ((uint16_t)address)                       \
+    );                                                  \
+    __result;                                           \
+}))
+
+
 void setup()
 {
-  watchdogReset();
-  watchdogConfig(WATCHDOG_OFF);
+  if (boot_lock_fuse_bits_get(2) == 0xfd) {
+    watchdogReset();
+    watchdogConfig(WATCHDOG_OFF);
+    useWD=1;
+  }
+  
   //LEDs
   pinMode(Green_LED, OUTPUT);
   pinMode(Red_LED, OUTPUT);
@@ -636,11 +658,13 @@ void setup()
   }
 
   Serial.print("Entering normal mode");
-  cli();
-  watchdogReset();
-  watchdogConfig(WATCHDOG_4S);
-  watchdogReset();
-  sei();
+  if (useWD) {
+    cli();
+    watchdogReset();
+    watchdogConfig(WATCHDOG_4S);
+    watchdogReset();
+    sei();
+  }
 
   init_rfm(0);   // Configure the RFM22B's registers for normal operation
   RF_channel = 0;
@@ -737,7 +761,9 @@ void loop()
 {
   uint32_t timeUs, timeMs;
 
-  watchdogReset();
+  if (useWD) {
+    watchdogReset();
+  }
 
   if (spiReadRegister(0x0C) == 0) {     // detect the locked module and reboot
     Serial.println("RX hang");
