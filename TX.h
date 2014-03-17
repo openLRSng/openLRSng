@@ -1,6 +1,8 @@
 /****************************************************
  * OpenLRSng transmitter code
  ****************************************************/
+#include "wd.h"
+
 uint8_t RF_channel = 0;
 
 uint8_t FSstate = 0; // 1 = waiting timer, 2 = send FS, 3 sent waiting btn release
@@ -311,6 +313,10 @@ uint8_t serial_okToSend; // 2 if it is ok to send serial instead of servo
 void setup(void)
 {
   uint32_t start;
+
+  watchdogReset();
+  watchdogConfig(WATCHDOG_OFF);
+
   setupSPI();
 #ifdef SDN_pin
   pinMode(SDN_pin, OUTPUT); //SDN
@@ -406,6 +412,11 @@ void setup(void)
   } else if (bind_data.flags & TELEMETRY_MASK) {
     // ?
   }
+  cli();
+  watchdogReset();
+  watchdogConfig(WATCHDOG_4S);
+  watchdogReset();
+  sei();
 }
 
 uint8_t compositeRSSI(uint8_t rssi, uint8_t linkq)
@@ -640,6 +651,12 @@ void loop(void)
 
   if ((time - lastSent) >= getInterval(&bind_data)) {
     lastSent = time;
+
+    watchdogReset();
+
+#ifdef HALT_RX_BY_CH2
+      while (PPM[1] > 1013);
+#endif
 
     if (ppmAge < 8) {
       ppmAge++;
