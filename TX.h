@@ -133,7 +133,7 @@ void bindMode(void)
 {
   uint32_t prevsend = millis();
   uint8_t  tx_buf[sizeof(bind_data) + 1];
-  boolean  sendBinds = 1;
+  bool  sendBinds = 1;
 
   init_rfm(1);
 
@@ -655,7 +655,7 @@ void loop(void)
     watchdogReset();
 
 #ifdef HALT_RX_BY_CH2
-      while (PPM[1] > 1013);
+    while (PPM[1] > 1013);
 #endif
 
     if (ppmAge < 8) {

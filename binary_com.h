@@ -5,7 +5,7 @@
     [SYNC1][SYNC2][CODE][LENGTH_L][LENGTH_H][DATA/DATA ARRAY][CRC]
 */
 
-boolean binary_mode_active = false;
+bool binary_mode_active = false;
 
 #define PSP_SYNC1 0xB5
 #define PSP_SYNC2 0x62
@@ -44,29 +44,34 @@ uint8_t rxcConnect();
 
 uint8_t PSP_crc;
 
-void PSP_serialize_uint8(uint8_t data) {
+void PSP_serialize_uint8(uint8_t data)
+{
   Serial.write(data);
   PSP_crc ^= data;
 }
 
-void PSP_serialize_uint16(uint16_t data) {
+void PSP_serialize_uint16(uint16_t data)
+{
   PSP_serialize_uint8(lowByte(data));
   PSP_serialize_uint8(highByte(data));
 }
 
-void PSP_serialize_uint32(uint32_t data) {
+void PSP_serialize_uint32(uint32_t data)
+{
   for (uint8_t i = 0; i < 4; i++) {
     PSP_serialize_uint8((uint8_t) (data >> (i * 8)));
   }
 }
 
-void PSP_serialize_uint64(uint64_t data) {
+void PSP_serialize_uint64(uint64_t data)
+{
   for (uint8_t i = 0; i < 8; i++) {
     PSP_serialize_uint8((uint8_t) (data >> (i * 8)));
   }
 }
 
-void PSP_serialize_float32(float f) {
+void PSP_serialize_float32(float f)
+{
   uint8_t *b = (uint8_t*) & f;
 
   for (uint8_t i = 0; i < sizeof(f); i++) {
@@ -74,7 +79,8 @@ void PSP_serialize_float32(float f) {
   }
 }
 
-void PSP_protocol_head(uint8_t code, uint16_t length) {
+void PSP_protocol_head(uint8_t code, uint16_t length)
+{
   PSP_crc = 0; // reset crc
 
   Serial.write(PSP_SYNC1);
@@ -84,17 +90,20 @@ void PSP_protocol_head(uint8_t code, uint16_t length) {
   PSP_serialize_uint16(length);
 }
 
-void PSP_protocol_tail() {
+void PSP_protocol_tail()
+{
   Serial.write(PSP_crc);
 }
 
-void PSP_ACK() {
+void PSP_ACK()
+{
   PSP_protocol_head(PSP_INF_ACK, 1);
 
   PSP_serialize_uint8(0x01);
 }
 
-void PSP_process_data(uint8_t code, uint16_t payload_length_received, uint8_t data_buffer[]) {
+void PSP_process_data(uint8_t code, uint16_t payload_length_received, uint8_t data_buffer[])
+{
   switch (code) {
   case PSP_REQ_BIND_DATA:
     PSP_protocol_head(PSP_REQ_BIND_DATA, sizeof(bind_data));
@@ -341,7 +350,8 @@ void PSP_process_data(uint8_t code, uint16_t payload_length_received, uint8_t da
   PSP_protocol_tail();
 }
 
-void PSP_read(void) {
+void PSP_read(void)
+{
   static uint8_t data;
   static uint8_t state;
   static uint8_t code;

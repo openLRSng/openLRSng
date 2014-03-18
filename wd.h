@@ -12,13 +12,15 @@ void watchdogConfig(uint8_t x);
 #define WATCHDOG_4S     (_BV(WDP3) | _BV(WDE))
 #define WATCHDOG_8S     (_BV(WDP3) | _BV(WDP0) | _BV(WDE))
 
-void watchdogReset() {
+void watchdogReset()
+{
   __asm__ __volatile__ (
     "wdr\n"
-			);
+  );
 }
 
-void watchdogConfig(uint8_t x) {
+void watchdogConfig(uint8_t x)
+{
   WDTCSR = _BV(WDCE) | _BV(WDE);
   WDTCSR = x;
 }

@@ -38,7 +38,7 @@ uint8_t numberOfLostPackets = 0;
 volatile uint8_t slaveState = 0; // 0 - no slave, 1 - slave initializing, 2 - slave running, 3- errored
 uint32_t slaveFailedMs = 0;
 
-boolean willhop = 0, fs_saved = 0;
+bool willhop = 0, fs_saved = 0;
 
 bool useWD = 0;
 
@@ -299,7 +299,7 @@ void setupOutputs()
   }
 }
 
-void updateLBeep(boolean packetLost)
+void updateLBeep(bool packetLost)
 {
   if (rx_config.pinMapping[LLIND_OUTPUT] == PINMAP_LLIND) {
     digitalWrite(OUTPUT_PIN[LLIND_OUTPUT],packetLost);
@@ -360,11 +360,11 @@ uint8_t bindReceive(uint32_t timeout)
           rxInitDefaults(1);
           rxc_buf[0] = 'I';
         }
-	if (useWD) {
-	  rx_config.flags|=WATCHDOG_USED;
-	} else {
-	  rx_config.flags&=~WATCHDOG_USED;
-	}
+        if (useWD) {
+          rx_config.flags|=WATCHDOG_USED;
+        } else {
+          rx_config.flags&=~WATCHDOG_USED;
+        }
         memcpy(rxc_buf + 1, &rx_config, sizeof(rx_config));
         tx_packet(rxc_buf, sizeof(rx_config) + 1);
       } else if (rxb == 't') {
@@ -389,8 +389,9 @@ uint8_t bindReceive(uint32_t timeout)
         if (failsafeIsValid) {
           rxc_buf[0]='F';
           for (uint8_t i = 0; i < 16; i++) {
-            rxc_buf[i * 2 + 1] = (failsafePPM[i] & 0xff);
-            rxc_buf[i * 2 + 2] = (failsafePPM[i] >> 8);
+            uint16_t us = servoBits2Us(failsafePPM[i]);
+            rxc_buf[i * 2 + 1] = (us >> 8);
+            rxc_buf[i * 2 + 2] = (us & 0xff);
           }
         } else {
           rxc_buf[0]='f';
@@ -399,9 +400,9 @@ uint8_t bindReceive(uint32_t timeout)
       } else if (rxb == 'g') {
         for (uint8_t i = 0; i < 16 ; i++) {
           uint16_t val;
-          val = spiReadData();
-          val += (uint16_t)spiReadData() << 8;
-          PPM[i] = val;
+          val = (uint16_t)spiReadData() << 8;
+          val += spiReadData();
+          PPM[i] = servoUs2Bits(val);
         }
         rxb = 'G';
         tx_packet(&rxb, 1);
@@ -583,7 +584,7 @@ void setup()
     watchdogConfig(WATCHDOG_OFF);
     useWD=1;
   }
-  
+
   //LEDs
   pinMode(Green_LED, OUTPUT);
   pinMode(Red_LED, OUTPUT);
