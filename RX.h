@@ -148,7 +148,6 @@ void failsafeInvalidate(void)
 
 void failsafeSave(void)
 {
-  uint32_t start = millis();
   uint8_t ee_buf[20];
 
   for (int16_t i = 0; i < PPM_CHANNELS; i++) {
@@ -168,13 +167,6 @@ void failsafeSave(void)
   ee_buf[3] = 0xFE;
   for (int16_t i = 0; i < 4; i++) {
     myEEPROMwrite(EEPROM_FAILSAFE_OFFSET + i, ee_buf[i]);
-  }
-
-  // make this last at least 200ms for user to see it
-  // needed as optimized eeprom code can be real fast if no changes are done
-  start = millis() - start;
-  if (start < 200) {
-    delay(200 - start);
   }
 }
 
@@ -405,8 +397,8 @@ uint8_t bindReceive(uint32_t timeout)
           PPM[i] = servoUs2Bits(val);
         }
         rxb = 'G';
-        tx_packet(&rxb, 1);
         failsafeSave();
+        tx_packet(&rxb, 1);
       } else if (rxb == 'G') {
         failsafeInvalidate();
         rxb = 'G';
@@ -667,7 +659,7 @@ void setup()
   if (useWD) {
     cli();
     watchdogReset();
-    watchdogConfig(WATCHDOG_4S);
+    watchdogConfig(WATCHDOG_8S);
     watchdogReset();
     sei();
   }

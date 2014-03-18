@@ -414,7 +414,7 @@ void setup(void)
   }
   cli();
   watchdogReset();
-  watchdogConfig(WATCHDOG_4S);
+  watchdogConfig(WATCHDOG_8S);
   watchdogReset();
   sei();
 }
