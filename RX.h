@@ -389,8 +389,8 @@ uint8_t bindReceive(uint32_t timeout)
         if (failsafeIsValid) {
           rxc_buf[0]='F';
           for (uint8_t i = 0; i < 16; i++) {
-            rxc_buf[i * 2 + 1] = (failsafePPM[i] >> 8);
-            rxc_buf[i * 2 + 2] = (failsafePPM[i] & 0xff);
+            rxc_buf[i * 2 + 1] = (failsafePPM[i] & 0xff);
+            rxc_buf[i * 2 + 2] = (failsafePPM[i] >> 8);
           }
         } else {
           rxc_buf[0]='f';
@@ -399,8 +399,8 @@ uint8_t bindReceive(uint32_t timeout)
       } else if (rxb == 'g') {
         for (uint8_t i = 0; i < 16 ; i++) {
           uint16_t val;
-          val = (uint16_t)spiReadData() << 8;
-          val += spiReadData();
+          val = spiReadData();
+          val += (uint16_t)spiReadData() << 8;
           PPM[i] = val;
         }
         rxb = 'G';
