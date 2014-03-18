@@ -670,22 +670,27 @@ void beacon_send(void)
   //octave 3:  392  440  349  175   261
 
   beacon_tone(392, 1);
+  watchdogReset();
 
   spiWriteRegister(0x6d, 0x05);   // 5 set mid power 25mW
   delay(10);
   beacon_tone(440,1);
+  watchdogReset();
 
   spiWriteRegister(0x6d, 0x04);   // 4 set mid power 13mW
   delay(10);
   beacon_tone(349, 1);
+  watchdogReset();
 
   spiWriteRegister(0x6d, 0x02);   // 2 set min power 3mW
   delay(10);
   beacon_tone(175,1);
+  watchdogReset();
 
   spiWriteRegister(0x6d, 0x00);   // 0 set min power 1.3mW
   delay(10);
   beacon_tone(261, 2);
+  watchdogReset();
 
 
   spiWriteRegister(0x07, RF22B_PWRSTATE_READY);

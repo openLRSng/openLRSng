@@ -60,6 +60,12 @@
 //#define RFMXX_868
 //#define RFMXX_915
 
+//### DEBUG flags, may be dangerous
+//#define TEST_NO_ACK_BY_CH1 // disable sending of acks from RX by channel 1
+//#define TEST_HALT_RX_BY_CH2 // freeze RX
+//#define TEST_HALT_TX_BY_CH3 // freeze TX
+//#define SLAVE_STATISTICS // output master/slave stats on RX serial
+
 //####################
 //### CODE SECTION ###
 //####################
@@ -68,6 +74,7 @@
 
 #include "version.h"
 #include "hardware.h"
+#include "wd.h"
 #include "binding.h"
 #include "common.h"
 

@@ -3,7 +3,6 @@
  ****************************************************/
 
 #include <avr/eeprom.h>
-#include "wd.h"
 uint8_t RF_channel = 0;
 
 uint32_t lastPacketTimeUs = 0;
@@ -39,8 +38,6 @@ volatile uint8_t slaveState = 0; // 0 - no slave, 1 - slave initializing, 2 - sl
 uint32_t slaveFailedMs = 0;
 
 bool willhop = 0, fs_saved = 0;
-
-bool useWD = 0;
 
 pinMask_t chToMask[PPM_CHANNELS];
 pinMask_t clearMask;
@@ -352,7 +349,7 @@ uint8_t bindReceive(uint32_t timeout)
           rxInitDefaults(1);
           rxc_buf[0] = 'I';
         }
-        if (useWD) {
+        if (watchdogUsed) {
           rx_config.flags|=WATCHDOG_USED;
         } else {
           rx_config.flags&=~WATCHDOG_USED;
@@ -553,29 +550,9 @@ void reinitSlave()
   }
 }
 
-#define boot_lock_fuse_bits_get(address)                \
-(__extension__({                                        \
-    uint8_t __result;                                   \
-    __asm__ __volatile__                                \
-    (                                                   \
-        "sts %1, %2\n\t"                                \
-        "lpm %0, Z\n\t"                                 \
-        : "=r" (__result)                               \
-        : "i" (_SFR_MEM_ADDR(SPMCSR)),                  \
-          "r" ((uint8_t)(_BV(SELFPRGEN) | _BV(BLBSET))),\
-          "z" ((uint16_t)address)                       \
-    );                                                  \
-    __result;                                           \
-}))
-
-
 void setup()
 {
-  if ((boot_lock_fuse_bits_get(3)&0x06) == 0x6) {
-    watchdogReset();
-    watchdogConfig(WATCHDOG_OFF);
-    useWD=1;
-  }
+  watchdogConfig(WATCHDOG_OFF);
 
   //LEDs
   pinMode(Green_LED, OUTPUT);
@@ -656,13 +633,8 @@ void setup()
   }
 
   Serial.print("Entering normal mode");
-  if (useWD) {
-    cli();
-    watchdogReset();
-    watchdogConfig(WATCHDOG_8S);
-    watchdogReset();
-    sei();
-  }
+
+  watchdogConfig(WATCHDOG_2S);
 
   init_rfm(0);   // Configure the RFM22B's registers for normal operation
   RF_channel = 0;
@@ -759,9 +731,7 @@ void loop()
 {
   uint32_t timeUs, timeMs;
 
-  if (useWD) {
-    watchdogReset();
-  }
+  watchdogReset();
 
   if (spiReadRegister(0x0C) == 0) {     // detect the locked module and reboot
     Serial.println("RX hang");
@@ -911,7 +881,7 @@ retry:
           tx_buf[6] = countSetBits(linkQuality & 0x7fff);
         }
       }
-#ifdef TEST_NO_ACK_BY_CH0
+#ifdef TEST_NO_ACK_BY_CH1
       if (PPM[0]<900) {
         tx_packet_async(tx_buf, 9);
         while(!tx_done()) {
@@ -925,7 +895,7 @@ retry:
       }
 #endif
 
-#ifdef HALT_RX_BY_CH2
+#ifdef TEST_HALT_RX_BY_CH2
       if (PPM[1]>1013) {
         fatalBlink(3);
       }

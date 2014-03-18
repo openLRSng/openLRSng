@@ -1,8 +1,6 @@
 /****************************************************
  * OpenLRSng transmitter code
  ****************************************************/
-#include "wd.h"
-
 uint8_t RF_channel = 0;
 
 uint8_t FSstate = 0; // 1 = waiting timer, 2 = send FS, 3 sent waiting btn release
@@ -314,7 +312,6 @@ void setup(void)
 {
   uint32_t start;
 
-  watchdogReset();
   watchdogConfig(WATCHDOG_OFF);
 
   setupSPI();
@@ -412,11 +409,7 @@ void setup(void)
   } else if (bind_data.flags & TELEMETRY_MASK) {
     // ?
   }
-  cli();
-  watchdogReset();
-  watchdogConfig(WATCHDOG_8S);
-  watchdogReset();
-  sei();
+  watchdogConfig(WATCHDOG_2S);
 }
 
 uint8_t compositeRSSI(uint8_t rssi, uint8_t linkq)
@@ -654,8 +647,8 @@ void loop(void)
 
     watchdogReset();
 
-#ifdef HALT_RX_BY_CH2
-    while (PPM[1] > 1013);
+#ifdef TEST_HALT_TX_BY_CH3
+    while (PPM[2] > 1013);
 #endif
 
     if (ppmAge < 8) {

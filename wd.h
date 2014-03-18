@@ -12,6 +12,35 @@ void watchdogConfig(uint8_t x);
 #define WATCHDOG_4S     (_BV(WDP3) | _BV(WDE))
 #define WATCHDOG_8S     (_BV(WDP3) | _BV(WDP0) | _BV(WDE))
 
+static bool watchdogUsed = false;
+
+#if defined(__AVR_ATmega32U4__)
+bool watchdogAvailable()
+{
+  return false;
+}
+#else
+#define boot_lock_fuse_bits_get(address)                \
+(__extension__({                                        \
+    uint8_t __result;                                   \
+    __asm__ __volatile__                                \
+    (                                                   \
+        "sts %1, %2\n\t"                                \
+        "lpm %0, Z\n\t"                                 \
+        : "=r" (__result)                               \
+        : "i" (_SFR_MEM_ADDR(SPMCSR)),                  \
+          "r" ((uint8_t)(_BV(SELFPRGEN) | _BV(BLBSET))),\
+          "z" ((uint16_t)address)                       \
+    );                                                  \
+    __result;                                           \
+}))
+bool watchdogAvailable()
+{
+  // This basically checks bootloader size to detect optiboot
+  return ((boot_lock_fuse_bits_get(3) & 0x06) == 0x6);
+}
+#endif
+
 void watchdogReset()
 {
   __asm__ __volatile__ (
@@ -21,6 +50,17 @@ void watchdogReset()
 
 void watchdogConfig(uint8_t x)
 {
-  WDTCSR = _BV(WDCE) | _BV(WDE);
-  WDTCSR = x;
+  // Following only enables watchdog with optiboot (determined from bootsz)
+  if (watchdogAvailable()) {
+    uint8_t _sreg = SREG;
+    watchdogUsed=1;
+    cli();
+    watchdogReset();
+    WDTCSR = _BV(WDCE) | _BV(WDE);
+    WDTCSR = x;
+    if (x) {
+      watchdogReset();
+    }
+    SREG = _sreg;
+  }
 }
