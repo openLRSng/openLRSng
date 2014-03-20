@@ -17,7 +17,7 @@ static bool watchdogUsed = false;
 #if defined(__AVR_ATmega32U4__)
 bool watchdogAvailable()
 {
-  return false;
+  return true;
 }
 #else
 #define boot_lock_fuse_bits_get(address)                \
