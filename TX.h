@@ -171,17 +171,21 @@ void bindMode(void)
       Red_LED_ON;
       Green_LED_ON;
       switch (Serial.read()) {
+#ifdef CLI
       case '\n':
       case '\r':
         Serial.println(F("Enter menu..."));
         handleCLI();
         break;
+#endif
       case '#':
         scannerMode();
         break;
+#ifdef CONFIGURATOR
       case 'B':
         binaryMode();
         break;
+#endif
       default:
         break;
       }

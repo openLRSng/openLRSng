@@ -60,6 +60,10 @@
 //#define RFMXX_868
 //#define RFMXX_915
 
+//### Enabled Features (some features can be enabled / disabled with compile flag)
+#define CLI // Command-line interface
+#define CONFIGURATOR // Phoenix Serial Protocol (required for Configurator to work)
+
 //### DEBUG flags, may be dangerous
 //#define TEST_NO_ACK_BY_CH1 // disable sending of acks from RX by channel 1
 //#define TEST_HALT_RX_BY_CH2 // freeze RX
