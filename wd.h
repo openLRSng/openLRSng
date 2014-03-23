@@ -1,5 +1,4 @@
 static inline void watchdogReset();
-void watchdogConfig(uint8_t x);
 #define WATCHDOG_OFF    (0)
 #define WATCHDOG_16MS   (_BV(WDE))
 #define WATCHDOG_32MS   (_BV(WDP0) | _BV(WDE))
@@ -11,7 +10,7 @@ void watchdogConfig(uint8_t x);
 #define WATCHDOG_2S     (_BV(WDP2) | _BV(WDP1) | _BV(WDP0) | _BV(WDE))
 #define WATCHDOG_4S     (_BV(WDP3) | _BV(WDE))
 #define WATCHDOG_8S     (_BV(WDP3) | _BV(WDP0) | _BV(WDE))
-
+void watchdogConfig(uint8_t x);
 static bool watchdogUsed = false;
 
 #if defined(__AVR_ATmega32U4__)
@@ -43,9 +42,13 @@ bool watchdogAvailable()
 
 void watchdogReset()
 {
-  __asm__ __volatile__ (
-    "wdr\n"
-  );
+#if defined(__AVR_ATmega32U4__)
+  // this allows leonardo bootloader to work
+  if (*(uint16_t *)0x0800 = 0x7777) {
+    return;
+  }
+#endif
+  __asm__ __volatile__ ( "wdr\n" );
 }
 
 void watchdogConfig(uint8_t x)
@@ -64,3 +67,4 @@ void watchdogConfig(uint8_t x)
     SREG = _sreg;
   }
 }
+
