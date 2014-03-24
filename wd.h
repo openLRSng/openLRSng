@@ -44,7 +44,7 @@ void watchdogReset()
 {
 #if defined(__AVR_ATmega32U4__)
   // this allows leonardo bootloader to work
-  if (*(uint16_t *)0x0800 = 0x7777) {
+  if (*(uint16_t *)0x0800 == 0x7777) {
     return;
   }
 #endif
@@ -53,7 +53,6 @@ void watchdogReset()
 
 void watchdogConfig(uint8_t x)
 {
-  // Following only enables watchdog with optiboot (determined from bootsz)
   if (watchdogAvailable()) {
     uint8_t _sreg = SREG;
     watchdogUsed=1;
