@@ -101,6 +101,13 @@ static uint8_t default_hop_list[] = {DEFAULT_HOPLIST};
 
 #define MAXHOPS 24
 
+struct TX_config {
+  uint32_t max_frequency;
+  bool mute_tx;
+  bool inverted_ppmin;
+  bool microppm;
+} tx_config;
+
 struct bind_data {
   uint8_t version;
   uint32_t serial_baudrate;
@@ -170,6 +177,34 @@ void profileSwap(uint8_t profile)
   if ((activeProfile != profile) && (profile < TX_PROFILE_COUNT)) {
     activeProfile = profile;
     profileSet();
+  }
+}
+
+void txWriteEeprom()
+{
+  for (uint8_t i = 0; i < sizeof(tx_config); i++) {
+    // myEEPROMwrite(EEPROM_OFFSET() + i, *((uint8_t*)&tx_config + i)); TODO: needs correct offset
+  }
+}
+
+void txInitDefaults(bool save)
+{
+    tx_config.max_frequency = MAX_RFM_FREQUENCY;
+    tx_config.mute_tx = false;
+    tx_config.inverted_ppmin = false;
+    tx_config.microppm = false;
+
+    if (save) {
+        txWriteEeprom();
+    }
+}
+
+void txReadEeprom()
+{
+  // TODO: needs some pre-validation over here i guess ?
+
+  for (uint8_t i = 0; i < sizeof(tx_config); i++) {
+    // *((uint8_t*)&tx_config + i) = eeprom_read_byte((uint8_t *)(EEPROM_OFFSET() + i)); TODO: needs correct offset
   }
 }
 #endif
@@ -248,6 +283,8 @@ again:
         goto again;
       }
     }
+
+    // TODO: don't allow channels with frequency higher then max allowed by the user
 
     bind_data.hopchannel[c] = ch;
   }

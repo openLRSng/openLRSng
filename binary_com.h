@@ -10,31 +10,33 @@ bool binary_mode_active = false;
 #define PSP_SYNC1 0xB5
 #define PSP_SYNC2 0x62
 
-#define PSP_REQ_BIND_DATA             1
-#define PSP_REQ_RX_CONFIG             2
-#define PSP_REQ_RX_JOIN_CONFIGURATION 3
-#define PSP_REQ_SCANNER_MODE          4
-#define PSP_REQ_SPECIAL_PINS          5
-#define PSP_REQ_FW_VERSION            6
-#define PSP_REQ_NUMBER_OF_RX_OUTPUTS  7
-#define PSP_REQ_ACTIVE_PROFILE        8
-#define PSP_REQ_RX_FAILSAFE           9
+#define PSP_REQ_BIND_DATA               1
+#define PSP_REQ_RX_CONFIG               2
+#define PSP_REQ_RX_JOIN_CONFIGURATION   3
+#define PSP_REQ_SCANNER_MODE            4
+#define PSP_REQ_SPECIAL_PINS            5
+#define PSP_REQ_FW_VERSION              6
+#define PSP_REQ_NUMBER_OF_RX_OUTPUTS    7
+#define PSP_REQ_ACTIVE_PROFILE          8
+#define PSP_REQ_RX_FAILSAFE             9
+#define PSP_REQ_TX_CONFIG               10
 
-#define PSP_SET_BIND_DATA          101
-#define PSP_SET_RX_CONFIG          102
-#define PSP_SET_TX_SAVE_EEPROM     103
-#define PSP_SET_RX_SAVE_EEPROM     104
-#define PSP_SET_TX_RESTORE_DEFAULT 105
-#define PSP_SET_RX_RESTORE_DEFAULT 106
-#define PSP_SET_ACTIVE_PROFILE     107
-#define PSP_SET_RX_FAILSAFE        108
+#define PSP_SET_BIND_DATA               101
+#define PSP_SET_RX_CONFIG               102
+#define PSP_SET_TX_SAVE_EEPROM          103
+#define PSP_SET_RX_SAVE_EEPROM          104
+#define PSP_SET_TX_RESTORE_DEFAULT      105
+#define PSP_SET_RX_RESTORE_DEFAULT      106
+#define PSP_SET_ACTIVE_PROFILE          107
+#define PSP_SET_RX_FAILSAFE             108
+#define PSP_SET_TX_CONFIG               109
 
-#define PSP_SET_EXIT               199
+#define PSP_SET_EXIT                    199
 
-#define PSP_INF_ACK           201
-#define PSP_INF_REFUSED       202
-#define PSP_INF_CRC_FAIL      203
-#define PSP_INF_DATA_TOO_LONG 204
+#define PSP_INF_ACK                     201
+#define PSP_INF_REFUSED                 202
+#define PSP_INF_CRC_FAIL                203
+#define PSP_INF_DATA_TOO_LONG           204
 
 extern struct rxSpecialPinMap rxcSpecialPins[];
 extern uint8_t rxcSpecialPinCount;
@@ -191,6 +193,15 @@ void PSP_process_data(uint8_t code, uint16_t payload_length_received, uint8_t da
       PSP_serialize_uint8(0x00); // fail
     }
   }
+  case PSP_REQ_TX_CONFIG: {
+    PSP_protocol_head(PSP_REQ_TX_CONFIG, sizeof(tx_config));
+    {
+      char* array = (char*) &tx_config;
+      for (uint16_t i = 0; i < sizeof(tx_config); i++) {
+        PSP_serialize_uint8(array[i]);
+      }
+    }
+  }
   break;
   // SET
   case PSP_SET_BIND_DATA:
@@ -331,6 +342,9 @@ void PSP_process_data(uint8_t code, uint16_t payload_length_received, uint8_t da
       }
     }
     break;
+  case PSP_SET_TX_CONFIG:
+    PSP_protocol_head(PSP_SET_TX_CONFIG, 1);
+    PSP_serialize_uint8(0x01); // yes 1 / no 0
   case PSP_SET_EXIT:
     PSP_protocol_head(PSP_SET_EXIT, 1);
     PSP_serialize_uint8(0x01);
