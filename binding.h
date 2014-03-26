@@ -101,11 +101,9 @@ static uint8_t default_hop_list[] = {DEFAULT_HOPLIST};
 
 #define MAXHOPS 24
 
-struct TX_config {
+struct tx_config {
   uint32_t max_frequency;
-  bool mute_tx;
-  bool inverted_ppmin;
-  bool microppm;
+  uint32_t flags;
 } tx_config;
 
 struct bind_data {
@@ -187,25 +185,21 @@ void txWriteEeprom()
   }
 }
 
-void txInitDefaults(bool save)
+void txInitDefaults()
 {
-    tx_config.max_frequency = MAX_RFM_FREQUENCY;
-    tx_config.mute_tx = false;
-    tx_config.inverted_ppmin = false;
-    tx_config.microppm = false;
-
-    if (save) {
-        txWriteEeprom();
-    }
+  tx_config.max_frequency = MAX_RFM_FREQUENCY;
+  tx_config.flags = DEFAULT_FLAGS;
 }
 
-void txReadEeprom()
+bool txReadEeprom()
 {
   // TODO: needs some pre-validation over here i guess ?
 
   for (uint8_t i = 0; i < sizeof(tx_config); i++) {
     // *((uint8_t*)&tx_config + i) = eeprom_read_byte((uint8_t *)(EEPROM_OFFSET() + i)); TODO: needs correct offset
   }
+
+  return true;
 }
 #endif
 

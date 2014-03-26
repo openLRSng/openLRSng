@@ -130,7 +130,6 @@ void PSP_process_data(uint8_t code, uint16_t payload_length_received, uint8_t da
     // 1 success, 2 timeout, 3 failed response
 
     PSP_serialize_uint8(rxcConnect());
-
     break;
   case PSP_REQ_SCANNER_MODE:
     PSP_protocol_head(PSP_REQ_SCANNER_MODE, 1);
@@ -216,7 +215,6 @@ void PSP_process_data(uint8_t code, uint16_t payload_length_received, uint8_t da
 
       PSP_serialize_uint8(0x01);
     } else {
-      // fail (buffer size doesn't match struct memory size)
       PSP_serialize_uint8(0x00);
     }
     break;
@@ -232,18 +230,17 @@ void PSP_process_data(uint8_t code, uint16_t payload_length_received, uint8_t da
 
       PSP_serialize_uint8(0x01);
     } else {
-      // fail (buffer size doesn't match struct memory size)
       PSP_serialize_uint8(0x00);
     }
     break;
   case PSP_SET_TX_SAVE_EEPROM:
     PSP_protocol_head(PSP_SET_TX_SAVE_EEPROM, 1);
     bindWriteEeprom();
-    PSP_serialize_uint8(0x01); // success
+    txWriteEeprom();
+    PSP_serialize_uint8(0x01);
     break;
   case PSP_SET_RX_SAVE_EEPROM:
     PSP_protocol_head(PSP_SET_RX_SAVE_EEPROM, 1);
-    // 1 success, 0 fail
 
     {
       uint8_t tx_buf[1 + sizeof(rx_config)];
@@ -276,7 +273,6 @@ void PSP_process_data(uint8_t code, uint16_t payload_length_received, uint8_t da
     break;
   case PSP_SET_RX_RESTORE_DEFAULT:
     PSP_protocol_head(PSP_SET_RX_RESTORE_DEFAULT, 1);
-    // 1 success, 0 fail
 
     uint8_t tx_buf[1 + sizeof(rx_config)];
     tx_buf[0] = 'i';
@@ -344,7 +340,18 @@ void PSP_process_data(uint8_t code, uint16_t payload_length_received, uint8_t da
     break;
   case PSP_SET_TX_CONFIG:
     PSP_protocol_head(PSP_SET_TX_CONFIG, 1);
-    PSP_serialize_uint8(0x01); // yes 1 / no 0
+
+    if (payload_length_received == sizeof(tx_config)) {
+      char* array = (char*) &tx_config;
+
+      for (uint16_t i = 0; i < sizeof(tx_config); i++) {
+        array[i] = data_buffer[i];
+      }
+
+      PSP_serialize_uint8(0x01);
+    } else {
+      PSP_serialize_uint8(0x00);
+    }
   case PSP_SET_EXIT:
     PSP_protocol_head(PSP_SET_EXIT, 1);
     PSP_serialize_uint8(0x01);
