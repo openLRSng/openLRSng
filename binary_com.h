@@ -353,6 +353,7 @@ void PSP_process_data(uint8_t code, uint16_t payload_length_received, uint8_t da
     } else {
       PSP_serialize_uint8(0x00);
     }
+    break;
   case PSP_SET_EXIT:
     PSP_protocol_head(PSP_SET_EXIT, 1);
     PSP_serialize_uint8(0x01);
