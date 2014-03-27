@@ -268,6 +268,7 @@ void PSP_process_data(uint8_t code, uint16_t payload_length_received, uint8_t da
     PSP_protocol_head(PSP_SET_TX_RESTORE_DEFAULT, 1);
 
     bindInitDefaults();
+    txInitDefaults();
 
     PSP_serialize_uint8(0x01); // done
     break;

@@ -188,7 +188,7 @@ void txWriteEeprom()
 void txInitDefaults()
 {
   tx_config.max_frequency = MAX_RFM_FREQUENCY;
-  tx_config.flags = DEFAULT_FLAGS;
+  tx_config.flags = 0x00;
 }
 
 bool txReadEeprom()
