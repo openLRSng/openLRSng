@@ -181,7 +181,7 @@ void profileSwap(uint8_t profile)
 void txWriteEeprom()
 {
   for (uint8_t i = 0; i < sizeof(tx_config); i++) {
-    // myEEPROMwrite(EEPROM_OFFSET() + i, *((uint8_t*)&tx_config + i)); TODO: needs correct offset
+    myEEPROMwrite(i, *((uint8_t*)&tx_config + i));
   }
 }
 
@@ -194,9 +194,10 @@ void txInitDefaults()
 bool txReadEeprom()
 {
   // TODO: needs some pre-validation over here i guess ?
+  // if CRC check of data fails, return false
 
   for (uint8_t i = 0; i < sizeof(tx_config); i++) {
-    // *((uint8_t*)&tx_config + i) = eeprom_read_byte((uint8_t *)(EEPROM_OFFSET() + i)); TODO: needs correct offset
+    *((uint8_t*)&tx_config + i) = eeprom_read_byte((uint8_t *)(i));
   }
 
   return true;
@@ -256,8 +257,8 @@ void bindInitDefaults(void)
 void bindRandomize(void)
 {
   uint8_t c;
-  uint32_t t=0;
-  while (t==0) {
+  uint32_t t = 0;
+  while (t == 0) {
     t = micros();
   }
   srandom(t);
