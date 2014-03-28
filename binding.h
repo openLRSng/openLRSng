@@ -188,13 +188,6 @@ void txWriteEeprom()
 
 void txInitDefaults()
 {
-#if (defined RFMXX_868)
-  tx_config.rfm_type = 1;
-#elif (defined RFMXX_915)
-  tx_config.rfm_type = 2;
-#else
-  tx_config.rfm_type = 0;
-#endif
   tx_config.max_frequency = MAX_RFM_FREQUENCY;
   tx_config.flags = 0x00;
 }
