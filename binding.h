@@ -204,8 +204,8 @@ bool txReadEeprom()
   // TODO: needs some pre-validation over here i guess ?
   // if CRC check of data fails, return false
 
-  for (uint8_t i = 0; i < sizeof(tx_config); i++) {
-    *((uint8_t*)&tx_config + i) = eeprom_read_byte((uint8_t *)(i));
+  for (uint16_t i = 0; i < sizeof(tx_config); i++) {
+    *((uint8_t*)&tx_config + i) = eeprom_read_byte((uint8_t *)i);
   }
 
   return true;

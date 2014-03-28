@@ -341,7 +341,11 @@ void setup(void)
 #endif
   buzzerInit();
 
+#ifdef __AVR_ATmega32U4__
+  Serial.begin(0); // Suppress warning on overflow on Leonardo
+#else
   Serial.begin(115200);
+#endif
   profileInit();
   if (bindReadEeprom() && txReadEeprom()) {
     Serial.println("Loaded settings from EEPROM\n");
