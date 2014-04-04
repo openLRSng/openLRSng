@@ -257,6 +257,7 @@ void bindInitDefaults(void)
 
 void bindRandomize(void)
 {
+  uint8_t emergency_counter = 0;
   uint8_t c;
   uint32_t t = 0;
   while (t == 0) {
@@ -269,8 +270,13 @@ void bindRandomize(void)
     bind_data.rf_magic = (bind_data.rf_magic << 8) + (random() % 255);
   }
 
+  // TODO: verify if this works properly
   for (c = 0; (c < MAXHOPS) && (bind_data.hopchannel[c] != 0); c++) {
 again:
+    if (emergency_counter == 255) {
+      return;
+    }
+
     uint8_t ch = (random() % 50) + 1;
 
     // don't allow same channel twice
@@ -280,7 +286,11 @@ again:
       }
     }
 
-    // TODO: don't allow channels with frequency higher then max allowed by the user
+    // don't allow frequencies higher then tx_config.max_frequency
+    uint32_t real_frequency = bind_data.rf_frequency + ch * bind_data.rf_channel_spacing * 10000;
+    if (real_frequency > tx_config.max_frequency) {
+      goto again;
+    }
 
     bind_data.hopchannel[c] = ch;
   }
