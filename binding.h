@@ -273,7 +273,7 @@ void bindRandomize(void)
   // TODO: verify if this works properly
   for (c = 0; (c < MAXHOPS) && (bind_data.hopchannel[c] != 0); c++) {
 again:
-    if (emergency_counter == 255) {
+    if (emergency_counter++ == 255) {
       return;
     }
 
