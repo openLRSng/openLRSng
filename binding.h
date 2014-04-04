@@ -274,6 +274,7 @@ void bindRandomize(void)
   for (c = 0; (c < MAXHOPS) && (bind_data.hopchannel[c] != 0); c++) {
 again:
     if (emergency_counter++ == 255) {
+      bindInitDefaults();
       return;
     }
 
