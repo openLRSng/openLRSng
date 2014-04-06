@@ -138,21 +138,6 @@ struct rfm22_modem_regs bind_params =
 // prototype
 void fatalBlink(uint8_t blinks);
 
-// Optimized CRC-16 implementation (normally used in disk-drive controllers)
-uint16_t crc16_update(uint16_t crc, uint8_t data)
-{
-  crc ^= data;
-
-  for (uint8_t i = 0; i < 8; i++) {
-    if (crc & 1)
-      crc = (crc >> 1) ^ 0xA001;
-    else
-      crc = (crc >> 1);
-  }
-
-  return crc;
-}
-
 #include <avr/eeprom.h>
 
 // Save EEPROM by writing just changed data
