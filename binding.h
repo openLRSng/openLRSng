@@ -100,11 +100,28 @@ static uint8_t default_hop_list[] = {DEFAULT_HOPLIST};
 
 #define MAXHOPS 24
 
+uint8_t activeProfile = 0;
+
 struct tx_config {
   uint8_t  rfm_type;
   uint32_t max_frequency;
   uint32_t flags;
 } tx_config;
+
+struct RX_config {
+  uint8_t  rx_type; // RX type fillled in by RX, do not change
+  uint8_t  pinMapping[13];
+  uint8_t  flags;
+  uint8_t  RSSIpwm;
+  uint32_t beacon_frequency;
+  uint8_t  beacon_deadtime;
+  uint8_t  beacon_interval;
+  uint16_t minsync;
+  uint8_t  failsafeDelay;
+  uint8_t  ppmStopDelay;
+  uint8_t  pwmStopDelay;
+} rx_config;
+
 
 struct bind_data {
   uint8_t version;
@@ -151,18 +168,113 @@ void myEEPROMwrite(int16_t addr, uint8_t data)
   }
 }
 
+static uint16_t CRC16_value;
+
+inline void CRC16_reset()
+{
+  CRC16_value = 0;
+}
+
+void CRC16_add(uint8_t c) // CCITT polynome
+{
+  uint8_t i;
+  CRC16_value ^= (uint16_t)c << 8;
+  for (i = 0; i < 8; i++) {
+    if (CRC16_value & 0x8000) {
+      CRC16_value = (CRC16_value << 1) ^ 0x1021;
+    } else {
+      CRC16_value = (CRC16_value << 1);
+    }
+  }
+}
+
+// Halt and blink failure code
+void fatalBlink(uint8_t blinks)
+{
+  while (1) {
+    for (uint8_t i=0; i < blinks; i++) {
+      Red_LED_ON;
+      delay(100);
+      Red_LED_OFF;
+      delay(100);
+    }
+    delay(300);
+  }
+}
+
+// TODO
+bool accessEEPROM(uint8_t dataType, bool write)
+{
+  void *dataAddress = NULL;
+  uint16_t dataSize = 0;
+
+  uint16_t addressNeedle = 0;
+  uint16_t CRC = 0;
+
+#ifdef COMPILE_TX
+  if (dataType == 0) {
+    dataAddress = &tx_config;
+    dataSize = sizeof(tx_config);
+  } else if (dataType == 1) {
+    dataAddress = &bind_data;
+    dataSize = sizeof(bind_data);
+    addressNeedle = sizeof(tx_config) + 2;
+  } else if (dataType == 2) {
+    dataAddress = &activeProfile;
+    dataSize = 1;
+    addressNeedle = sizeof(tx_config) + sizeof(bind_data) + 4;
+  }
+#else
+  if (dataType == 0) {
+    dataAddress = &rx_config;
+    dataSize = sizeof(rx_config);
+  } else if (dataType == 1) {
+    dataAddress = &bind_data;
+    dataSize = sizeof(bind_data);
+    addressNeedle = sizeof(rx_config) + 2;
+  } else if (dataType == 2) {
+    // failsafe
+    addressNeedle = sizeof(rx_config) + sizeof(bind_data) + 4;
+  }
+#endif
+
+  CRC16_reset();
+  for (uint8_t i = 0; i < dataSize; i++, addressNeedle++) {
+    if (!write) {
+      *((uint8_t*)dataAddress + i) = eeprom_read_byte((uint8_t *)(addressNeedle));
+    } else {
+      myEEPROMwrite(addressNeedle, *((uint8_t*)dataAddress + i));
+    }
+
+    CRC16_add(*((uint8_t*)dataAddress + i));
+  }
+
+  if (!write) {
+    CRC = eeprom_read_byte((uint8_t *)addressNeedle) << 8 | eeprom_read_byte((uint8_t *)(addressNeedle + 1));
+
+    if (CRC16_value == CRC) {
+      return true;
+    } else {
+      return false;
+    }
+  } else {
+    myEEPROMwrite(addressNeedle++, CRC16_value >> 8);
+    myEEPROMwrite(addressNeedle, CRC16_value & 0x00FF);
+    return true;
+  }
+}
+
 #ifdef COMPILE_TX
 #define TX_PROFILE_COUNT 4
-uint8_t activeProfile = 0;
 
 void profileSet()
 {
-  myEEPROMwrite(EEPROM_PROFILE_OFFSET, activeProfile);
+  accessEEPROM(2, true);
 }
 
-void  profileInit()
+void profileInit()
 {
-  activeProfile = eeprom_read_byte((uint8_t *)EEPROM_PROFILE_OFFSET);
+  accessEEPROM(2, false);
   if (activeProfile >= TX_PROFILE_COUNT) {
     activeProfile = 0;
     profileSet();
@@ -312,20 +424,6 @@ uint32_t delayInMsLong(uint8_t d)
 {
   return delayInMs((uint16_t)d + 100);
 }
-
-struct RX_config {
-  uint8_t  rx_type; // RX type fillled in by RX, do not change
-  uint8_t  pinMapping[13];
-  uint8_t  flags;
-  uint8_t  RSSIpwm;
-  uint32_t beacon_frequency;
-  uint8_t  beacon_deadtime;
-  uint8_t  beacon_interval;
-  uint16_t minsync;
-  uint8_t  failsafeDelay;
-  uint8_t  ppmStopDelay;
-  uint8_t  pwmStopDelay;
-} rx_config;
 
 #ifndef COMPILE_TX
 // following is only needed on receiver

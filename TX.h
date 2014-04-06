@@ -347,13 +347,12 @@ void setup(void)
   Serial.begin(115200);
 #endif
   profileInit();
-  if (accessEEPROM(0, false) && accessEEPROM(1, false)) { // proper order is 1, 0, using 0, 1 for debugging (as TX struct have less data)
+  if (accessEEPROM(1, false) && accessEEPROM(0, false)) {
     Serial.println("Loaded settings from EEPROM\n");
   } else {
     Serial.print("EEPROM data not valid, reiniting\n");
     bindInitDefaults();
     accessEEPROM(1, true);
-    bindWriteEeprom();
     txInitDefaults();
     accessEEPROM(0, true);
   }
