@@ -215,14 +215,22 @@ bool accessEEPROM(uint8_t dataType, bool write)
   if (dataType == 0) {
     dataAddress = &tx_config;
     dataSize = sizeof(tx_config);
+
+    if (activeProfile) {
+      addressNeedle = (sizeof(tx_config) + sizeof(bind_data) + 4) * activeProfile;
+    }
   } else if (dataType == 1) {
     dataAddress = &bind_data;
     dataSize = sizeof(bind_data);
     addressNeedle = sizeof(tx_config) + 2;
+
+    if (activeProfile) {
+        addressNeedle += (sizeof(tx_config) + sizeof(bind_data) + 4) * activeProfile;
+    }
   } else if (dataType == 2) {
     dataAddress = &activeProfile;
     dataSize = 1;
-    addressNeedle = sizeof(tx_config) + sizeof(bind_data) + 4;
+    addressNeedle = (sizeof(tx_config) + sizeof(bind_data) + 4) * 4; // activeProfile is stored behind all 4 profiles
   }
 #else
   if (dataType == 0) {
