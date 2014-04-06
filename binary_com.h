@@ -238,8 +238,8 @@ void PSP_process_data(uint8_t code, uint16_t payload_length_received, uint8_t da
     break;
   case PSP_SET_TX_SAVE_EEPROM:
     PSP_protocol_head(PSP_SET_TX_SAVE_EEPROM, 1);
-    accessEEPROM(1, true);
-    accessEEPROM(0, true);
+    bindWriteEeprom();
+    txWriteEeprom();
     PSP_serialize_uint8(0x01);
     break;
   case PSP_SET_RX_SAVE_EEPROM:
@@ -308,9 +308,11 @@ void PSP_process_data(uint8_t code, uint16_t payload_length_received, uint8_t da
     PSP_protocol_head(PSP_SET_ACTIVE_PROFILE, 1);
 
     profileSwap(data_buffer[0]);
-    if (!bindReadEeprom()) {
+    if (!bindReadEeprom() || !txReadEeprom()) {
       bindInitDefaults();
       bindWriteEeprom();
+      txInitDefaults();
+      txWriteEeprom();
     }
     PSP_serialize_uint8(0x01); // done
     break;

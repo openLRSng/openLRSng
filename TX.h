@@ -238,19 +238,19 @@ void checkButton(void)
         profileSwap((activeProfile + 1) % TX_PROFILE_COUNT);
         Serial.print("New profile:");
         Serial.println(activeProfile);
-        if (accessEEPROM(1, false) && accessEEPROM(0, false)) {
+        if (bindReadEeprom() && txReadEeprom()) {
           Serial.println("Loaded settings from EEPROM\n");
         } else {
           Serial.print("EEPROM data not valid, reiniting\n");
           bindInitDefaults();
-          accessEEPROM(1, true);
+          bindWriteEeprom();
           txInitDefaults();
-          accessEEPROM(0, true);
+          txWriteEeprom();
         }
         return;
       }
       bindRandomize();
-      accessEEPROM(1, true);
+      bindWriteEeprom();
       bindPrint();
     }
 just_bind:
@@ -347,14 +347,14 @@ void setup(void)
   Serial.begin(115200);
 #endif
   profileInit();
-  if (accessEEPROM(1, false) && accessEEPROM(0, false)) {
+  if (bindReadEeprom() && txReadEeprom()) {
     Serial.println("Loaded settings from EEPROM\n");
   } else {
     Serial.print("EEPROM data not valid, reiniting\n");
     bindInitDefaults();
-    accessEEPROM(1, true);
+    bindWriteEeprom();
     txInitDefaults();
-    accessEEPROM(0, true);
+    txWriteEeprom();
   }
 
   setupPPMinput();

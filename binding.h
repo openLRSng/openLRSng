@@ -295,10 +295,21 @@ void txInitDefaults()
   tx_config.max_frequency = MAX_RFM_FREQUENCY;
   tx_config.flags = 0x00;
 }
+
+void txWriteEeprom()
+{
+  accessEEPROM(0, true);
+}
+
+bool txReadEeprom()
+{
+  return accessEEPROM(0, false);
+}
 #endif
 
-int16_t bindReadEeprom()
+bool bindReadEeprom()
 {
+  /* i dont know what to do with this old BIND_MAGIC code, so i am commenting it here
   uint32_t temp = 0;
   for (uint8_t i = 0; i < 4; i++) {
     temp = (temp << 8) + eeprom_read_byte((uint8_t *)(EEPROM_OFFSET(activeProfile) + i));
@@ -316,10 +327,22 @@ int16_t bindReadEeprom()
   }
 
   return 1;
+  */
+
+  if (accessEEPROM(1, false)) {
+    if (bind_data.version != BINDING_VERSION) {
+      return false;
+    }
+
+    return true;
+  } else {
+    return false;
+  }
 }
 
-void bindWriteEeprom(void)
+void bindWriteEeprom()
 {
+  /* i dont know what to do with this old BIND_MAGIC code, so i am commenting it here
   for (uint8_t i = 0; i < 4; i++) {
     myEEPROMwrite(EEPROM_OFFSET(activeProfile) + i, (BIND_MAGIC >> ((3 - i) * 8)) & 0xff);
   }
@@ -327,6 +350,8 @@ void bindWriteEeprom(void)
   for (uint8_t i = 0; i < sizeof(bind_data); i++) {
     myEEPROMwrite(EEPROM_OFFSET(activeProfile) + 4 + i, *((uint8_t*)&bind_data + i));
   }
+  */
+  accessEEPROM(1, true);
 }
 
 void bindInitDefaults(void)
