@@ -185,6 +185,10 @@ bool accessEEPROM(uint8_t dataType, bool write)
     dataAddress = &bind_data;
     dataSize = sizeof(bind_data);
     addressNeedle = sizeof(tx_config) + 2;
+  } else if (dataType == 2) {
+    dataAddress = &activeProfile;
+    dataSize = 1;
+    addressNeedle = sizeof(tx_config) + sizeof(bind_data) + 4;
   }
 #else
   if (dataType == 0) {
