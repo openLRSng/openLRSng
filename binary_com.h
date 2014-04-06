@@ -177,7 +177,7 @@ void PSP_process_data(uint8_t code, uint16_t payload_length_received, uint8_t da
     if (RF_Mode == Received) {
       spiSendAddress(0x7f);
       rxtx_buf = spiReadData();
-      if (rxtx_buf=='F') {
+      if (rxtx_buf == 'F') {
         PSP_protocol_head(PSP_REQ_RX_FAILSAFE, 32);
         for (uint8_t i = 0; i < 32; i++) {
           PSP_serialize_uint8(spiReadData()); // failsafe data
