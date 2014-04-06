@@ -168,6 +168,64 @@ void CRC16_add(uint8_t c) // CCITT polynome
   }
 }
 
+// TODO
+bool accessEEPROM(uint8_t dataType, bool write)
+{
+  void *dataAddress = NULL;
+  uint16_t dataSize = 0;
+
+  uint16_t addressNeedle = 0;
+  uint16_t CRC = 0;
+
+#ifdef COMPILE_TX
+  if (dataType == 0) {
+    dataAddress = &tx_config;
+    dataSize = sizeof(tx_config);
+  } else if (dataType == 1) {
+    dataAddress = &bind_data;
+    dataSize = sizeof(bind_data);
+    addressNeedle = sizeof(tx_config) + 2;
+  }
+#else
+  if (dataType == 0) {
+    dataAddress = &rx_config;
+    dataSize = sizeof(rx_config);
+  } else if (dataType == 1) {
+    dataAddress = &bind_data;
+    dataSize = sizeof(bind_data);
+    addressNeedle = sizeof(rx_config) + 2;
+  } else if (dataType == 2) {
+    // failsafe
+    addressNeedle = sizeof(rx_config) + sizeof(bind_data) + 4;
+  }
+#endif
+
+  CRC16_reset();
+  for (uint8_t i = 0; i < dataSize; i++) {
+    if (!write)
+      *((uint8_t*)dataAddress + i) = eeprom_read_byte((uint8_t *)(4 + i));
+    else
+      myEEPROMwrite(addressNeedle, *((uint8_t*)&dataAddress + i));
+
+    CRC16_add(*((uint8_t*)dataAddress + i));
+    addressNeedle++;
+  }
+
+  if (!write) {
+    CRC = eeprom_read_byte((uint8_t *)addressNeedle) << 8 | eeprom_read_byte((uint8_t *)(addressNeedle + 1));
+
+    if (CRC16_value == CRC) {
+      return true;
+    } else {
+      return false;
+    }
+  } else {
+    myEEPROMwrite(addressNeedle++, CRC16_value >> 8);
+    myEEPROMwrite(addressNeedle, CRC16_value & 0x00FF);
+    return true;
+  }
+}
+
 // Halt and blink failure code
 void fatalBlink(uint8_t blinks)
 {
