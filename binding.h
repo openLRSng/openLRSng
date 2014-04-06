@@ -178,29 +178,10 @@ void profileSwap(uint8_t profile)
   }
 }
 
-void txWriteEeprom()
-{
-  for (uint8_t i = 0; i < sizeof(tx_config); i++) {
-    myEEPROMwrite(i, *((uint8_t*)&tx_config + i));
-  }
-}
-
 void txInitDefaults()
 {
   tx_config.max_frequency = MAX_RFM_FREQUENCY;
   tx_config.flags = 0x00;
-}
-
-bool txReadEeprom()
-{
-  // TODO: needs some pre-validation over here i guess ?
-  // if CRC check of data fails, return false
-
-  for (uint16_t i = 0; i < sizeof(tx_config); i++) {
-    *((uint8_t*)&tx_config + i) = eeprom_read_byte((uint8_t *)i);
-  }
-
-  return true;
 }
 #endif
 

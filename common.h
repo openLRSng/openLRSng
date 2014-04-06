@@ -204,12 +204,27 @@ bool accessEEPROM(uint8_t dataType, bool write)
   }
 #endif
 
+  if (!write) {
+    Serial.println("Reading");
+  } else {
+    Serial.println("Writing");
+  }
+
   CRC16_reset();
   for (uint8_t i = 0; i < dataSize; i++) {
-    if (!write)
-      *((uint8_t*)dataAddress + i) = eeprom_read_byte((uint8_t *)(4 + i));
-    else
+    if (!write) {
+      *((uint8_t*)dataAddress + i) = eeprom_read_byte((uint8_t *)(addressNeedle));
+      Serial.print("Read: ");
+      Serial.println(*((uint8_t*)&dataAddress + i));
+    } else {
+      Serial.print("Wrote: ");
+      Serial.println(*((uint8_t*)&dataAddress + i));
       myEEPROMwrite(addressNeedle, *((uint8_t*)&dataAddress + i));
+      //Serial.print("Read: ");
+      //Serial.println(eeprom_read_byte((uint8_t *)(addressNeedle)));
+    }
+
+    //Serial.println(*((uint8_t*)dataAddress + i));
 
     CRC16_add(*((uint8_t*)dataAddress + i));
     addressNeedle++;
@@ -218,12 +233,20 @@ bool accessEEPROM(uint8_t dataType, bool write)
   if (!write) {
     CRC = eeprom_read_byte((uint8_t *)addressNeedle) << 8 | eeprom_read_byte((uint8_t *)(addressNeedle + 1));
 
+    Serial.print("CRC Calculated: ");
+    Serial.println(CRC16_value);
+    Serial.print("CRC Stored: ");
+    Serial.println(CRC);
+
     if (CRC16_value == CRC) {
       return true;
     } else {
       return false;
     }
   } else {
+    Serial.print("CRC: ");
+    Serial.println(CRC16_value);
+
     myEEPROMwrite(addressNeedle++, CRC16_value >> 8);
     myEEPROMwrite(addressNeedle, CRC16_value & 0x00FF);
     return true;
