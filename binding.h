@@ -72,8 +72,7 @@
 #else
 #define EEPROM_OFFSET(no)      0x100
 #endif
-#define EEPROM_RX_OFFSET       0x140 // RX specific config struct
-#define EEPROM_FAILSAFE_OFFSET 0x180
+#define EEPROM_FAILSAFE_OFFSET 0x40
 
 
 #define TELEMETRY_PACKETSIZE 9
@@ -352,11 +351,11 @@ struct RX_config {
 void rxWriteEeprom()
 {
   for (uint8_t i = 0; i < 4; i++) {
-    myEEPROMwrite(EEPROM_RX_OFFSET + i, (BIND_MAGIC >> ((3 - i) * 8)) & 0xff);
+    myEEPROMwrite(i, (BIND_MAGIC >> ((3 - i) * 8)) & 0xff);
   }
 
   for (uint8_t i = 0; i < sizeof(rx_config); i++) {
-    myEEPROMwrite(EEPROM_RX_OFFSET + 4 + i, *((uint8_t*)&rx_config + i));
+    myEEPROMwrite(4 + i, *((uint8_t*)&rx_config + i));
   }
 }
 
@@ -407,14 +406,14 @@ void rxReadEeprom()
   uint32_t temp = 0;
 
   for (uint8_t i = 0; i < 4; i++) {
-    temp = (temp << 8) + eeprom_read_byte((uint8_t *)(EEPROM_RX_OFFSET + i));
+    temp = (temp << 8) + eeprom_read_byte((uint8_t *)(i));
   }
 
   if (temp != BIND_MAGIC) {
     rxInitDefaults(1);
   } else {
     for (uint8_t i = 0; i < sizeof(rx_config); i++) {
-      *((uint8_t*)&rx_config + i) = eeprom_read_byte((uint8_t *)(EEPROM_RX_OFFSET + 4 + i));
+      *((uint8_t*)&rx_config + i) = eeprom_read_byte((uint8_t *)(4 + i));
     }
 #if (BOARD_TYPE == 3)
     if (rx_config.rx_type != RX_FLYTRON8CH) {
