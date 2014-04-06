@@ -462,6 +462,7 @@ uint32_t delayInMsLong(uint8_t d)
 // following is only needed on receiver
 void rxWriteEeprom()
 {
+  /*
   for (uint8_t i = 0; i < 4; i++) {
     myEEPROMwrite(i, (BIND_MAGIC >> ((3 - i) * 8)) & 0xff);
   }
@@ -469,6 +470,8 @@ void rxWriteEeprom()
   for (uint8_t i = 0; i < sizeof(rx_config); i++) {
     myEEPROMwrite(4 + i, *((uint8_t*)&rx_config + i));
   }
+  */
+  accessEEPROM(0, true);
 }
 
 void rxInitDefaults(bool save)
@@ -515,6 +518,8 @@ void rxInitDefaults(bool save)
 
 void rxReadEeprom()
 {
+  accessEEPROM(0, false);
+  /*
   uint32_t temp = 0;
 
   for (uint8_t i = 0; i < 4; i++) {
@@ -540,6 +545,25 @@ void rxReadEeprom()
 #endif
     Serial.println("RXconf loaded");
   }
+  */
+
+  if (accessEEPROM(0, false)) {
+#if (BOARD_TYPE == 3)
+    if (rx_config.rx_type != RX_FLYTRON8CH) {
+      rxInitDefaults(1);
+    }
+#elif (BOARD_TYPE == 5)
+    if (rx_config.rx_type != RX_OLRSNG4CH) {
+      rxInitDefaults(1);
+    }
+#else
+#error FIXME
+#endif
+  } else {
+    rxInitDefaults(1);
+  }
+
+  Serial.println("RXconf loaded");
 }
 
 #endif
