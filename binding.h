@@ -199,12 +199,15 @@ void fatalBlink(uint8_t blinks)
 extern uint16_t failsafePPM[PPM_CHANNELS];
 #endif
 
+#define EEPROM_SIZE 1024 // EEPROM is 1k on 328p and 32u4
+
 bool accessEEPROM(uint8_t dataType, bool write)
 {
   void *dataAddress = NULL;
   uint16_t dataSize = 0;
 
   uint16_t addressNeedle = 0;
+  uint16_t addressBase = 0;
   uint16_t CRC = 0;
 
 #ifdef COMPILE_TX
@@ -237,30 +240,39 @@ bool accessEEPROM(uint8_t dataType, bool write)
   }
 #endif
 
-  CRC16_reset();
-  for (uint8_t i = 0; i < dataSize; i++, addressNeedle++) {
+  do {
+    CRC16_reset();
+    for (uint8_t i = 0; i < dataSize; i++, addressNeedle++) {
+      if (!write) {
+	*((uint8_t*)dataAddress + i) = eeprom_read_byte((uint8_t *)(addressNeedle));
+      } else {
+	myEEPROMwrite(addressNeedle, *((uint8_t*)dataAddress + i));
+      }
+      
+      CRC16_add(*((uint8_t*)dataAddress + i));
+    }
+    
     if (!write) {
-      *((uint8_t*)dataAddress + i) = eeprom_read_byte((uint8_t *)(addressNeedle));
+      CRC = eeprom_read_byte((uint8_t *)addressNeedle) << 8 | eeprom_read_byte((uint8_t *)(addressNeedle + 1));
+      
+      if (CRC16_value == CRC) {
+	return true;
+      } else {
+	// skip to next block
+      }
     } else {
-      myEEPROMwrite(addressNeedle, *((uint8_t*)dataAddress + i));
+      myEEPROMwrite(addressNeedle++, CRC16_value >> 8);
+      myEEPROMwrite(addressNeedle, CRC16_value & 0x00FF);
     }
-
-    CRC16_add(*((uint8_t*)dataAddress + i));
-  }
-
-  if (!write) {
-    CRC = eeprom_read_byte((uint8_t *)addressNeedle) << 8 | eeprom_read_byte((uint8_t *)(addressNeedle + 1));
-
-    if (CRC16_value == CRC) {
-      return true;
-    } else {
-      return false;
-    }
-  } else {
-    myEEPROMwrite(addressNeedle++, CRC16_value >> 8);
-    myEEPROMwrite(addressNeedle, CRC16_value & 0x00FF);
-    return true;
-  }
+#ifdef COMPILE_TX
+    addressBase += (sizeof(tx_config) + sizeof(bind_data) + 4) * 4 + 3;
+#else
+    addressBase += sizeof(rx_config) + sizeof(bind_data) + sizeof(failsafePPM) + 6;
+#endif
+    addressBase +=15;
+    addressBase &= 0xfff0; // align to 16 bytes
+  } while (addressBase < EEPROM_SIZE);
+  return (write); // success on write, failure on read
 }
 
 #ifdef COMPILE_TX
