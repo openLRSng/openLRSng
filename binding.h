@@ -90,7 +90,8 @@ static uint8_t default_hop_list[] = {DEFAULT_HOPLIST};
 #  define BINDING_FREQUENCY 435000000 // Hz
 #endif
 
-#define MAXHOPS 24
+#define MAXHOPS      24
+#define PPM_CHANNELS 16
 
 uint8_t activeProfile = 0;
 
@@ -194,7 +195,10 @@ void fatalBlink(uint8_t blinks)
   }
 }
 
-// TODO
+#ifndef COMPILE_TX
+extern uint16_t failsafePPM[PPM_CHANNELS];
+#endif
+
 bool accessEEPROM(uint8_t dataType, bool write)
 {
   void *dataAddress = NULL;
@@ -227,7 +231,8 @@ bool accessEEPROM(uint8_t dataType, bool write)
     dataSize = sizeof(bind_data);
     addressNeedle = sizeof(rx_config) + 2;
   } else if (dataType == 2) {
-    // failsafe
+    dataAddress = &failsafePPM;
+    dataSize = sizeof(failsafePPM);
     addressNeedle = sizeof(rx_config) + sizeof(bind_data) + 4;
   }
 #endif

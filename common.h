@@ -8,7 +8,6 @@ void spiWriteRegister(uint8_t address, uint8_t data);
 void tx_packet(uint8_t* pkt, uint8_t size);
 void to_rx_mode(void);
 
-#define PPM_CHANNELS 16
 volatile uint16_t PPM[PPM_CHANNELS] = { 512, 512, 512, 512, 512, 512, 512, 512 , 512, 512, 512, 512, 512, 512, 512, 512 };
 
 const static uint8_t pktsizes[8] = { 0, 7, 11, 12, 16, 17, 21, 0 };
