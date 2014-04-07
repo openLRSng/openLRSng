@@ -145,6 +145,7 @@ void failsafeInvalidate(void)
 
 void failsafeSave(void)
 {
+  /*
   uint8_t ee_buf[20];
 
   for (int16_t i = 0; i < PPM_CHANNELS; i++) {
@@ -165,10 +166,18 @@ void failsafeSave(void)
   for (int16_t i = 0; i < 4; i++) {
     myEEPROMwrite(EEPROM_FAILSAFE_OFFSET + i, ee_buf[i]);
   }
+  */
+
+  for (int16_t i = 0; i < PPM_CHANNELS; i++) {
+    failsafePPM[i] = PPM[i];
+  }
+
+  accessEEPROM(2, true);
 }
 
 void failsafeLoad(void)
 {
+  /*
   uint8_t ee_buf[20];
 
   for (int16_t i = 0; i < 4; i++) {
@@ -183,6 +192,13 @@ void failsafeLoad(void)
     failsafeIsValid = 1;
   } else {
     failsafeIsValid = 0;
+  }
+  */
+
+  if (accessEEPROM(2, false)) {
+    failsafeIsValid = true;
+  } else {
+    failsafeIsValid = false;
   }
 }
 

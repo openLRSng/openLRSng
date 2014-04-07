@@ -10,31 +10,33 @@ bool binary_mode_active = false;
 #define PSP_SYNC1 0xB5
 #define PSP_SYNC2 0x62
 
-#define PSP_REQ_BIND_DATA             1
-#define PSP_REQ_RX_CONFIG             2
-#define PSP_REQ_RX_JOIN_CONFIGURATION 3
-#define PSP_REQ_SCANNER_MODE          4
-#define PSP_REQ_SPECIAL_PINS          5
-#define PSP_REQ_FW_VERSION            6
-#define PSP_REQ_NUMBER_OF_RX_OUTPUTS  7
-#define PSP_REQ_ACTIVE_PROFILE        8
-#define PSP_REQ_RX_FAILSAFE           9
+#define PSP_REQ_BIND_DATA               1
+#define PSP_REQ_RX_CONFIG               2
+#define PSP_REQ_RX_JOIN_CONFIGURATION   3
+#define PSP_REQ_SCANNER_MODE            4
+#define PSP_REQ_SPECIAL_PINS            5
+#define PSP_REQ_FW_VERSION              6
+#define PSP_REQ_NUMBER_OF_RX_OUTPUTS    7
+#define PSP_REQ_ACTIVE_PROFILE          8
+#define PSP_REQ_RX_FAILSAFE             9
+#define PSP_REQ_TX_CONFIG               10
 
-#define PSP_SET_BIND_DATA          101
-#define PSP_SET_RX_CONFIG          102
-#define PSP_SET_TX_SAVE_EEPROM     103
-#define PSP_SET_RX_SAVE_EEPROM     104
-#define PSP_SET_TX_RESTORE_DEFAULT 105
-#define PSP_SET_RX_RESTORE_DEFAULT 106
-#define PSP_SET_ACTIVE_PROFILE     107
-#define PSP_SET_RX_FAILSAFE        108
+#define PSP_SET_BIND_DATA               101
+#define PSP_SET_RX_CONFIG               102
+#define PSP_SET_TX_SAVE_EEPROM          103
+#define PSP_SET_RX_SAVE_EEPROM          104
+#define PSP_SET_TX_RESTORE_DEFAULT      105
+#define PSP_SET_RX_RESTORE_DEFAULT      106
+#define PSP_SET_ACTIVE_PROFILE          107
+#define PSP_SET_RX_FAILSAFE             108
+#define PSP_SET_TX_CONFIG               109
 
-#define PSP_SET_EXIT               199
+#define PSP_SET_EXIT                    199
 
-#define PSP_INF_ACK           201
-#define PSP_INF_REFUSED       202
-#define PSP_INF_CRC_FAIL      203
-#define PSP_INF_DATA_TOO_LONG 204
+#define PSP_INF_ACK                     201
+#define PSP_INF_REFUSED                 202
+#define PSP_INF_CRC_FAIL                203
+#define PSP_INF_DATA_TOO_LONG           204
 
 extern struct rxSpecialPinMap rxcSpecialPins[];
 extern uint8_t rxcSpecialPinCount;
@@ -43,6 +45,8 @@ extern uint16_t rxcVersion;
 uint8_t rxcConnect();
 
 uint8_t PSP_crc;
+
+#define AS_U8ARRAY(x) ((uint8_t *)(x))
 
 void PSP_serialize_uint8(uint8_t data)
 {
@@ -108,18 +112,16 @@ void PSP_process_data(uint8_t code, uint16_t payload_length_received, uint8_t da
   case PSP_REQ_BIND_DATA:
     PSP_protocol_head(PSP_REQ_BIND_DATA, sizeof(bind_data));
     {
-      char* array = (char*) &bind_data;
       for (uint16_t i = 0; i < sizeof(bind_data); i++) {
-        PSP_serialize_uint8(array[i]);
+        PSP_serialize_uint8(AS_U8ARRAY(&bind_data)[i]);
       }
     }
     break;
   case PSP_REQ_RX_CONFIG:
     PSP_protocol_head(PSP_REQ_RX_CONFIG, sizeof(rx_config));
     {
-      char* array = (char*) &rx_config;
       for (uint16_t i = 0; i < sizeof(rx_config); i++) {
-        PSP_serialize_uint8(array[i]);
+        PSP_serialize_uint8(AS_U8ARRAY(&rx_config)[i]);
       }
     }
     break;
@@ -128,7 +130,6 @@ void PSP_process_data(uint8_t code, uint16_t payload_length_received, uint8_t da
     // 1 success, 2 timeout, 3 failed response
 
     PSP_serialize_uint8(rxcConnect());
-
     break;
   case PSP_REQ_SCANNER_MODE:
     PSP_protocol_head(PSP_REQ_SCANNER_MODE, 1);
@@ -142,9 +143,8 @@ void PSP_process_data(uint8_t code, uint16_t payload_length_received, uint8_t da
   case PSP_REQ_SPECIAL_PINS:
     PSP_protocol_head(PSP_REQ_SPECIAL_PINS, sizeof(struct rxSpecialPinMap) * rxcSpecialPinCount);
     {
-      char* array = (char*) &rxcSpecialPins;
       for (uint16_t i = 0; i < sizeof(struct rxSpecialPinMap) * rxcSpecialPinCount; i++) {
-        PSP_serialize_uint8(array[i]);
+        PSP_serialize_uint8(AS_U8ARRAY(&rxcSpecialPins)[i]);
       }
     }
     break;
@@ -177,10 +177,10 @@ void PSP_process_data(uint8_t code, uint16_t payload_length_received, uint8_t da
     if (RF_Mode == Received) {
       spiSendAddress(0x7f);
       rxtx_buf = spiReadData();
-      if (rxtx_buf=='F') {
+      if (rxtx_buf == 'F') {
         PSP_protocol_head(PSP_REQ_RX_FAILSAFE, 32);
         for (uint8_t i = 0; i < 32; i++) {
-          PSP_serialize_uint8(spiReadData());
+          PSP_serialize_uint8(spiReadData()); // failsafe data
         }
       } else {
         PSP_protocol_head(PSP_REQ_RX_FAILSAFE, 1);
@@ -192,20 +192,35 @@ void PSP_process_data(uint8_t code, uint16_t payload_length_received, uint8_t da
     }
   }
   break;
+  case PSP_REQ_TX_CONFIG: {
+    PSP_protocol_head(PSP_REQ_TX_CONFIG, sizeof(tx_config));
+    {
+      // Force correct TX type based on firmware
+#if (defined RFMXX_868)
+      tx_config.rfm_type = 1;
+#elif (defined RFMXX_915)
+      tx_config.rfm_type = 2;
+#else
+      tx_config.rfm_type = 0;
+#endif
+      for (uint16_t i = 0; i < sizeof(tx_config); i++) {
+        PSP_serialize_uint8(AS_U8ARRAY(&tx_config)[i]);
+      }
+    }
+  }
+  break;
   // SET
   case PSP_SET_BIND_DATA:
     PSP_protocol_head(PSP_SET_BIND_DATA, 1);
 
     if (payload_length_received == sizeof(bind_data)) {
-      char* array = (char*) &bind_data;
 
       for (uint16_t i = 0; i < sizeof(bind_data); i++) {
-        array[i] = data_buffer[i];
+        AS_U8ARRAY(&bind_data)[i] = data_buffer[i];
       }
 
       PSP_serialize_uint8(0x01);
     } else {
-      // fail (buffer size doesn't match struct memory size)
       PSP_serialize_uint8(0x00);
     }
     break;
@@ -213,26 +228,23 @@ void PSP_process_data(uint8_t code, uint16_t payload_length_received, uint8_t da
     PSP_protocol_head(PSP_SET_RX_CONFIG, 1);
 
     if (payload_length_received == sizeof(rx_config)) {
-      char* array = (char*) &rx_config;
-
       for (uint16_t i = 0; i < sizeof(rx_config); i++) {
-        array[i] = data_buffer[i];
+        AS_U8ARRAY(&rx_config)[i] = data_buffer[i];
       }
 
       PSP_serialize_uint8(0x01);
     } else {
-      // fail (buffer size doesn't match struct memory size)
       PSP_serialize_uint8(0x00);
     }
     break;
   case PSP_SET_TX_SAVE_EEPROM:
     PSP_protocol_head(PSP_SET_TX_SAVE_EEPROM, 1);
     bindWriteEeprom();
-    PSP_serialize_uint8(0x01); // success
+    txWriteEeprom();
+    PSP_serialize_uint8(0x01);
     break;
   case PSP_SET_RX_SAVE_EEPROM:
     PSP_protocol_head(PSP_SET_RX_SAVE_EEPROM, 1);
-    // 1 success, 0 fail
 
     {
       uint8_t tx_buf[1 + sizeof(rx_config)];
@@ -260,12 +272,12 @@ void PSP_process_data(uint8_t code, uint16_t payload_length_received, uint8_t da
     PSP_protocol_head(PSP_SET_TX_RESTORE_DEFAULT, 1);
 
     bindInitDefaults();
+    txInitDefaults();
 
     PSP_serialize_uint8(0x01); // done
     break;
   case PSP_SET_RX_RESTORE_DEFAULT:
     PSP_protocol_head(PSP_SET_RX_RESTORE_DEFAULT, 1);
-    // 1 success, 0 fail
 
     uint8_t tx_buf[1 + sizeof(rx_config)];
     tx_buf[0] = 'i';
@@ -297,9 +309,11 @@ void PSP_process_data(uint8_t code, uint16_t payload_length_received, uint8_t da
     PSP_protocol_head(PSP_SET_ACTIVE_PROFILE, 1);
 
     profileSwap(data_buffer[0]);
-    if (!bindReadEeprom()) {
+    if (!bindReadEeprom() || !txReadEeprom()) {
       bindInitDefaults();
       bindWriteEeprom();
+      txInitDefaults();
+      txWriteEeprom();
     }
     PSP_serialize_uint8(0x01); // done
     break;
@@ -329,6 +343,18 @@ void PSP_process_data(uint8_t code, uint16_t payload_length_received, uint8_t da
       } else {
         PSP_serialize_uint8(0x00);
       }
+    }
+    break;
+  case PSP_SET_TX_CONFIG:
+    PSP_protocol_head(PSP_SET_TX_CONFIG, 1);
+
+    if (payload_length_received == sizeof(tx_config)) {
+      for (uint16_t i = 0; i < sizeof(tx_config); i++) {
+        AS_U8ARRAY(&tx_config)[i] = data_buffer[i];
+      }
+      PSP_serialize_uint8(0x01);
+    } else {
+      PSP_serialize_uint8(0x00);
     }
     break;
   case PSP_SET_EXIT:

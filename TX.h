@@ -68,7 +68,7 @@ static inline void processPulse(uint16_t pulse)
     return;
   }
 
-  if (!(bind_data.flags & MICROPPM)) {
+  if (!(tx_config.flags & MICROPPM)) {
     pulse >>= 1; // divide by 2 to get servo value on normal PPM
   }
 
@@ -106,7 +106,7 @@ void setupPPMinput()
   TCCR1A = ((1 << WGM10) | (1 << WGM11));
   TCCR1B = ((1 << WGM12) | (1 << WGM13) | (1 << CS11) | (1 <<ICNC1));
   // normally capture on rising edge, allow invertting via SW flag
-  if (!(bind_data.flags & INVERTED_PPMIN)) {
+  if (!(tx_config.flags & INVERTED_PPMIN)) {
     TCCR1B |= (1 << ICES1);
   }
   OCR1A = 65535;
@@ -117,7 +117,7 @@ void setupPPMinput()
 ISR(PPM_Signal_Interrupt)
 {
   uint16_t pulseWidth;
-  if ( (bind_data.flags & INVERTED_PPMIN) ^ PPM_Signal_Edge_Check) {
+  if ( (tx_config.flags & INVERTED_PPMIN) ^ PPM_Signal_Edge_Check) {
     pulseWidth = TCNT1; // read the timer1 value
     TCNT1 = 0; // reset the timer1 value for next
     processPulse(pulseWidth);
@@ -246,12 +246,14 @@ void checkButton(void)
         profileSwap((activeProfile + 1) % TX_PROFILE_COUNT);
         Serial.print("New profile:");
         Serial.println(activeProfile);
-        if (bindReadEeprom()) {
+        if (bindReadEeprom() && txReadEeprom()) {
           Serial.println("Loaded settings from EEPROM\n");
         } else {
           Serial.print("EEPROM data not valid, reiniting\n");
           bindInitDefaults();
           bindWriteEeprom();
+          txInitDefaults();
+          txWriteEeprom();
         }
         return;
       }
@@ -347,14 +349,20 @@ void setup(void)
 #endif
   buzzerInit();
 
+#ifdef __AVR_ATmega32U4__
+  Serial.begin(0); // Suppress warning on overflow on Leonardo
+#else
   Serial.begin(115200);
+#endif
   profileInit();
-  if (bindReadEeprom()) {
+  if (bindReadEeprom() && txReadEeprom()) {
     Serial.println("Loaded settings from EEPROM\n");
   } else {
     Serial.print("EEPROM data not valid, reiniting\n");
     bindInitDefaults();
     bindWriteEeprom();
+    txInitDefaults();
+    txWriteEeprom();
   }
 
   setupPPMinput();
@@ -673,7 +681,7 @@ void loop(void)
       if (lastTelemetry) {
         if ((time - lastTelemetry) > getInterval(&bind_data)) {
           // telemetry lost
-          if (!(bind_data.flags & MUTE_TX)) {
+          if (!(tx_config.flags & MUTE_TX)) {
             buzzerOn(BZ_FREQ);
           }
           lastTelemetry = 0;
