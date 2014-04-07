@@ -200,6 +200,13 @@ extern uint16_t failsafePPM[PPM_CHANNELS];
 #endif
 
 #define EEPROM_SIZE 1024 // EEPROM is 1k on 328p and 32u4
+#define ROUNDUP(x) (((x)+15)&0xfff0)
+#ifdef COMPILE_TX
+#define EEPROM_DATASIZE ROUNDUP((sizeof(tx_config) + sizeof(bind_data) + 4) * 4 + 3)
+#else
+#define EEPROM_DATASIZE ROUNDUP(sizeof(rx_config) + sizeof(bind_data) + sizeof(failsafePPM) + 6)
+#endif
+
 
 bool accessEEPROM(uint8_t dataType, bool write)
 {
@@ -258,20 +265,14 @@ bool accessEEPROM(uint8_t dataType, bool write)
       if (CRC16_value == CRC) {
 	return true;
       } else {
-	// skip to next block
+	// try next block
       }
     } else {
       myEEPROMwrite(addressNeedle++, CRC16_value >> 8);
       myEEPROMwrite(addressNeedle, CRC16_value & 0x00FF);
     }
-#ifdef COMPILE_TX
-    addressBase += (sizeof(tx_config) + sizeof(bind_data) + 4) * 4 + 3;
-#else
-    addressBase += sizeof(rx_config) + sizeof(bind_data) + sizeof(failsafePPM) + 6;
-#endif
-    addressBase +=15;
-    addressBase &= 0xfff0; // align to 16 bytes
-  } while (addressBase < EEPROM_SIZE);
+    addressBase += EEPROM_DATASIZE;
+  } while (addressBase < (EEPROM_SIZE - EEPROM_DATASIZE));
   return (write); // success on write, failure on read
 }
 
