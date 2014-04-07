@@ -268,7 +268,7 @@ just_bind:
   }
 }
 
-void checkBND(void)
+static inline void checkBND(void)
 {
   if ((Serial.available() > 3) &&
       (Serial.read() == 'B') && (Serial.read() == 'N') &&
@@ -278,7 +278,7 @@ void checkBND(void)
   }
 }
 
-void checkFS(void)
+static inline void checkFS(void)
 {
 
   switch (FSstate) {
@@ -454,7 +454,7 @@ uint32_t srxLast=0;
 uint8_t srxFlags=0;
 uint8_t srxChannels=0;
 
-void processSpektrum(uint8_t c)
+static inline void processSpektrum(uint8_t c)
 {
   if (frameIndex == 0) {
     frameIndex++;
@@ -486,7 +486,7 @@ void processSpektrum(uint8_t c)
   }
 }
 
-void processSBUS(uint8_t c)
+static inline void processSBUS(uint8_t c)
 {
   if (frameIndex == 0) {
     if (c == SBUS_SYNC) {
@@ -518,7 +518,7 @@ void processSBUS(uint8_t c)
   }
 }
 
-void processSUMD(uint8_t c)
+static inline void processSUMD(uint8_t c)
 {
   if ((frameIndex == 0) && (c == SUMD_HEAD)) {
     CRC16_reset();

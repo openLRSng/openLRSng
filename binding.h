@@ -64,20 +64,12 @@
 #define MAX_INTERVAL 255
 
 #define BINDING_POWER     0x06 // not lowest since may result fail with RFM23BP
-#define BINDING_VERSION   9
-
-#define EEPROM_PROFILE_OFFSET  0x040 // profile number on TX
-#ifdef COMPILE_TX
-#define EEPROM_OFFSET(no)      (0x100 + (no)*0x40)
-#else
-#define EEPROM_OFFSET(no)      0x100
-#endif
-#define EEPROM_FAILSAFE_OFFSET 0x40
-
 
 #define TELEMETRY_PACKETSIZE 9
 
-#define BIND_MAGIC (0xDEC1BE15 + BINDING_VERSION)
+#define BIND_MAGIC (0xDEC1BE15 + (OPENLRSNG_VERSION & 0xfff0))
+#define BINDING_VERSION ((OPENLRSNG_VERSION & 0x0ff0)>>4)
+
 static uint8_t default_hop_list[] = {DEFAULT_HOPLIST};
 
 // HW frequency limits
@@ -215,18 +207,12 @@ bool accessEEPROM(uint8_t dataType, bool write)
   if (dataType == 0) {
     dataAddress = &tx_config;
     dataSize = sizeof(tx_config);
-
-    if (activeProfile) {
-      addressNeedle = (sizeof(tx_config) + sizeof(bind_data) + 4) * activeProfile;
-    }
+    addressNeedle = (sizeof(tx_config) + sizeof(bind_data) + 4) * activeProfile;
   } else if (dataType == 1) {
     dataAddress = &bind_data;
     dataSize = sizeof(bind_data);
     addressNeedle = sizeof(tx_config) + 2;
-
-    if (activeProfile) {
-        addressNeedle += (sizeof(tx_config) + sizeof(bind_data) + 4) * activeProfile;
-    }
+    addressNeedle += (sizeof(tx_config) + sizeof(bind_data) + 4) * activeProfile;
   } else if (dataType == 2) {
     dataAddress = &activeProfile;
     dataSize = 1;
@@ -317,48 +303,14 @@ bool txReadEeprom()
 
 bool bindReadEeprom()
 {
-  /* i dont know what to do with this old BIND_MAGIC code, so i am commenting it here
-  uint32_t temp = 0;
-  for (uint8_t i = 0; i < 4; i++) {
-    temp = (temp << 8) + eeprom_read_byte((uint8_t *)(EEPROM_OFFSET(activeProfile) + i));
-  }
-  if (temp != BIND_MAGIC) {
-    return 0;
-  }
-
-  for (uint8_t i = 0; i < sizeof(bind_data); i++) {
-    *((uint8_t*)&bind_data + i) = eeprom_read_byte((uint8_t *)(EEPROM_OFFSET(activeProfile) + 4 + i));
-  }
-
-  if (bind_data.version != BINDING_VERSION) {
-    return 0;
-  }
-
-  return 1;
-  */
-
-  if (accessEEPROM(1, false)) {
-    if (bind_data.version != BINDING_VERSION) {
-      return false;
-    }
-
+  if (accessEEPROM(1, false) && (bind_data.version == BINDING_VERSION)) {
     return true;
-  } else {
-    return false;
   }
+  return false;
 }
 
 void bindWriteEeprom()
 {
-  /* i dont know what to do with this old BIND_MAGIC code, so i am commenting it here
-  for (uint8_t i = 0; i < 4; i++) {
-    myEEPROMwrite(EEPROM_OFFSET(activeProfile) + i, (BIND_MAGIC >> ((3 - i) * 8)) & 0xff);
-  }
-
-  for (uint8_t i = 0; i < sizeof(bind_data); i++) {
-    myEEPROMwrite(EEPROM_OFFSET(activeProfile) + 4 + i, *((uint8_t*)&bind_data + i));
-  }
-  */
   accessEEPROM(1, true);
 }
 

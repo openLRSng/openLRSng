@@ -29,7 +29,6 @@ volatile uint8_t disablePPM = 0;
 uint8_t failsafeActive = 0;
 
 uint16_t failsafePPM[PPM_CHANNELS];
-uint8_t  failsafeIsValid = 0;
 
 uint8_t linkAcquired = 0;
 uint8_t numberOfLostPackets = 0;
@@ -137,74 +136,30 @@ void set_RSSI_output()
   }
 }
 
-void failsafeInvalidate(void)
+static inline void failsafeInvalidate(void)
 {
-  failsafeIsValid = 0;
-  myEEPROMwrite(EEPROM_FAILSAFE_OFFSET, 0);
+  failsafePPM[0] = 0xffff;
+  accessEEPROM(2, true);
 }
 
 void failsafeSave(void)
 {
-  /*
-  uint8_t ee_buf[20];
-
   for (int16_t i = 0; i < PPM_CHANNELS; i++) {
     failsafePPM[i] = PPM[i];
   }
-
-  failsafeIsValid = 1;
-
-  packChannels(6, failsafePPM, ee_buf);
-  for (int16_t i = 0; i < 20; i++) {
-    myEEPROMwrite(EEPROM_FAILSAFE_OFFSET + 4 + i, ee_buf[i]);
-  }
-
-  ee_buf[0] = 0xFA;
-  ee_buf[1] = 0x11;
-  ee_buf[2] = 0x5A;
-  ee_buf[3] = 0xFE;
-  for (int16_t i = 0; i < 4; i++) {
-    myEEPROMwrite(EEPROM_FAILSAFE_OFFSET + i, ee_buf[i]);
-  }
-  */
-
-  for (int16_t i = 0; i < PPM_CHANNELS; i++) {
-    failsafePPM[i] = PPM[i];
-  }
-
   accessEEPROM(2, true);
 }
 
-void failsafeLoad(void)
+static inline void failsafeLoad(void)
 {
-  /*
-  uint8_t ee_buf[20];
-
-  for (int16_t i = 0; i < 4; i++) {
-    ee_buf[i] = eeprom_read_byte((uint8_t *)(EEPROM_FAILSAFE_OFFSET + i));
-  }
-
-  if ((ee_buf[0] == 0xFA) && (ee_buf[1] == 0x11) && (ee_buf[2] == 0x5A) && (ee_buf[3] == 0xFE)) {
-    for (int16_t i = 0; i < 20; i++) {
-      ee_buf[i] = eeprom_read_byte((uint8_t *)(EEPROM_FAILSAFE_OFFSET + 4 + i));
-    }
-    unpackChannels(6, failsafePPM, ee_buf);
-    failsafeIsValid = 1;
-  } else {
-    failsafeIsValid = 0;
-  }
-  */
-
-  if (accessEEPROM(2, false)) {
-    failsafeIsValid = true;
-  } else {
-    failsafeIsValid = false;
+  if (!accessEEPROM(2, false)) {
+    failsafePPM[0]=0xffff;
   }
 }
 
 void failsafeApply()
 {
-  if (failsafeIsValid) {
+  if (failsafePPM[0] != 0xffff) {
     for (int16_t i = 0; i < PPM_CHANNELS; i++) {
       if (i != rx_config.RSSIpwm) {
         cli();
@@ -297,7 +252,7 @@ void setupOutputs()
   ppmCountter = 0;
   TIMSK1 |= (1 << TOIE1);
 
-  if ((rx_config.flags & IMMEDIATE_OUTPUT) && failsafeIsValid) {
+  if ((rx_config.flags & IMMEDIATE_OUTPUT) && failsafePPM[0]!=0xffff) {
     failsafeApply();
     disablePPM=0;
     disablePWM=0;
@@ -318,7 +273,7 @@ void updateLBeep(bool packetLost)
   }
 }
 
-void updateSwitches()
+static inline void updateSwitches()
 {
   uint8_t i;
   for (i = 0; i < OUTPUTS; i++) {
@@ -391,7 +346,7 @@ uint8_t bindReceive(uint32_t timeout)
         tx_packet(&rxb, 1); // ACK that we updated settings
       } else if (rxb == 'f') {
         uint8_t rxc_buf[33];
-        if (failsafeIsValid) {
+        if (failsafePPM[0]!=0xffff) {
           rxc_buf[0]='F';
           for (uint8_t i = 0; i < 16; i++) {
             uint16_t us = servoBits2Us(failsafePPM[i]);
