@@ -796,8 +796,8 @@ retry:
     if ((rx_buf[0] & 0x3e) == 0x00) {
       cli();
       unpackChannels(bind_data.flags & 7, PPM, rx_buf + 1);
-#if DEBUG_DUMP_PPM
-      for (uint8_t i=0; i<8; i++) {
+#ifdef DEBUG_DUMP_PPM
+      for (uint8_t i = 0; i < 8; i++) {
         Serial.print(PPM[i]);
         Serial.print(',');
       }

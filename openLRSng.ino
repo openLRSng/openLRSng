@@ -69,6 +69,7 @@
 //#define TEST_HALT_RX_BY_CH2 // freeze RX
 //#define TEST_HALT_TX_BY_CH3 // freeze TX
 //#define SLAVE_STATISTICS // output master/slave stats on RX serial
+//#define DEBUG_DUMP_PPM // dump PPM data on serial (both TX/RX)
 
 //####################
 //### CODE SECTION ###

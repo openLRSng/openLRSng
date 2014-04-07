@@ -53,6 +53,11 @@ union ppm_msg {
 #define BZ_FREQ 2000
 #endif
 
+#ifdef DEBUG_DUMP_PPM
+uint8_t ppmDump   = 0;
+uint32_t lastDump = 0;
+#endif
+
 /****************************************************
  * Interrupt Vector
  ****************************************************/
@@ -74,6 +79,9 @@ static inline void processPulse(uint16_t pulse)
         PPM[i] = ppmWork.words[i];
       }
       ppmAge = 0;                 // brand new PPM data received
+#ifdef DEBUG_DUMP_PPM
+      ppmDump = 1;
+#endif
     }
     ppmCounter = 0;             // -> restart the channel counter
   } else if ((pulse > 700) && (ppmCounter < PPM_CHANNELS)) { // extra channels will get ignored here
@@ -459,11 +467,14 @@ void processSpektrum(uint8_t c)
         if (ch<16) {
           PPM[ch] = v;
         }
-        ppmAge=0;
+#ifdef DEBUG_DUMP_PPM
+        ppmDump = 1;
+#endif
+        ppmAge = 0;
       }
     }
   } else {
-    frameIndex=0;
+    frameIndex = 0;
   }
 }
 
@@ -489,7 +500,10 @@ void processSBUS(uint8_t c)
         PPM[(set<<3)+7] = ppmWork.sbus.ch[set].ch7 >> 1;
       }
       if ((ppmWork.sbus.status & 0x08)==0) {
-        ppmAge=0;
+#ifdef DEBUG_DUMP_PPM
+        ppmDump = 1;
+#endif
+        ppmAge = 0;
       }
     }
     frameIndex = 0;
@@ -526,6 +540,9 @@ void processSUMD(uint8_t c)
           uint16_t val = (uint16_t)ppmWork.bytes[ch*2]<<8 | (uint16_t)ppmWork.bytes[ch*2+1];
           PPM[ch] = servoUs2Bits(val >> 3);
         }
+#ifdef DEBUG_DUMP_PPM
+        ppmDump = 1;
+#endif
         ppmAge = 0;
       }
       frameIndex = 0;
@@ -553,25 +570,20 @@ void processChannelsFromSerial(uint8_t c)
   }
 }
 
-#ifdef DEBUG_DUMP_PPM
-uint32_t lastTMP;
-#endif
-
 void loop(void)
 {
 #ifdef DEBUG_DUMP_PPM
-  {
-    uint32_t timeTMP=micros();
-    if ((timeTMP-lastTMP)>1000000) {
-      lastTMP=timeTMP;
-      TelemetrySerial.print(ppmAge);
+  if (ppmDump) {
+    uint32_t timeTMP = millis();
+    Serial.print(timeTMP - lastDump);
+    lastDump = timeTMP;
+    TelemetrySerial.print(':');
+    for (uint8_t i = 0; i < 16; i++) {
+      TelemetrySerial.print(PPM[i]);
       TelemetrySerial.print(',');
-      for (uint8_t i=0; i<8; i++) {
-        TelemetrySerial.print(PPM[i]);
-        TelemetrySerial.print(',');
-      }
-      TelemetrySerial.println();
     }
+    TelemetrySerial.println();
+    ppmDump = 0;
   }
 #endif
 
