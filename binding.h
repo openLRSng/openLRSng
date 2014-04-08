@@ -251,21 +251,21 @@ bool accessEEPROM(uint8_t dataType, bool write)
     CRC16_reset();
     for (uint8_t i = 0; i < dataSize; i++, addressNeedle++) {
       if (!write) {
-	*((uint8_t*)dataAddress + i) = eeprom_read_byte((uint8_t *)(addressNeedle));
+        *((uint8_t*)dataAddress + i) = eeprom_read_byte((uint8_t *)(addressNeedle));
       } else {
-	myEEPROMwrite(addressNeedle, *((uint8_t*)dataAddress + i));
+        myEEPROMwrite(addressNeedle, *((uint8_t*)dataAddress + i));
       }
-      
+
       CRC16_add(*((uint8_t*)dataAddress + i));
     }
-    
+
     if (!write) {
       CRC = eeprom_read_byte((uint8_t *)addressNeedle) << 8 | eeprom_read_byte((uint8_t *)(addressNeedle + 1));
-      
+
       if (CRC16_value == CRC) {
-	return true;
+        return true;
       } else {
-	// try next block
+        // try next block
       }
     } else {
       myEEPROMwrite(addressNeedle++, CRC16_value >> 8);
@@ -488,7 +488,6 @@ void rxInitDefaults(bool save)
 
 void rxReadEeprom()
 {
-  accessEEPROM(0, false);
   /*
   uint32_t temp = 0;
 
