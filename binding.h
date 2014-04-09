@@ -201,10 +201,11 @@ extern uint16_t failsafePPM[PPM_CHANNELS];
 
 #define EEPROM_SIZE 1024 // EEPROM is 1k on 328p and 32u4
 #define ROUNDUP(x) (((x)+15)&0xfff0)
+#define MIN256(x)  (((x)<256)?256:(x))
 #ifdef COMPILE_TX
-#define EEPROM_DATASIZE ROUNDUP((sizeof(tx_config) + sizeof(bind_data) + 4) * 4 + 3)
+#define EEPROM_DATASIZE MIN256(ROUNDUP((sizeof(tx_config) + sizeof(bind_data) + 4) * 4 + 3))
 #else
-#define EEPROM_DATASIZE ROUNDUP(sizeof(rx_config) + sizeof(bind_data) + sizeof(failsafePPM) + 6)
+#define EEPROM_DATASIZE MIN256(ROUNDUP(sizeof(rx_config) + sizeof(bind_data) + sizeof(failsafePPM) + 6))
 #endif
 
 
