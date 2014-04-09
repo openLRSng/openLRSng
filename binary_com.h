@@ -253,7 +253,7 @@ void PSP_process_data(uint8_t code, uint16_t payload_length_received, uint8_t da
       tx_packet(tx_buf, sizeof(rx_config) + 1);
       rx_reset();
       RF_Mode = Receive;
-      delay(600);
+      delay(800);
 
       if (RF_Mode == Received) {
         spiSendAddress(0x7f); // Send the package read command
