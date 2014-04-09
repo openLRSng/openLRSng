@@ -219,7 +219,7 @@ bool accessEEPROM(uint8_t dataType, bool write)
   uint16_t CRC = 0;
 
   do {
-    start:
+start:
 #ifdef COMPILE_TX
     if (dataType == 0) {
       dataAddress = &tx_config;
