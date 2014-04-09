@@ -136,7 +136,7 @@ void set_RSSI_output()
   }
 }
 
-static inline void failsafeInvalidate(void)
+void failsafeInvalidate(void)
 {
   failsafePPM[0] = 0xffff;
   accessEEPROM(2, true);
@@ -318,6 +318,7 @@ uint8_t bindReceive(uint32_t timeout)
           timeout = 0;
         } else {
           rxInitDefaults(1);
+          failsafeInvalidate();
           rxc_buf[0] = 'I';
         }
         if (watchdogUsed) {
