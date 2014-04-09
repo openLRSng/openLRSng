@@ -284,7 +284,7 @@ bool accessEEPROM(uint8_t dataType, bool write)
       myEEPROMwrite(addressNeedle, CRC16_value & 0x00FF);
     }
     addressBase += EEPROM_DATASIZE;
-  } while (addressBase < (EEPROM_SIZE - EEPROM_DATASIZE));
+  } while (addressBase <= (EEPROM_SIZE - EEPROM_DATASIZE));
   return (write); // success on write, failure on read
 }
 
