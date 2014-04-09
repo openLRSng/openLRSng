@@ -239,6 +239,7 @@ start:
     if (dataType == 0) {
       dataAddress = &rx_config;
       dataSize = sizeof(rx_config);
+      addressNeedle = 0;
     } else if (dataType == 1) {
       dataAddress = &bind_data;
       dataSize = sizeof(bind_data);
