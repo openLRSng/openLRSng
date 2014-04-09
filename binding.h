@@ -90,7 +90,8 @@ static uint8_t default_hop_list[] = {DEFAULT_HOPLIST};
 #  define BINDING_FREQUENCY 435000000 // Hz
 #endif
 
-#define MAXHOPS 24
+#define MAXHOPS      24
+#define PPM_CHANNELS 16
 
 uint8_t activeProfile = 0;
 
@@ -194,68 +195,96 @@ void fatalBlink(uint8_t blinks)
   }
 }
 
-// TODO
+#ifndef COMPILE_TX
+extern uint16_t failsafePPM[PPM_CHANNELS];
+#endif
+
+#define EEPROM_SIZE 1024 // EEPROM is 1k on 328p and 32u4
+#define ROUNDUP(x) (((x)+15)&0xfff0)
+#ifdef COMPILE_TX
+#define EEPROM_DATASIZE ROUNDUP((sizeof(tx_config) + sizeof(bind_data) + 4) * 4 + 3)
+#else
+#define EEPROM_DATASIZE ROUNDUP(sizeof(rx_config) + sizeof(bind_data) + sizeof(failsafePPM) + 6)
+#endif
+
+
 bool accessEEPROM(uint8_t dataType, bool write)
 {
   void *dataAddress = NULL;
   uint16_t dataSize = 0;
 
   uint16_t addressNeedle = 0;
+  uint16_t addressBase = 0;
   uint16_t CRC = 0;
+  bool dataCorrupted = false;
 
+  do {
+    start:
 #ifdef COMPILE_TX
-  if (dataType == 0) {
-    dataAddress = &tx_config;
-    dataSize = sizeof(tx_config);
-    addressNeedle = (sizeof(tx_config) + sizeof(bind_data) + 4) * activeProfile;
-  } else if (dataType == 1) {
-    dataAddress = &bind_data;
-    dataSize = sizeof(bind_data);
-    addressNeedle = sizeof(tx_config) + 2;
-    addressNeedle += (sizeof(tx_config) + sizeof(bind_data) + 4) * activeProfile;
-  } else if (dataType == 2) {
-    dataAddress = &activeProfile;
-    dataSize = 1;
-    addressNeedle = (sizeof(tx_config) + sizeof(bind_data) + 4) * 4; // activeProfile is stored behind all 4 profiles
-  }
+    if (dataType == 0) {
+      dataAddress = &tx_config;
+      dataSize = sizeof(tx_config);
+      addressNeedle = (sizeof(tx_config) + sizeof(bind_data) + 4) * activeProfile;
+    } else if (dataType == 1) {
+      dataAddress = &bind_data;
+      dataSize = sizeof(bind_data);
+      addressNeedle = sizeof(tx_config) + 2;
+      addressNeedle += (sizeof(tx_config) + sizeof(bind_data) + 4) * activeProfile;
+    } else if (dataType == 2) {
+      dataAddress = &activeProfile;
+      dataSize = 1;
+      addressNeedle = (sizeof(tx_config) + sizeof(bind_data) + 4) * 4; // activeProfile is stored behind all 4 profiles
+    }
 #else
-  if (dataType == 0) {
-    dataAddress = &rx_config;
-    dataSize = sizeof(rx_config);
-  } else if (dataType == 1) {
-    dataAddress = &bind_data;
-    dataSize = sizeof(bind_data);
-    addressNeedle = sizeof(rx_config) + 2;
-  } else if (dataType == 2) {
-    // failsafe
-    addressNeedle = sizeof(rx_config) + sizeof(bind_data) + 4;
-  }
+    if (dataType == 0) {
+      dataAddress = &rx_config;
+      dataSize = sizeof(rx_config);
+    } else if (dataType == 1) {
+      dataAddress = &bind_data;
+      dataSize = sizeof(bind_data);
+      addressNeedle = sizeof(rx_config) + 2;
+    } else if (dataType == 2) {
+      dataAddress = &failsafePPM;
+      dataSize = sizeof(failsafePPM);
+      addressNeedle = sizeof(rx_config) + sizeof(bind_data) + 4;
+    }
 #endif
+    addressNeedle += addressBase;
+    CRC16_reset();
 
-  CRC16_reset();
-  for (uint8_t i = 0; i < dataSize; i++, addressNeedle++) {
+    for (uint8_t i = 0; i < dataSize; i++, addressNeedle++) {
+      if (!write) {
+        *((uint8_t*)dataAddress + i) = eeprom_read_byte((uint8_t *)(addressNeedle));
+      } else {
+        myEEPROMwrite(addressNeedle, *((uint8_t*)dataAddress + i));
+      }
+
+      CRC16_add(*((uint8_t*)dataAddress + i));
+    }
+
     if (!write) {
-      *((uint8_t*)dataAddress + i) = eeprom_read_byte((uint8_t *)(addressNeedle));
+      CRC = eeprom_read_byte((uint8_t *)addressNeedle) << 8 | eeprom_read_byte((uint8_t *)(addressNeedle + 1));
+
+      if (CRC16_value == CRC) {
+        if (dataCorrupted) {
+          // recover corrupted data
+          write = true;
+          addressBase = 0;
+          goto start;
+        }
+
+        return true;
+      } else {
+        // try next block
+        dataCorrupted = true;
+      }
     } else {
-      myEEPROMwrite(addressNeedle, *((uint8_t*)dataAddress + i));
+      myEEPROMwrite(addressNeedle++, CRC16_value >> 8);
+      myEEPROMwrite(addressNeedle, CRC16_value & 0x00FF);
     }
-
-    CRC16_add(*((uint8_t*)dataAddress + i));
-  }
-
-  if (!write) {
-    CRC = eeprom_read_byte((uint8_t *)addressNeedle) << 8 | eeprom_read_byte((uint8_t *)(addressNeedle + 1));
-
-    if (CRC16_value == CRC) {
-      return true;
-    } else {
-      return false;
-    }
-  } else {
-    myEEPROMwrite(addressNeedle++, CRC16_value >> 8);
-    myEEPROMwrite(addressNeedle, CRC16_value & 0x00FF);
-    return true;
-  }
+    addressBase += EEPROM_DATASIZE;
+  } while (addressBase < (EEPROM_SIZE - EEPROM_DATASIZE));
+  return (write); // success on write, failure on read
 }
 
 #ifdef COMPILE_TX
@@ -470,7 +499,6 @@ void rxInitDefaults(bool save)
 
 void rxReadEeprom()
 {
-  accessEEPROM(0, false);
   /*
   uint32_t temp = 0;
 
