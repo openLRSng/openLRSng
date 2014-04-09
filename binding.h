@@ -217,7 +217,6 @@ bool accessEEPROM(uint8_t dataType, bool write)
   uint16_t addressNeedle = 0;
   uint16_t addressBase = 0;
   uint16_t CRC = 0;
-  bool dataCorrupted = false;
 
   do {
     start:
@@ -267,17 +266,13 @@ bool accessEEPROM(uint8_t dataType, bool write)
       CRC = eeprom_read_byte((uint8_t *)addressNeedle) << 8 | eeprom_read_byte((uint8_t *)(addressNeedle + 1));
 
       if (CRC16_value == CRC) {
-        if (dataCorrupted) {
-          // recover corrupted data
-          write = true;
-          addressBase = 0;
-          goto start;
-        }
-
-        return true;
+        // recover corrupted data
+        // write operation is performed after every successful read operation, this will keep all cells valid
+        write = true;
+        addressBase = 0;
+        goto start;
       } else {
         // try next block
-        dataCorrupted = true;
       }
     } else {
       myEEPROMwrite(addressNeedle++, CRC16_value >> 8);
