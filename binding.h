@@ -439,15 +439,6 @@ uint32_t delayInMsLong(uint8_t d)
 // following is only needed on receiver
 void rxWriteEeprom()
 {
-  /*
-  for (uint8_t i = 0; i < 4; i++) {
-    myEEPROMwrite(i, (BIND_MAGIC >> ((3 - i) * 8)) & 0xff);
-  }
-
-  for (uint8_t i = 0; i < sizeof(rx_config); i++) {
-    myEEPROMwrite(4 + i, *((uint8_t*)&rx_config + i));
-  }
-  */
   accessEEPROM(0, true);
 }
 
@@ -495,34 +486,6 @@ void rxInitDefaults(bool save)
 
 void rxReadEeprom()
 {
-  /*
-  uint32_t temp = 0;
-
-  for (uint8_t i = 0; i < 4; i++) {
-    temp = (temp << 8) + eeprom_read_byte((uint8_t *)(i));
-  }
-
-  if (temp != BIND_MAGIC) {
-    rxInitDefaults(1);
-  } else {
-    for (uint8_t i = 0; i < sizeof(rx_config); i++) {
-      *((uint8_t*)&rx_config + i) = eeprom_read_byte((uint8_t *)(4 + i));
-    }
-#if (BOARD_TYPE == 3)
-    if (rx_config.rx_type != RX_FLYTRON8CH) {
-      rxInitDefaults(1);
-    }
-#elif (BOARD_TYPE == 5)
-    if (rx_config.rx_type != RX_OLRSNG4CH) {
-      rxInitDefaults(1);
-    }
-#else
-#error FIXME
-#endif
-    Serial.println("RXconf loaded");
-  }
-  */
-
   if (accessEEPROM(0, false)) {
 #if (BOARD_TYPE == 3)
     if (rx_config.rx_type != RX_FLYTRON8CH) {
