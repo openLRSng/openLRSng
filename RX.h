@@ -136,27 +136,6 @@ void set_RSSI_output()
   }
 }
 
-void failsafeInvalidate(void)
-{
-  failsafePPM[0] = 0xffff;
-  accessEEPROM(2, true);
-}
-
-void failsafeSave(void)
-{
-  for (int16_t i = 0; i < PPM_CHANNELS; i++) {
-    failsafePPM[i] = PPM[i];
-  }
-  accessEEPROM(2, true);
-}
-
-static inline void failsafeLoad(void)
-{
-  if (!accessEEPROM(2, false)) {
-    failsafePPM[0]=0xffff;
-  }
-}
-
 void failsafeApply()
 {
   if (failsafePPM[0] != 0xffff) {
@@ -318,7 +297,6 @@ uint8_t bindReceive(uint32_t timeout)
           timeout = 0;
         } else {
           rxInitDefaults(1);
-          failsafeInvalidate();
           rxc_buf[0] = 'I';
         }
         if (watchdogUsed) {
@@ -342,7 +320,7 @@ uint8_t bindReceive(uint32_t timeout)
         for (uint8_t i = 0; i < sizeof(rx_config); i++) {
           *(((uint8_t*) &rx_config) + i) = spiReadData();
         }
-        rxWriteEeprom();
+        accessEEPROM(0, true);
         rxb = 'U';
         tx_packet(&rxb, 1); // ACK that we updated settings
       } else if (rxb == 'f') {
@@ -363,13 +341,14 @@ uint8_t bindReceive(uint32_t timeout)
           uint16_t val;
           val = (uint16_t)spiReadData() << 8;
           val += spiReadData();
-          PPM[i] = servoUs2Bits(val);
+          failsafePPM[i] = servoUs2Bits(val);
         }
         rxb = 'G';
         failsafeSave();
         tx_packet(&rxb, 1);
       } else if (rxb == 'G') {
-        failsafeInvalidate();
+        failsafePPM[0] = 0xffff;
+        failsafeSave();
         rxb = 'G';
         tx_packet(&rxb, 1);
       }
@@ -580,7 +559,7 @@ void setup()
 
     if ((rx_config.flags & ALWAYS_BIND) && (!(rx_config.flags & SLAVE_MODE))) {
       if (bindReceive(500)) {
-        bindWriteEeprom();
+	bindWriteEeprom();
         Serial.println("Saved bind data to EEPROM\n");
         setupOutputs(); // parameters may have changed
         Green_LED_ON;
@@ -781,6 +760,9 @@ retry:
       sei();
       if (rx_buf[0] & 0x01) {
         if (!fs_saved) {
+          for (int16_t i = 0; i < PPM_CHANNELS; i++) {
+            failsafePPM[i] = PPM[i];
+          }
           failsafeSave();
           fs_saved = 1;
         }

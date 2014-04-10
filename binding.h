@@ -284,6 +284,37 @@ start:
   return (write); // success on write, failure on read
 }
 
+bool bindReadEeprom()
+{
+  if (accessEEPROM(1, false) && (bind_data.version == BINDING_VERSION)) {
+    return true;
+  }
+  return false;
+}
+
+void bindWriteEeprom()
+{
+  accessEEPROM(1, true);
+}
+
+void bindInitDefaults(void)
+{
+  bind_data.version = BINDING_VERSION;
+  bind_data.serial_baudrate = DEFAULT_BAUDRATE;
+  bind_data.rf_power = DEFAULT_RF_POWER;
+  bind_data.rf_frequency = DEFAULT_CARRIER_FREQUENCY;
+  bind_data.rf_channel_spacing = DEFAULT_CHANNEL_SPACING;
+
+  bind_data.rf_magic = DEFAULT_RF_MAGIC;
+
+  for (uint8_t c = 0; c < MAXHOPS; c++) {
+    bind_data.hopchannel[c] = (c < sizeof(default_hop_list)) ? default_hop_list[c] : 0;
+  }
+
+  bind_data.modem_params = DEFAULT_DATARATE;
+  bind_data.flags = DEFAULT_FLAGS;
+}
+
 #ifdef COMPILE_TX
 #define TX_PROFILE_COUNT 4
 
@@ -318,44 +349,17 @@ void txInitDefaults()
 
 void txWriteEeprom()
 {
-  accessEEPROM(0, true);
+  accessEEPROM(0,true);
+  accessEEPROM(1,true);
 }
 
-bool txReadEeprom()
+void txReadEeprom()
 {
-  return accessEEPROM(0, false);
-}
-#endif
-
-bool bindReadEeprom()
-{
-  if (accessEEPROM(1, false) && (bind_data.version == BINDING_VERSION)) {
-    return true;
+  if ((!accessEEPROM(0, false)) || (!accessEEPROM(1, false))) {
+    txInitDefaults();
+    bindInitDefaults();
+    txWriteEeprom();
   }
-  return false;
-}
-
-void bindWriteEeprom()
-{
-  accessEEPROM(1, true);
-}
-
-void bindInitDefaults(void)
-{
-  bind_data.version = BINDING_VERSION;
-  bind_data.serial_baudrate = DEFAULT_BAUDRATE;
-  bind_data.rf_power = DEFAULT_RF_POWER;
-  bind_data.rf_frequency = DEFAULT_CARRIER_FREQUENCY;
-  bind_data.rf_channel_spacing = DEFAULT_CHANNEL_SPACING;
-
-  bind_data.rf_magic = DEFAULT_RF_MAGIC;
-
-  for (uint8_t c = 0; c < MAXHOPS; c++) {
-    bind_data.hopchannel[c] = (c < sizeof(default_hop_list)) ? default_hop_list[c] : 0;
-  }
-
-  bind_data.modem_params = DEFAULT_DATARATE;
-  bind_data.flags = DEFAULT_FLAGS;
 }
 
 void bindRandomize(void)
@@ -399,6 +403,8 @@ again:
     bind_data.hopchannel[c] = ch;
   }
 }
+#endif
+
 
 #define PPM_MAX_8CH       0x01
 #define ALWAYS_BIND       0x02
@@ -438,9 +444,16 @@ uint32_t delayInMsLong(uint8_t d)
 
 #ifndef COMPILE_TX
 // following is only needed on receiver
-void rxWriteEeprom()
+void failsafeSave(void)
 {
-  accessEEPROM(0, true);
+  accessEEPROM(2, true);
+}
+
+void failsafeLoad(void)
+{
+  if (!accessEEPROM(2, false)) {
+    failsafePPM[0]=0xffff;
+  }
 }
 
 void rxInitDefaults(bool save)
@@ -481,29 +494,17 @@ void rxInitDefaults(bool save)
   rx_config.minsync = 3000;
 
   if (save) {
-    rxWriteEeprom();
+    accessEEPROM(0, true);
+    failsafePPM[0] = 0xffff;
+    failsafeSave();
   }
 }
 
 void rxReadEeprom()
 {
-  if (accessEEPROM(0, false)) {
-#if (BOARD_TYPE == 3)
-    if (rx_config.rx_type != RX_FLYTRON8CH) {
-      rxInitDefaults(1);
-    }
-#elif (BOARD_TYPE == 5)
-    if (rx_config.rx_type != RX_OLRSNG4CH) {
-      rxInitDefaults(1);
-    }
-#else
-#error FIXME
-#endif
-  } else {
+  if (!accessEEPROM(0, false)) {
     rxInitDefaults(1);
   }
-
-  Serial.println("RXconf loaded");
 }
 
 #endif

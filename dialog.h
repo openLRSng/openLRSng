@@ -194,13 +194,13 @@ void bindPrint(void)
   Serial.println(bind_data.serial_baudrate);
 
   Serial.print(F("0) Mute buzzer (mostly):"));
-  printYesNo(bind_data.flags & MUTE_TX);
+  printYesNo(tx_config.flags & MUTE_TX);
 
   Serial.print(F("A) Inverted PPM in     :"));
-  printYesNo(bind_data.flags & INVERTED_PPMIN);
+  printYesNo(tx_config.flags & INVERTED_PPMIN);
 
   Serial.print(F("B) Micro (half) PPM    :"));
-  printYesNo(bind_data.flags & MICROPPM);
+  printYesNo(tx_config.flags & MICROPPM);
 
   Serial.print(F("Calculated packet interval: "));
   Serial.print(getInterval(&bind_data));
@@ -839,7 +839,7 @@ void handleCLImenu(char c)
     case 's':
     case 'S':
       // save settings to EEPROM
-      bindWriteEeprom();
+      txWriteEeprom();
       Serial.println("Settings saved to EEPROM\n");
       // leave CLI
       CLI_menu = -2;
@@ -848,7 +848,7 @@ void handleCLImenu(char c)
     case 'X':
     case 0x1b: //ESC
       // restore settings from EEPROM
-      bindReadEeprom();
+      txReadEeprom();
       Serial.println("Reverted settings from EEPROM\n");
       // leave CLI
       CLI_menu = -2;
@@ -857,6 +857,7 @@ void handleCLImenu(char c)
     case 'I':
       // restore factory settings
       bindInitDefaults();
+      txInitDefaults();
       Serial.println("Loaded factory defaults\n");
       break;
     case 'r':
@@ -892,19 +893,19 @@ void handleCLImenu(char c)
       break;
     case '0':
       Serial.println(F("Toggled TX muting!"));
-      bind_data.flags ^= MUTE_TX;
+      tx_config.flags ^= MUTE_TX;
       CLI_menu = -1;
       break;
     case 'a':
     case 'A':
       Serial.println(F("Toggled inverted PPM!"));
-      bind_data.flags ^= INVERTED_PPMIN;
+      tx_config.flags ^= INVERTED_PPMIN;
       CLI_menu = -1;
       break;
     case 'b':
     case 'B':
       Serial.println(F("Toggled microPPM"));
-      bind_data.flags ^= MICROPPM;
+      tx_config.flags ^= MICROPPM;
       CLI_menu = -1;
       break;
     case 'z':
