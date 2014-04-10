@@ -203,6 +203,13 @@ void PSP_process_data(uint8_t code, uint16_t payload_length_received, uint8_t da
 #else
       tx_config.rfm_type = 0;
 #endif
+      // Set current watchdog status
+      if (watchdogUsed) {
+        tx_config.flags |= WATCHDOG_USED;
+      } else {
+        tx_config.flags &=~ WATCHDOG_USED;
+      }
+
       for (uint16_t i = 0; i < sizeof(tx_config); i++) {
         PSP_serialize_uint8(AS_U8ARRAY(&tx_config)[i]);
       }
