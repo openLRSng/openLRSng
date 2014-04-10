@@ -584,10 +584,11 @@ void loop(void)
   }
 
   while (TelemetrySerial.available()) {
+    uint8_t ch = TelemetrySerial.read();
     if (serialMode) {
-      processChannelsFromSerial(TelemetrySerial.read());
+      processChannelsFromSerial(ch);
     } else if (((serial_tail + 1) % SERIAL_BUFSIZE) != serial_head) {
-      serial_buffer[serial_tail] = TelemetrySerial.read();
+      serial_buffer[serial_tail] = ch;
       serial_tail = (serial_tail + 1) % SERIAL_BUFSIZE;
     }
   }
