@@ -92,8 +92,7 @@ ASTYLEOPTIONS=--style=1tbs --indent=spaces=2 --suffix=none
 # Compile flags
 #
 COPTFLAGS= -g -Os -funsigned-char -funsigned-bitfields -fpack-struct -fshort-enums \
-	   --param inline-call-cost=2 -fno-inline-small-functions -Wl,--relax \
-	   -mcall-prologues
+	   -fno-inline-small-functions -Wl,--relax -mcall-prologues
 
 CFLAGS=-Wall -ffunction-sections -fdata-sections -mmcu=$(CPU) -DF_CPU=$(CLOCK) -MMD \
 	-DUSB_VID=$(USB_VID) -DUSB_PID=$(USB_PID) -DARDUINO=105 -D__PROG_TYPES_COMPAT__ $(DEFINES)
