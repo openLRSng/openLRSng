@@ -20,6 +20,7 @@ bool binary_mode_active = false;
 #define PSP_REQ_ACTIVE_PROFILE          8
 #define PSP_REQ_RX_FAILSAFE             9
 #define PSP_REQ_TX_CONFIG               10
+#define PSP_REQ_PPM_IN                  11
 
 #define PSP_SET_BIND_DATA               101
 #define PSP_SET_RX_CONFIG               102
@@ -214,6 +215,16 @@ void PSP_process_data(uint8_t code, uint16_t payload_length_received, uint8_t da
         PSP_serialize_uint8(AS_U8ARRAY(&tx_config)[i]);
       }
     }
+  }
+  break;
+  case PSP_REQ_PPM_IN: {
+    PSP_protocol_head(PSP_REQ_PPM_IN, sizeof(PPM));
+
+    cli();
+    for (uint8_t i = 0; i < sizeof(PPM); i++) {
+      PSP_serialize_uint8(AS_U8ARRAY(&PPM)[i]);
+    }
+    sei();
   }
   break;
   // SET
