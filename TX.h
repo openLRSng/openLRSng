@@ -591,6 +591,14 @@ void loop(void)
     }
   }
 
+#ifdef __AVR_ATmega32U4__
+  if (serialMode) {
+    while (Serial.available()) {
+      processChannelsFromSerial(Serial.read());
+    }
+  }
+#endif
+
   if (RF_Mode == Received) {
     // got telemetry packet
     lastTelemetry = micros();
