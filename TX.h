@@ -368,9 +368,8 @@ void setup(void)
   Serial.print(" on HW ");
   Serial.println(BOARD_TYPE);
 
-  if (ppmAge == 255) {
-    delay(200);
-  }
+  delay(50);
+
   checkBND();
 
   if (bind_data.serial_baudrate && (bind_data.serial_baudrate < 5)) {
