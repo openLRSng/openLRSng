@@ -559,7 +559,7 @@ void setup()
 
     if ((rx_config.flags & ALWAYS_BIND) && (!(rx_config.flags & SLAVE_MODE))) {
       if (bindReceive(500)) {
-	bindWriteEeprom();
+        bindWriteEeprom();
         Serial.println("Saved bind data to EEPROM\n");
         setupOutputs(); // parameters may have changed
         Green_LED_ON;
