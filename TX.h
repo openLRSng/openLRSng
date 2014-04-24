@@ -368,9 +368,8 @@ void setup(void)
   Serial.print(" on HW ");
   Serial.println(BOARD_TYPE);
 
-  if (ppmAge == 255) {
-    delay(200);
-  }
+  delay(50);
+
   checkBND();
 
   if (bind_data.serial_baudrate && (bind_data.serial_baudrate < 5)) {
@@ -590,6 +589,14 @@ void loop(void)
       serial_tail = (serial_tail + 1) % SERIAL_BUFSIZE;
     }
   }
+
+#ifdef __AVR_ATmega32U4__
+  if (serialMode) {
+    while (Serial.available()) {
+      processChannelsFromSerial(Serial.read());
+    }
+  }
+#endif
 
   if (RF_Mode == Received) {
     // got telemetry packet
