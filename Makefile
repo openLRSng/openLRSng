@@ -127,7 +127,7 @@ ARDUINO_CORELIB_OBJS= $(patsubst %.c, libraries/%.o, $(patsubst %.cpp, libraries
 #
 # Arduino stdc library files used, compilation settings.
 #
-ARDUINO_LIBC_PATH=/usr/share/arduino/hardware/arduino/cores/arduino/avr-libc/
+ARDUINO_LIBC_PATH=$(ARDUINO_PATH)/hardware/arduino/cores/arduino/avr-libc/
 ARDUINO_LIBC_SRCS=malloc.c realloc.c
 
 #
