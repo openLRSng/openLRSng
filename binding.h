@@ -457,8 +457,8 @@ void failsafeLoad(void)
 
 void rxInitDefaults(bool save)
 {
-  uint8_t i;
 #if (BOARD_TYPE == 3)
+  uint8_t i;
   rx_config.rx_type = RX_FLYTRON8CH;
   rx_config.pinMapping[0] = PINMAP_RSSI; // the CH0 on 8ch RX
   for (i = 1; i < 9; i++) {
@@ -469,12 +469,23 @@ void rxInitDefaults(bool save)
   rx_config.pinMapping[11] = PINMAP_RXD;
   rx_config.pinMapping[12] = PINMAP_TXD;
 #elif (BOARD_TYPE == 5)
+  uint8_t i;
   rx_config.rx_type = RX_OLRSNG4CH;
   for (i = 0; i < 4; i++) {
     rx_config.pinMapping[i] = i; // default to PWM out
   }
   rx_config.pinMapping[4] = 4;
   rx_config.pinMapping[5] = 5;
+  rx_config.pinMapping[6] = PINMAP_RXD;
+  rx_config.pinMapping[7] = PINMAP_TXD;
+#elif (BOARD_TYPE == 7)
+  rx_config.rx_type = RX_PTOWER;
+  rx_config.pinMapping[0] = PINMAP_PPM;
+  rx_config.pinMapping[1] = PINMAP_SDA;
+  rx_config.pinMapping[2] = PINMAP_RSSI;
+  rx_config.pinMapping[3] = PINMAP_SCL;
+  // Skipping pinMapping[4] as it is NC
+  rx_config.pinMapping[5] = PINMAP_LLIND;
   rx_config.pinMapping[6] = PINMAP_RXD;
   rx_config.pinMapping[7] = PINMAP_TXD;
 
