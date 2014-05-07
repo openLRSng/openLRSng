@@ -830,36 +830,22 @@ ISR(PCINT0_vect)
 #define USE_ICP1 // use ICP1 for PPM input for less jitter
 #define PPM_IN 8 // ICP1
 
-#define BUZZER_PAS  3  // OCR2B
-#define BUZZER_ACT A5
-#define BTN     A4
+#define BUZZER_ACT A1
+#define BTN     A5 // Shorting SCL to GND will bind
 
 void buzzerInit()
 {
   pinMode(BUZZER_ACT, OUTPUT);
   digitalWrite(BUZZER_ACT, LOW);
-  TCCR2A = (1<<WGM21); // mode=CTC
-  TCCR2B = (1<<CS22) | (1<<CS20); // prescaler = 128
-  pinMode(BUZZER_PAS, OUTPUT);
-  digitalWrite(BUZZER_PAS, LOW);
 }
 
 void buzzerOn(uint16_t freq)
 {
+  // Leaving freq in since it is being used in code already.
   if (freq) {
-    uint32_t ocr = 125000L / freq;
     digitalWrite(BUZZER_ACT,HIGH);
-    if (ocr>255) {
-      ocr=255;
-    }
-    if (!ocr) {
-      ocr=1;
-    }
-    OCR2A = ocr;
-    TCCR2A |= (1<<COM2B0); // enable output
   } else {
     digitalWrite(BUZZER_ACT,LOW);
-    TCCR2A &= ~(1<<COM2B0); // disable output
   }
 }
 
@@ -873,7 +859,7 @@ void buzzerOn(uint16_t freq)
 #define PWM_3 3 // PD3 - also RSSI
 #define PWM_4 A5 // PC5 - also SCL
 #define PWM_5 A0 // PC0, Leaving in but un-used.
-#define PWM_6 A1 // PC1
+#define PWM_6 A1 // PC1 - Buzzer
 
 #define OUTPUTS 8 // outputs available
 
