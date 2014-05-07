@@ -232,6 +232,8 @@ void rxPrint(void)
     Serial.println(F("OpenLRSngRX mini 4/6ch"));
   } else if (rx_config.rx_type == RX_DTFUHF10CH) {
     Serial.println(F("DTF UHF 32-bit 10ch"));
+  } else if (rx_config.rx_type == RX_PTOWER) {
+    Serial.println(F("PowerTower"));
   }
   for (i=0; i < rxcNumberOfOutputs; i++) {
     Serial.print((char)(((i + 1) > 9) ? (i + 'A' - 9) : (i + '1')));
