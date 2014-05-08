@@ -17,6 +17,7 @@ ARDUINO_PATH=/usr/share/arduino
 # 4 - Hawkeye TX, OpenLRSng TX
 # 5 - DTF 4ch RX
 # 6 - Deluxe TX
+# 7 - PowerTowerRX
 #
 BOARD_TYPE=3
 
@@ -127,7 +128,7 @@ ARDUINO_CORELIB_OBJS= $(patsubst %.c, libraries/%.o, $(patsubst %.cpp, libraries
 #
 # Arduino stdc library files used, compilation settings.
 #
-ARDUINO_LIBC_PATH=/usr/share/arduino/hardware/arduino/cores/arduino/avr-libc/
+ARDUINO_LIBC_PATH=$(ARDUINO_PATH)/hardware/arduino/cores/arduino/avr-libc/
 ARDUINO_LIBC_SRCS=malloc.c realloc.c
 
 #
@@ -203,11 +204,13 @@ astyle:
 	rm -f out/*.hex
 	make -s COMPILE_TX= BOARD_TYPE=3 clean all && cp openLRSng.hex out/RX-3.hex
 	make -s COMPILE_TX= BOARD_TYPE=5 clean all && cp openLRSng.hex out/RX-5.hex
+	make -s COMPILE_TX= BOARD_TYPE=7 clean all && cp openLRSng.hex out/RX-7.hex
 	make -s COMPILE_TX=1 BOARD_TYPE=2 clean all && cp openLRSng.hex out/TX-2.hex
 	make -s COMPILE_TX=1 BOARD_TYPE=3 clean all && cp openLRSng.hex out/TX-3.hex
 	make -s COMPILE_TX=1 BOARD_TYPE=4 clean all && cp openLRSng.hex out/TX-4.hex
 	make -s COMPILE_TX=1 BOARD_TYPE=5 clean all && cp openLRSng.hex out/TX-5.hex
 	make -s COMPILE_TX=1 BOARD_TYPE=6 clean all && cp openLRSng.hex out/TX-6.hex
+	make -s COMPILE_TX=1 BOARD_TYPE=7 clean all && cp openLRSng.hex out/TX-7.hex
 	ls -l out
 
 868:
@@ -215,11 +218,13 @@ astyle:
 	rm -f out/868/*.hex
 	make -s RFMXX_868=1 COMPILE_TX= BOARD_TYPE=3 clean all && cp openLRSng.hex out/868/RX-3.hex
 	make -s RFMXX_868=1 COMPILE_TX= BOARD_TYPE=5 clean all && cp openLRSng.hex out/868/RX-5.hex
+	make -s RFMXX_868=1 COMPILE_TX= BOARD_TYPE=7 clean all && cp openLRSng.hex out/868/RX-7.hex
 	make -s RFMXX_868=1 COMPILE_TX=1 BOARD_TYPE=2 clean all && cp openLRSng.hex out/868/TX-2.hex
 	make -s RFMXX_868=1 COMPILE_TX=1 BOARD_TYPE=3 clean all && cp openLRSng.hex out/868/TX-3.hex
 	make -s RFMXX_868=1 COMPILE_TX=1 BOARD_TYPE=4 clean all && cp openLRSng.hex out/868/TX-4.hex
 	make -s RFMXX_868=1 COMPILE_TX=1 BOARD_TYPE=5 clean all && cp openLRSng.hex out/868/TX-5.hex
 	make -s RFMXX_868=1 COMPILE_TX=1 BOARD_TYPE=6 clean all && cp openLRSng.hex out/868/TX-6.hex
+	make -s RFMXX_868=1 COMPILE_TX=1 BOARD_TYPE=7 clean all && cp openLRSng.hex out/868/TX-7.hex
 	ls -l out/868
 
 915:
@@ -227,11 +232,13 @@ astyle:
 	rm -f out/915/*.hex
 	make -s RFMXX_915=1 COMPILE_TX= BOARD_TYPE=3 clean all && cp openLRSng.hex out/915/RX-3.hex
 	make -s RFMXX_915=1 COMPILE_TX= BOARD_TYPE=5 clean all && cp openLRSng.hex out/915/RX-5.hex
+	make -s RFMXX_915=1 COMPILE_TX= BOARD_TYPE=7 clean all && cp openLRSng.hex out/915/RX-7.hex
 	make -s RFMXX_915=1 COMPILE_TX=1 BOARD_TYPE=2 clean all && cp openLRSng.hex out/915/TX-2.hex
 	make -s RFMXX_915=1 COMPILE_TX=1 BOARD_TYPE=3 clean all && cp openLRSng.hex out/915/TX-3.hex
 	make -s RFMXX_915=1 COMPILE_TX=1 BOARD_TYPE=4 clean all && cp openLRSng.hex out/915/TX-4.hex
 	make -s RFMXX_915=1 COMPILE_TX=1 BOARD_TYPE=5 clean all && cp openLRSng.hex out/915/TX-5.hex
 	make -s RFMXX_915=1 COMPILE_TX=1 BOARD_TYPE=6 clean all && cp openLRSng.hex out/915/TX-6.hex
+	make -s RFMXX_915=1 COMPILE_TX=1 BOARD_TYPE=7 clean all && cp openLRSng.hex out/915/TX-7.hex
 	ls -l out/868
 
 allfw:  433 868 915

@@ -28,6 +28,7 @@ typedef struct pinMask {
 #define RX_OLRSNG4CH  0x02
 #define RX_OLRSNG12CH 0x03
 #define RX_DTFUHF10CH 0x04
+#define RX_PTOWER     0x05
 
 #define PINMAP_PPM    0x20
 #define PINMAP_RSSI   0x21
@@ -813,6 +814,151 @@ ISR(PCINT0_vect)
 }
 
 #define SWAP_GPIOS
+
+#endif
+
+#if (BOARD_TYPE == 7) // PowerTowerRX
+#if (__AVR_ATmega328P__ != 1) || (F_CPU != 16000000)
+#error Wrong board selected, select Arduino Pro/Pro Mini 5V/16MHz w/ ATMega328
+#endif
+
+#ifdef COMPILE_TX
+// TX operation
+
+#define TelemetrySerial Serial
+
+#define USE_ICP1 // use ICP1 for PPM input for less jitter
+#define PPM_IN 8 // ICP1
+
+#define BUZZER_ACT A1
+#define BTN     A5 // Shorting SCL to GND will bind
+
+void buzzerInit()
+{
+  pinMode(BUZZER_ACT, OUTPUT);
+  digitalWrite(BUZZER_ACT, LOW);
+}
+
+void buzzerOn(uint16_t freq)
+{
+  // Leaving freq in since it is being used in code already.
+  if (freq) {
+    digitalWrite(BUZZER_ACT,HIGH);
+  } else {
+    digitalWrite(BUZZER_ACT,LOW);
+  }
+}
+
+#else
+// RX operation
+#define PPM_OUT 9 // OCP1A
+#define RSSI_OUT 3 // PD3 OC2B
+
+#define PWM_1 9 // PB1 - also PPM
+#define PWM_2 A4 // PC4 - also SDA
+#define PWM_3 3 // PD3 - also RSSI
+#define PWM_4 A5 // PC5 - also SCL
+#define PWM_5 A0 // PC0, Leaving in but un-used.
+#define PWM_6 A1 // PC1 - Buzzer
+
+#define OUTPUTS 8 // outputs available
+
+const pinMask_t OUTPUT_MASKS[OUTPUTS] = {
+  {0x02,0x00,0x00}, {0x00,0x10,0x00}, {0x00,0x00,0x08},// CH1/PPM, CH2/SDA, CH3/RSSI
+  {0x00,0x20,0x00}, {0x00,0x01,0x00}, {0x00,0x02,0x00},// CH4/SCL, CH5/(NC PIN), CH6/LLIND,
+  {0x00,0x00,0x01}, {0x00,0x00,0x02},                  // CH7/RXD, CH8/TXD
+
+};
+
+#define PPM_OUTPUT 0
+#define RSSI_OUTPUT 2
+#define ANALOG0_OUTPUT 1 // actually input
+#define ANALOG1_OUTPUT 3 // actually input
+#define ANALOG0_OUTPUT_ALT 4 // actually input
+#define ANALOG1_OUTPUT_ALT 5 // actually input
+#define SDA_OUTPUT 1
+#define SCL_OUTPUT 3
+#define LLIND_OUTPUT 5
+#define RXD_OUTPUT 6
+#define TXD_OUTPUT 7
+
+const uint8_t OUTPUT_PIN[OUTPUTS] = { 9, A4, 3, A5, A0, A1, 0, 1};
+
+struct rxSpecialPinMap rxSpecialPins[] = {
+  { 0, PINMAP_PPM},
+  { 1, PINMAP_SDA},
+  { 1, PINMAP_ANALOG}, // AIN0
+  { 2, PINMAP_RSSI},
+  { 2, PINMAP_LBEEP},
+  { 3, PINMAP_SCL},
+  { 3, PINMAP_ANALOG}, // AIN1
+  { 4, PINMAP_ANALOG},
+  { 5, PINMAP_ANALOG},
+  { 5, PINMAP_LLIND},
+  { 6, PINMAP_RXD},
+  { 7, PINMAP_TXD},
+  { 7, PINMAP_SPKTRM},
+  { 7, PINMAP_SBUS},
+  { 7, PINMAP_SUMD},
+};
+
+#endif
+
+#define Red_LED 6
+#define Green_LED 5
+
+#ifndef COMPILE_TX
+#define Red_LED_ON    PORTD |=  _BV(6);
+#define Red_LED_OFF   PORTD &= ~_BV(6);
+#define Green_LED_ON  PORTD |=  _BV(5);
+#define Green_LED_OFF PORTD &= ~_BV(5);
+#else
+#define Red_LED2   A0
+#define Green_LED2 A1
+#define Red_LED_ON    { PORTD |=  _BV(6); PORTC |=  _BV(0); }
+#define Red_LED_OFF   { PORTD &= ~_BV(6); PORTC &= ~_BV(0); }
+#define Green_LED_ON  { PORTD |=  _BV(5); PORTC |=  _BV(1); }
+#define Green_LED_OFF { PORTD &= ~_BV(5); PORTC &= ~_BV(1); }
+#endif
+
+#define buzzerOff(foo) buzzerOn(0)
+
+//## RFM22B Pinouts for Public Edition (M2)
+#define  nIRQ_1 (PIND & 0x04)==0x04 //D2
+#define  nIRQ_0 (PIND & 0x04)==0x00 //D2
+
+#define  nSEL_on PORTD |= (1<<4) //D4
+#define  nSEL_off PORTD &= 0xEF //D4
+
+#define  SCK_on  PORTB |= _BV(5)  //B5
+#define  SCK_off PORTB &= ~_BV(5) //B5
+
+#define  SDI_on  PORTB |= _BV(3)  //B3
+#define  SDI_off PORTB &= ~_BV(3) //B3
+
+#define  SDO_1 (PINB & _BV(4)) == _BV(4) //B4
+#define  SDO_0 (PINB & _BV(4)) == 0x00  //B4
+
+#define SDO_pin 12
+#define SDI_pin 11
+#define SCLK_pin 13
+#define IRQ_pin 2
+#define nSel_pin 4
+
+void setupSPI()
+{
+  pinMode(SDO_pin, INPUT);   //SDO
+  pinMode(SDI_pin, OUTPUT);   //SDI
+  pinMode(SCLK_pin, OUTPUT);   //SCLK
+  pinMode(IRQ_pin, INPUT);   //IRQ
+  pinMode(nSel_pin, OUTPUT);   //nSEL
+}
+
+#define IRQ_interrupt 0
+void setupRfmInterrupt()
+{
+  attachInterrupt(IRQ_interrupt, RFM22B_Int, FALLING);
+}
 
 #endif
 
