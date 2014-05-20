@@ -219,14 +219,14 @@ void PSP_process_data(uint8_t code, uint16_t payload_length_received, uint8_t da
   }
   break;
   case PSP_REQ_PPM_IN: {
-    PSP_protocol_head(PSP_REQ_PPM_IN, sizeof(PPM) + 1);
+    PSP_protocol_head(PSP_REQ_PPM_IN, 33);
 
-    cli();
     PSP_serialize_uint8((ppmAge < 255) ? ppmAge++ : ppmAge);
-    for (uint8_t i = 0; i < sizeof(PPM); i++) {
-      PSP_serialize_uint8(AS_U8ARRAY(&PPM)[i]);
+    for (uint8_t i = 0; i < 16; i++) {
+      cli();
+      PSP_serialize_uint16(servoBits2Us(PPM[i]));
+      sei();
     }
-    sei();
   }
   break;
   // SET
