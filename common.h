@@ -444,6 +444,13 @@ void rfmSetCarrierFrequency(uint32_t f)
 
 void init_rfm(uint8_t isbind)
 {
+#ifdef SDN_pin
+  digitalWrite(SDN_pin, 1);
+  delay(50);
+  digitalWrite(SDN_pin, 0);
+  delay(50);
+#endif
+
   ItStatus1 = spiReadRegister(0x03);   // read status, clear interrupt
   ItStatus2 = spiReadRegister(0x04);
   spiWriteRegister(0x06, 0x00);    // disable interrupts
