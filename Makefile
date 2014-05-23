@@ -82,6 +82,7 @@ SIZE=$(EXEPATH)/$(EXEPREFIX)size
 OBJCOPY=$(EXEPATH)/$(EXEPREFIX)objcopy
 
 RM=rm
+MKDIR=mkdir
 
 #
 # Styling
@@ -144,7 +145,7 @@ OBJS=openLRSng.o $(ARDUINO_LIB_OBJS) libraries/libcore.a
 #
 # Master target
 #
-all: openLRSng.hex
+all: mkdirs openLRSng.hex
 
 #
 # From here down are build rules
@@ -182,7 +183,11 @@ libraries/%.o: %.cpp
 # Other targets
 #
 clean:
-	@$(RM) -f *.[aod] libraries/*.[aod] *.elf *.eep *.d *.hex
+	@$(RM) -rf libraries/
+	@$(RM) -f *.[aod] *.elf *.eep *.d *.hex
+
+mkdirs:
+	@$(MKDIR) libraries
 
 openLRSng.hex: $(OBJS)
 	@$(CC) -Os -Wl,--gc-sections -mmcu=$(CPU) -o openLRSng.elf $(OBJS) -Llibraries -lm
