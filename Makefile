@@ -83,6 +83,9 @@ AR=$(EXEPATH)/$(EXEPREFIX)ar
 SIZE=$(EXEPATH)/$(EXEPREFIX)size
 OBJCOPY=$(EXEPATH)/$(EXEPREFIX)objcopy
 
+#
+# Shell commands
+#
 RM=rm
 MKDIR=mkdir
 LS=ls
@@ -237,6 +240,6 @@ astyle:
 	$(foreach type, $(BOARD_TYPES_TX), make -s RFMXX_915=1 COMPILE_TX=1 BOARD_TYPE=$(type) clean_compilation_products all && cp openLRSng.hex $(OUT_FOLDER)/$@/TX-$(type).hex;)
 	$(LS) -l $(OUT_FOLDER)
 
-allfw:  433 868 915
-	ls -lR out
+allfw: 433 868 915
+	$(LS) -lR $(OUT_FOLDER)
 
