@@ -20,6 +20,8 @@ ARDUINO_PATH=/usr/share/arduino
 # 7 - PowerTowerRX
 #
 BOARD_TYPE=3
+BOARD_TYPES_TX=2 3 4 5 6 7
+BOARD_TYPES_RX=3 5 7
 
 #
 # You can compile all TX as TX, and all RX as either RX or TX.
@@ -83,6 +85,7 @@ OBJCOPY=$(EXEPATH)/$(EXEPREFIX)objcopy
 
 RM=rm
 MKDIR=mkdir
+LS=ls
 
 #
 # Styling
@@ -132,15 +135,22 @@ ARDUINO_CORELIB_OBJS= $(patsubst %.c, libraries/%.o, $(patsubst %.cpp, libraries
 ARDUINO_LIBC_PATH=$(ARDUINO_PATH)/hardware/arduino/cores/arduino/avr-libc/
 ARDUINO_LIBC_SRCS=malloc.c realloc.c
 
+
 #
 # Master include path
 #
 INCLUDE=-I$(ARDUINO_CORELIB_PATH) -I$(ARDUINO_VARIANT_PATH) $(ARDUINO_LIB_INCL) -I.
 
 #
+# Project folders
+#
+LIBRARIES_FOLDER=libraries
+OUT_FOLDER=out
+
+#
 # Target object files
 #
-OBJS=openLRSng.o $(ARDUINO_LIB_OBJS) libraries/libcore.a
+OBJS=openLRSng.o $(ARDUINO_LIB_OBJS) $(LIBRARIES_FOLDER)/libcore.a
 
 #
 # Master target
@@ -173,24 +183,27 @@ endef
 %.o: %.cpp
 	$(cxx-command)
 
-libraries/%.o: %.c
+$(LIBRARIES_FOLDER)/%.o: %.c
 	$(cc-command) 2>/dev/null
 
-libraries/%.o: %.cpp
+$(LIBRARIES_FOLDER)/%.o: %.cpp
 	$(cxx-command) 2>/dev/null
 
 #
 # Other targets
 #
-clean:
-	@$(RM) -rf libraries/
+clean: clean_compilation_products
+	@$(RM) -rf $(OUT_FOLDER)
+
+clean_compilation_products:
+	@$(RM) -rf $(LIBRARIES_FOLDER)
 	@$(RM) -f *.[aod] *.elf *.eep *.d *.hex
 
 mkdirs:
-	@$(MKDIR) libraries
+	@$(MKDIR) -p $(LIBRARIES_FOLDER)
 
 openLRSng.hex: $(OBJS)
-	@$(CC) -Os -Wl,--gc-sections -mmcu=$(CPU) -o openLRSng.elf $(OBJS) -Llibraries -lm
+	@$(CC) -Os -Wl,--gc-sections -mmcu=$(CPU) -o openLRSng.elf $(OBJS) -L$(LIBRARIES_FOLDER) -lm
 	@$(OBJCOPY) -O ihex -j .eeprom --set-section-flags=.eeprom=alloc,load \
 		--no-change-warnings --change-section-lma .eeprom=0 \
 		openLRSng.elf openLRSng.eep
@@ -198,53 +211,32 @@ openLRSng.hex: $(OBJS)
 	@echo "NOTE: Deployment size is text + data."
 	@$(SIZE) openLRSng.elf
 
-libraries/libcore.a: $(ARDUINO_CORELIB_OBJS)
-	@$(AR) rcs libraries/libcore.a $(ARDUINO_CORELIB_OBJS)
+$(LIBRARIES_FOLDER)/libcore.a: $(ARDUINO_CORELIB_OBJS)
+	@$(AR) rcs $(LIBRARIES_FOLDER)/libcore.a $(ARDUINO_CORELIB_OBJS)
 
 astyle:
 	$(ASTYLE) $(ASTYLEOPTIONS) openLRSng.ino *.h
 
 433:
-	mkdir -p out
-	rm -f out/*.hex
-	make -s COMPILE_TX= BOARD_TYPE=3 clean all && cp openLRSng.hex out/RX-3.hex
-	make -s COMPILE_TX= BOARD_TYPE=5 clean all && cp openLRSng.hex out/RX-5.hex
-	make -s COMPILE_TX= BOARD_TYPE=7 clean all && cp openLRSng.hex out/RX-7.hex
-	make -s COMPILE_TX=1 BOARD_TYPE=2 clean all && cp openLRSng.hex out/TX-2.hex
-	make -s COMPILE_TX=1 BOARD_TYPE=3 clean all && cp openLRSng.hex out/TX-3.hex
-	make -s COMPILE_TX=1 BOARD_TYPE=4 clean all && cp openLRSng.hex out/TX-4.hex
-	make -s COMPILE_TX=1 BOARD_TYPE=5 clean all && cp openLRSng.hex out/TX-5.hex
-	make -s COMPILE_TX=1 BOARD_TYPE=6 clean all && cp openLRSng.hex out/TX-6.hex
-	make -s COMPILE_TX=1 BOARD_TYPE=7 clean all && cp openLRSng.hex out/TX-7.hex
-	ls -l out
+	$(RM) -rf $(OUT_FOLDER)/$@
+	$(MKDIR) -p $(OUT_FOLDER)/$@
+	$(foreach model, $(BOARD_TYPES_RX), make -s COMPILE_TX= BOARD_TYPE=$(model) clean_compilation_products all && cp openLRSng.hex $(OUT_FOLDER)/$@/RX-$(model).hex;)
+	$(foreach model, $(BOARD_TYPES_TX), make -s COMPILE_TX=1 BOARD_TYPE=$(model) clean_compilation_products all && cp openLRSng.hex $(OUT_FOLDER)/$@/TX-$(model).hex;)
+	$(LS) -l $(OUT_FOLDER)
 
 868:
-	mkdir -p out/868
-	rm -f out/868/*.hex
-	make -s RFMXX_868=1 COMPILE_TX= BOARD_TYPE=3 clean all && cp openLRSng.hex out/868/RX-3.hex
-	make -s RFMXX_868=1 COMPILE_TX= BOARD_TYPE=5 clean all && cp openLRSng.hex out/868/RX-5.hex
-	make -s RFMXX_868=1 COMPILE_TX= BOARD_TYPE=7 clean all && cp openLRSng.hex out/868/RX-7.hex
-	make -s RFMXX_868=1 COMPILE_TX=1 BOARD_TYPE=2 clean all && cp openLRSng.hex out/868/TX-2.hex
-	make -s RFMXX_868=1 COMPILE_TX=1 BOARD_TYPE=3 clean all && cp openLRSng.hex out/868/TX-3.hex
-	make -s RFMXX_868=1 COMPILE_TX=1 BOARD_TYPE=4 clean all && cp openLRSng.hex out/868/TX-4.hex
-	make -s RFMXX_868=1 COMPILE_TX=1 BOARD_TYPE=5 clean all && cp openLRSng.hex out/868/TX-5.hex
-	make -s RFMXX_868=1 COMPILE_TX=1 BOARD_TYPE=6 clean all && cp openLRSng.hex out/868/TX-6.hex
-	make -s RFMXX_868=1 COMPILE_TX=1 BOARD_TYPE=7 clean all && cp openLRSng.hex out/868/TX-7.hex
-	ls -l out/868
+	$(RM) -rf $(OUT_FOLDER)/$@
+	$(MKDIR) -p $(OUT_FOLDER)/$@
+	$(foreach model, $(BOARD_TYPES_RX), make -s RFMXX_868=1 COMPILE_TX= BOARD_TYPE=$(model) clean_compilation_products all && cp openLRSng.hex $(OUT_FOLDER)/$@/RX-$(model).hex;)
+	$(foreach model, $(BOARD_TYPES_TX), make -s RFMXX_868=1 COMPILE_TX=1 BOARD_TYPE=$(model) clean_compilation_products all && cp openLRSng.hex $(OUT_FOLDER)/$@/TX-$(model).hex;)
+	$(LS) -l $(OUT_FOLDER)
 
 915:
-	mkdir -p out/915
-	rm -f out/915/*.hex
-	make -s RFMXX_915=1 COMPILE_TX= BOARD_TYPE=3 clean all && cp openLRSng.hex out/915/RX-3.hex
-	make -s RFMXX_915=1 COMPILE_TX= BOARD_TYPE=5 clean all && cp openLRSng.hex out/915/RX-5.hex
-	make -s RFMXX_915=1 COMPILE_TX= BOARD_TYPE=7 clean all && cp openLRSng.hex out/915/RX-7.hex
-	make -s RFMXX_915=1 COMPILE_TX=1 BOARD_TYPE=2 clean all && cp openLRSng.hex out/915/TX-2.hex
-	make -s RFMXX_915=1 COMPILE_TX=1 BOARD_TYPE=3 clean all && cp openLRSng.hex out/915/TX-3.hex
-	make -s RFMXX_915=1 COMPILE_TX=1 BOARD_TYPE=4 clean all && cp openLRSng.hex out/915/TX-4.hex
-	make -s RFMXX_915=1 COMPILE_TX=1 BOARD_TYPE=5 clean all && cp openLRSng.hex out/915/TX-5.hex
-	make -s RFMXX_915=1 COMPILE_TX=1 BOARD_TYPE=6 clean all && cp openLRSng.hex out/915/TX-6.hex
-	make -s RFMXX_915=1 COMPILE_TX=1 BOARD_TYPE=7 clean all && cp openLRSng.hex out/915/TX-7.hex
-	ls -l out/868
+	$(RM) -rf $(OUT_FOLDER)/$@
+	$(MKDIR) -p $(OUT_FOLDER)/$@
+	$(foreach model, $(BOARD_TYPES_RX), make -s RFMXX_915=1 COMPILE_TX= BOARD_TYPE=$(model) clean_compilation_products all && cp openLRSng.hex $(OUT_FOLDER)/$@/RX-$(model).hex;)
+	$(foreach model, $(BOARD_TYPES_TX), make -s RFMXX_915=1 COMPILE_TX=1 BOARD_TYPE=$(model) clean_compilation_products all && cp openLRSng.hex $(OUT_FOLDER)/$@/TX-$(model).hex;)
+	$(LS) -l $(OUT_FOLDER)
 
 allfw:  433 868 915
 	ls -lR out
