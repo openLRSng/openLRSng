@@ -135,7 +135,6 @@ ARDUINO_CORELIB_OBJS= $(patsubst %.c, libraries/%.o, $(patsubst %.cpp, libraries
 ARDUINO_LIBC_PATH=$(ARDUINO_PATH)/hardware/arduino/cores/arduino/avr-libc/
 ARDUINO_LIBC_SRCS=malloc.c realloc.c
 
-
 #
 # Master include path
 #
@@ -220,22 +219,22 @@ astyle:
 433:
 	$(RM) -rf $(OUT_FOLDER)/$@
 	$(MKDIR) -p $(OUT_FOLDER)/$@
-	$(foreach model, $(BOARD_TYPES_RX), make -s COMPILE_TX= BOARD_TYPE=$(model) clean_compilation_products all && cp openLRSng.hex $(OUT_FOLDER)/$@/RX-$(model).hex;)
-	$(foreach model, $(BOARD_TYPES_TX), make -s COMPILE_TX=1 BOARD_TYPE=$(model) clean_compilation_products all && cp openLRSng.hex $(OUT_FOLDER)/$@/TX-$(model).hex;)
+	$(foreach type, $(BOARD_TYPES_RX), make -s COMPILE_TX= BOARD_TYPE=$(type) clean_compilation_products all && cp openLRSng.hex $(OUT_FOLDER)/$@/RX-$(type).hex;)
+	$(foreach type, $(BOARD_TYPES_TX), make -s COMPILE_TX=1 BOARD_TYPE=$(type) clean_compilation_products all && cp openLRSng.hex $(OUT_FOLDER)/$@/TX-$(type).hex;)
 	$(LS) -l $(OUT_FOLDER)
 
 868:
 	$(RM) -rf $(OUT_FOLDER)/$@
 	$(MKDIR) -p $(OUT_FOLDER)/$@
-	$(foreach model, $(BOARD_TYPES_RX), make -s RFMXX_868=1 COMPILE_TX= BOARD_TYPE=$(model) clean_compilation_products all && cp openLRSng.hex $(OUT_FOLDER)/$@/RX-$(model).hex;)
-	$(foreach model, $(BOARD_TYPES_TX), make -s RFMXX_868=1 COMPILE_TX=1 BOARD_TYPE=$(model) clean_compilation_products all && cp openLRSng.hex $(OUT_FOLDER)/$@/TX-$(model).hex;)
+	$(foreach type, $(BOARD_TYPES_RX), make -s RFMXX_868=1 COMPILE_TX= BOARD_TYPE=$(type) clean_compilation_products all && cp openLRSng.hex $(OUT_FOLDER)/$@/RX-$(type).hex;)
+	$(foreach type, $(BOARD_TYPES_TX), make -s RFMXX_868=1 COMPILE_TX=1 BOARD_TYPE=$(type) clean_compilation_products all && cp openLRSng.hex $(OUT_FOLDER)/$@/TX-$(type).hex;)
 	$(LS) -l $(OUT_FOLDER)
 
 915:
 	$(RM) -rf $(OUT_FOLDER)/$@
 	$(MKDIR) -p $(OUT_FOLDER)/$@
-	$(foreach model, $(BOARD_TYPES_RX), make -s RFMXX_915=1 COMPILE_TX= BOARD_TYPE=$(model) clean_compilation_products all && cp openLRSng.hex $(OUT_FOLDER)/$@/RX-$(model).hex;)
-	$(foreach model, $(BOARD_TYPES_TX), make -s RFMXX_915=1 COMPILE_TX=1 BOARD_TYPE=$(model) clean_compilation_products all && cp openLRSng.hex $(OUT_FOLDER)/$@/TX-$(model).hex;)
+	$(foreach type, $(BOARD_TYPES_RX), make -s RFMXX_915=1 COMPILE_TX= BOARD_TYPE=$(type) clean_compilation_products all && cp openLRSng.hex $(OUT_FOLDER)/$@/RX-$(type).hex;)
+	$(foreach type, $(BOARD_TYPES_TX), make -s RFMXX_915=1 COMPILE_TX=1 BOARD_TYPE=$(type) clean_compilation_products all && cp openLRSng.hex $(OUT_FOLDER)/$@/TX-$(type).hex;)
 	$(LS) -l $(OUT_FOLDER)
 
 allfw:  433 868 915
