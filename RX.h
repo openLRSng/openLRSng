@@ -625,6 +625,13 @@ void setup()
     Serial.read();
   }
 
+  if (rx_config.pinMapping[RXD_OUTPUT]!=PINMAP_RXD) {
+    UCSR0B &= 0xEF; //disable serial RXD
+  }
+  if (rx_config.pinMapping[TXD_OUTPUT]!=PINMAP_TXD) {
+    UCSR0B &= 0xF7; //disable serial TXD
+  }
+
   serial_head = 0;
   serial_tail = 0;
   linkAcquired = 0;
