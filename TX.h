@@ -73,7 +73,7 @@ static inline void processPulse(uint16_t pulse)
   }
 
   if (pulse > 2500) {      // Verify if this is the sync pulse (2.5ms)
-    if ((ppmCounter>5) && (ppmCounter!=255)) {
+    if ((ppmCounter>3) && (ppmCounter!=255)) {
       uint8_t i;
       for (i=0; i < ppmCounter; i++) {
         PPM[i] = ppmWork.words[i];
