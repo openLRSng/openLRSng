@@ -246,6 +246,9 @@ void setupRfmInterrupt()
 #define BTN              11
 #define Red_LED          13
 #define Green_LED        12
+#define TX_AIN0          A4 // SDA
+#define TX_AIN1          A5 // SCL
+
 
 #define Red_LED_ON  PORTB |= _BV(5);
 #define Red_LED_OFF  PORTB &= ~_BV(5);
@@ -324,6 +327,9 @@ void setupRfmInterrupt()
 #define USE_ICP1 // use ICP1 for PPM input for less jitter
 
 #define PPM_IN 8 // ICP1
+
+#define TX_AIN0 A4 // SDA
+#define TX_AIN1 A5 // SCL
 
 #define BUZZER_ACT 6
 #define BUZZER_PAS 3
@@ -473,6 +479,9 @@ void setupRfmInterrupt()
 #define USE_ICP1 // use ICP1 for PPM input for less jitter
 #define PPM_IN 8 // ICP1
 
+#define TX_AIN0 A4 // SDA
+#define TX_AIN1 A5 // SCL
+
 #define BUZZER_PAS 3 // OCR2B
 #define BTN A0
 #define Red_LED 6
@@ -569,6 +578,9 @@ void setupRfmInterrupt()
 
 #define USE_ICP1 // use ICP1 for PPM input for less jitter
 #define PPM_IN 8 // ICP1
+
+#define TX_AIN0 A4 // SDA
+#define TX_AIN1 A5 // SCL
 
 #define BUZZER_PAS  3  // OCR2B
 #define BUZZER_ACT A5
@@ -730,6 +742,10 @@ void setupRfmInterrupt()
 #define USE_ICP1 // use ICP1 for PPM input for less jitter
 #define PPM_IN 4 // ICP1
 
+#define TX_AIN_IS_DIGITAL
+#define TX_AIN0 2 // SDA
+#define TX_AIN1 3 // SCL
+
 #define BUZZER_PAS 10 // OCR4B
 #define BTN A0
 #define Red_LED 6 //PD7
@@ -829,6 +845,9 @@ ISR(PCINT0_vect)
 
 #define USE_ICP1 // use ICP1 for PPM input for less jitter
 #define PPM_IN 8 // ICP1
+
+#define TX_AIN0 A4 // SDA
+#define TX_AIN1 A5 // SCL
 
 #define BUZZER_ACT A1
 #define BTN     A5 // Shorting SCL to GND will bind

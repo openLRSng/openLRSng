@@ -45,7 +45,7 @@ extern uint8_t rxcSpecialPinCount;
 extern uint8_t rxcNumberOfOutputs;
 extern uint16_t rxcVersion;
 uint8_t rxcConnect();
-
+uint16_t getChannel(uint8_t ch);
 uint8_t PSP_crc;
 
 #define AS_U8ARRAY(x) ((uint8_t *)(x))
@@ -224,7 +224,7 @@ void PSP_process_data(uint8_t code, uint16_t payload_length_received, uint8_t da
     PSP_serialize_uint8((ppmAge < 255) ? ppmAge++ : ppmAge);
     for (uint8_t i = 0; i < 16; i++) {
       cli();
-      PSP_serialize_uint16(servoBits2Us(PPM[i]));
+      PSP_serialize_uint16(servoBits2Us(getChannel(i)));
       sei();
     }
   }

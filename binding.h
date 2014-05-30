@@ -105,6 +105,7 @@ struct tx_config {
   uint8_t  rfm_type;
   uint32_t max_frequency;
   uint32_t flags;
+  uint8_t  chmap[16];
 } tx_config;
 
 struct RX_config {
@@ -351,6 +352,9 @@ void txInitDefaults()
 {
   tx_config.max_frequency = MAX_RFM_FREQUENCY;
   tx_config.flags = 0x00;
+  for (uint8_t i = 0; i < 16; i++) {
+    tx_config.chmap[i] = i;
+  }
 }
 
 void txWriteEeprom()

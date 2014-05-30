@@ -449,7 +449,7 @@ static inline void processSpektrum(uint8_t c)
           ch = ppmWork.words[i] >> 11;
           v = (ppmWork.words[i] & 0x7ff)>>1;
         }
-        if (ch<16) {
+        if (ch < 16) {
           PPM[ch] = v;
         }
 #ifdef DEBUG_DUMP_PPM
@@ -552,6 +552,30 @@ void processChannelsFromSerial(uint8_t c)
     processSBUS(c);
   } else if (serialMode==4) { // SUMD
     processSUMD(c);
+  }
+}
+
+uint16_t getChannel(uint8_t ch)
+{
+  ch = tx_config.chmap[ch];
+  if (ch < 16) {
+    return PPM[ch];
+  } else {
+    switch (ch) {
+#ifdef TX_AIN_IS_DIGITAL
+    case 16:
+      return digitalRead(TX_AIN0) ? 1012 : 12;
+    case 17:
+      return digitalRead(TX_AIN1) ? 1012 : 12;
+#else
+    case 16:
+      return analogRead(TX_AIN0);
+    case 17:
+      return analogRead(TX_AIN1);
+#endif
+    default:
+      return 512;
+    }
   }
 }
 
@@ -703,6 +727,7 @@ void loop(void)
         tx_buf[0] |= (0x37 + serial_resend[0]);
         serial_okToSend = 3; // sent but not acked
       } else {
+        uint16_t PPMout[16];
         if (FSstate == 2) {
           tx_buf[0] |= 0x01; // save failsafe
           Red_LED_ON
@@ -717,7 +742,10 @@ void loop(void)
           }
         }
         cli(); // disable interrupts when copying servo positions, to avoid race on 2 byte variable
-        packChannels(bind_data.flags & 7, PPM, tx_buf + 1);
+        for (uint8_t i=0; i < 16; i++) {
+          PPMout[i] = getChannel(tx_config.chmap[i]);
+        }
+        packChannels(bind_data.flags & 7, PPMout, tx_buf + 1);
         sei();
       }
       //Green LED will be on during transmission
