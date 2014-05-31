@@ -85,6 +85,8 @@ OBJCOPY=$(EXEPATH)/$(EXEPREFIX)objcopy
 RM=rm
 MKDIR=mkdir
 LS=ls
+SED=sed
+CAT=cat
 
 #
 # Styling
@@ -208,6 +210,11 @@ openLRSng.hex: $(OBJS)
 	@$(OBJCOPY) -O ihex -R .eeprom openLRSng.elf openLRSng.hex
 	@echo "NOTE: Deployment size is text + data."
 	@$(SIZE) openLRSng.elf
+ifneq ($(BOARD_TYPE),6)
+	@$(SED) "/:00000001FF/d" openLRSng.hex > openLRSngBL.hex
+	@$(CAT) bootloaders/optiboot_atmega328.hex >> openLRSngBL.hex
+endif
+
 
 $(LIBRARIES_FOLDER)/libcore.a: $(ARDUINO_CORELIB_OBJS)
 	@$(AR) rcs $(LIBRARIES_FOLDER)/libcore.a $(ARDUINO_CORELIB_OBJS)
@@ -218,8 +225,8 @@ astyle:
 433 868 915:
 	$(RM) -rf $(OUT_FOLDER)/$@
 	$(MKDIR) -p $(OUT_FOLDER)/$@
-	$(foreach type, $(BOARD_TYPES_RX), make -s RFMTYPE=$@ COMPILE_TX=0 BOARD_TYPE=$(type) clean_compilation_products all && cp openLRSng.hex $(OUT_FOLDER)/$@/RX-$(type).hex;)
-	$(foreach type, $(BOARD_TYPES_TX), make -s RFMTYPE=$@ COMPILE_TX=1 BOARD_TYPE=$(type) clean_compilation_products all && cp openLRSng.hex $(OUT_FOLDER)/$@/TX-$(type).hex;)
+	$(foreach type, $(BOARD_TYPES_RX), make -s RFMTYPE=$@ COMPILE_TX=0 BOARD_TYPE=$(type) clean_compilation_products all && cp openLRSng.hex $(OUT_FOLDER)/$@/RX-$(type).hex && cp openLRSngBL.hex $(OUT_FOLDER)/$@/RX-$(type)-bl.hex;)
+	$(foreach type, $(BOARD_TYPES_TX), make -s RFMTYPE=$@ COMPILE_TX=1 BOARD_TYPE=$(type) clean_compilation_products all && cp openLRSng.hex $(OUT_FOLDER)/$@/TX-$(type).hex && cp openLRSngBL.hex $(OUT_FOLDER)/$@/TX-$(type)-bl.hex;)
 	$(LS) -l $(OUT_FOLDER)
 
 allfw: 433 868 915
