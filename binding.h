@@ -13,7 +13,6 @@
 // 0 == 1.3mW
 #define DEFAULT_RF_POWER 7
 
-#define DEFAULT_CARRIER_FREQUENCY 435000000  // Hz  startup frequency
 #define DEFAULT_CHANNEL_SPACING 5 // 50kHz
 #define DEFAULT_HOPLIST 22,10,19,34,49,41
 #define DEFAULT_RF_MAGIC 0xDEADFEED
@@ -79,12 +78,12 @@
 static uint8_t default_hop_list[] = {DEFAULT_HOPLIST};
 
 // HW frequency limits
-#if (defined RFMXX_868)
+#if (RFMTYPE == 868)
 #  define MIN_RFM_FREQUENCY 848000000
 #  define MAX_RFM_FREQUENCY 888000000
 #  define DEFAULT_CARRIER_FREQUENCY 868000000  // Hz  (ch 0)
 #  define BINDING_FREQUENCY 868000000 // Hz
-#elif (defined RFMXX_915)
+#elif (RFMTYPE == 915)
 #  define MIN_RFM_FREQUENCY 895000000
 #  define MAX_RFM_FREQUENCY 935000000
 #  define DEFAULT_CARRIER_FREQUENCY 915000000  // Hz  (ch 0)
@@ -202,14 +201,14 @@ void fatalBlink(uint8_t blinks)
   }
 }
 
-#ifndef COMPILE_TX
+#if (COMPILE_TX != 1)
 extern uint16_t failsafePPM[PPM_CHANNELS];
 #endif
 
 #define EEPROM_SIZE 1024 // EEPROM is 1k on 328p and 32u4
 #define ROUNDUP(x) (((x)+15)&0xfff0)
 #define MIN256(x)  (((x)<256)?256:(x))
-#ifdef COMPILE_TX
+#if (COMPILE_TX == 1)
 #define EEPROM_DATASIZE MIN256(ROUNDUP((sizeof(tx_config) + sizeof(bind_data) + 4) * 4 + 3))
 #else
 #define EEPROM_DATASIZE MIN256(ROUNDUP(sizeof(rx_config) + sizeof(bind_data) + sizeof(failsafePPM) + 6))
@@ -227,7 +226,7 @@ bool accessEEPROM(uint8_t dataType, bool write)
 
   do {
 start:
-#ifdef COMPILE_TX
+#if (COMPILE_TX == 1)
     if (dataType == 0) {
       dataAddress = &tx_config;
       dataSize = sizeof(tx_config);
@@ -322,7 +321,7 @@ void bindInitDefaults(void)
   bind_data.flags = DEFAULT_FLAGS;
 }
 
-#ifdef COMPILE_TX
+#if (COMPILE_TX == 1)
 #define TX_PROFILE_COUNT 4
 
 void profileSet()
@@ -445,7 +444,7 @@ uint32_t delayInMsLong(uint8_t d)
   return delayInMs((uint16_t)d + 100);
 }
 
-#ifndef COMPILE_TX
+#if (COMPILE_TX != 1)
 // following is only needed on receiver
 void failsafeSave(void)
 {

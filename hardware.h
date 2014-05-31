@@ -52,7 +52,7 @@ struct rxSpecialPinMap {
   uint8_t type;
 };
 
-#ifdef COMPILE_TX
+#if (COMPILE_TX == 1)
 // Needed by dialog code
 static const char *specialStrs[] = { "PPM","RSSI","SDA","SCL","RXD","TXD","AIN","LBEEP",
                                      "SPKTRM", "SBUS", "SUMD", "LLIND", "", "", "", ""
@@ -67,7 +67,7 @@ static const char *specialStrs[] = { "PPM","RSSI","SDA","SCL","RXD","TXD","AIN",
 #error Wrong board selected, select Arduino Pro/Pro Mini 5V/16MHz w/ ATMega328
 #endif
 
-#ifndef COMPILE_TX
+#if (COMPILE_TX != 1)
 #error TX module cannot be used as RX
 #endif
 
@@ -150,7 +150,7 @@ void setupRfmInterrupt()
 #error Wrong board selected, select Arduino Pro/Pro Mini 5V/16MHz w/ ATMega328
 #endif
 
-#ifndef COMPILE_TX
+#if (COMPILE_TX != 1)
 #error M1 RX not verified yet
 #endif
 
@@ -234,7 +234,7 @@ void setupRfmInterrupt()
 #error Wrong board selected, select Arduino Pro/Pro Mini 5V/16MHz w/ ATMega328
 #endif
 
-#ifndef COMPILE_TX
+#if (COMPILE_TX != 1)
 #error TX module cannot be used as RX
 #endif
 
@@ -321,7 +321,7 @@ void setupRfmInterrupt()
 #error Wrong board selected, select Arduino Pro/Pro Mini 5V/16MHz w/ ATMega328
 #endif
 
-#ifdef COMPILE_TX
+#if (COMPILE_TX == 1)
 #define TelemetrySerial Serial
 
 #define USE_ICP1 // use ICP1 for PPM input for less jitter
@@ -412,7 +412,7 @@ struct rxSpecialPinMap rxSpecialPins[] = {
 #define Red_LED    A3
 #define Green_LED  13
 
-#ifndef COMPILE_TX
+#if (COMPILE_TX != 1)
 #define Red_LED_ON  PORTC |= _BV(3);
 #define Red_LED_OFF  PORTC &= ~_BV(3);
 #define Green_LED_ON  PORTB |= _BV(5);
@@ -470,7 +470,7 @@ void setupRfmInterrupt()
 #error Wrong board selected, select Arduino Pro/Pro Mini 5V/16MHz w/ ATMega328
 #endif
 
-#ifndef COMPILE_TX
+#if (COMPILE_TX != 1)
 #error TX module cannot be used as RX
 #endif
 
@@ -571,7 +571,7 @@ void setupRfmInterrupt()
 #error Wrong board selected, select Arduino Pro/Pro Mini 5V/16MHz w/ ATMega328
 #endif
 
-#ifdef COMPILE_TX
+#if (COMPILE_TX == 1)
 // TX operation
 
 #define TelemetrySerial Serial
@@ -673,7 +673,7 @@ struct rxSpecialPinMap rxSpecialPins[] = {
 #define Red_LED 6
 #define Green_LED 5
 
-#ifndef COMPILE_TX
+#if (COMPILE_TX != 1)
 #define Red_LED_ON    PORTD |=  _BV(6);
 #define Red_LED_OFF   PORTD &= ~_BV(6);
 #define Green_LED_ON  PORTD |=  _BV(5);
@@ -733,7 +733,7 @@ void setupRfmInterrupt()
 #error Wrong board selected, select Arduino Leonardo
 #endif
 
-#ifndef COMPILE_TX
+#if (COMPILE_TX != 1)
 #error TX module cannot be used as RX
 #endif
 
@@ -838,7 +838,7 @@ ISR(PCINT0_vect)
 #error Wrong board selected, select Arduino Pro/Pro Mini 5V/16MHz w/ ATMega328
 #endif
 
-#ifdef COMPILE_TX
+#if (COMPILE_TX == 1)
 // TX operation
 
 #define TelemetrySerial Serial
@@ -926,7 +926,7 @@ struct rxSpecialPinMap rxSpecialPins[] = {
 #define Red_LED 6
 #define Green_LED 5
 
-#ifndef COMPILE_TX
+#if (COMPILE_TX != 1)
 #define Red_LED_ON    PORTD |=  _BV(6);
 #define Red_LED_OFF   PORTD &= ~_BV(6);
 #define Green_LED_ON  PORTD |=  _BV(5);

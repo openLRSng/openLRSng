@@ -58,11 +58,7 @@ endif
 #
 # C preprocessor defines
 #
-ifeq ($(COMPILE_TX),1)
-DEFINES=-DBOARD_TYPE=$(BOARD_TYPE) -DCOMPILE_TX
-else
-DEFINES=-DBOARD_TYPE=$(BOARD_TYPE)
-endif
+DEFINES=-DBOARD_TYPE=$(BOARD_TYPE) -DCOMPILE_TX=$(COMPILE_TX) -DRFMTYPE=$(RFMTYPE)
 
 #
 # AVR GCC info
@@ -219,25 +215,11 @@ $(LIBRARIES_FOLDER)/libcore.a: $(ARDUINO_CORELIB_OBJS)
 astyle:
 	$(ASTYLE) $(ASTYLEOPTIONS) openLRSng.ino *.h
 
-433:
+433 868 915:
 	$(RM) -rf $(OUT_FOLDER)/$@
 	$(MKDIR) -p $(OUT_FOLDER)/$@
-	$(foreach type, $(BOARD_TYPES_RX), make -s COMPILE_TX= BOARD_TYPE=$(type) clean_compilation_products all && cp openLRSng.hex $(OUT_FOLDER)/$@/RX-$(type).hex;)
-	$(foreach type, $(BOARD_TYPES_TX), make -s COMPILE_TX=1 BOARD_TYPE=$(type) clean_compilation_products all && cp openLRSng.hex $(OUT_FOLDER)/$@/TX-$(type).hex;)
-	$(LS) -l $(OUT_FOLDER)
-
-868:
-	$(RM) -rf $(OUT_FOLDER)/$@
-	$(MKDIR) -p $(OUT_FOLDER)/$@
-	$(foreach type, $(BOARD_TYPES_RX), make -s RFMXX_868=1 COMPILE_TX= BOARD_TYPE=$(type) clean_compilation_products all && cp openLRSng.hex $(OUT_FOLDER)/$@/RX-$(type).hex;)
-	$(foreach type, $(BOARD_TYPES_TX), make -s RFMXX_868=1 COMPILE_TX=1 BOARD_TYPE=$(type) clean_compilation_products all && cp openLRSng.hex $(OUT_FOLDER)/$@/TX-$(type).hex;)
-	$(LS) -l $(OUT_FOLDER)
-
-915:
-	$(RM) -rf $(OUT_FOLDER)/$@
-	$(MKDIR) -p $(OUT_FOLDER)/$@
-	$(foreach type, $(BOARD_TYPES_RX), make -s RFMXX_915=1 COMPILE_TX= BOARD_TYPE=$(type) clean_compilation_products all && cp openLRSng.hex $(OUT_FOLDER)/$@/RX-$(type).hex;)
-	$(foreach type, $(BOARD_TYPES_TX), make -s RFMXX_915=1 COMPILE_TX=1 BOARD_TYPE=$(type) clean_compilation_products all && cp openLRSng.hex $(OUT_FOLDER)/$@/TX-$(type).hex;)
+	$(foreach type, $(BOARD_TYPES_RX), make -s RFMTYPE=$@ COMPILE_TX=0 BOARD_TYPE=$(type) clean_compilation_products all && cp openLRSng.hex $(OUT_FOLDER)/$@/RX-$(type).hex;)
+	$(foreach type, $(BOARD_TYPES_TX), make -s RFMTYPE=$@ COMPILE_TX=1 BOARD_TYPE=$(type) clean_compilation_products all && cp openLRSng.hex $(OUT_FOLDER)/$@/TX-$(type).hex;)
 	$(LS) -l $(OUT_FOLDER)
 
 allfw: 433 868 915

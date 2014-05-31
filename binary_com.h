@@ -198,9 +198,9 @@ void PSP_process_data(uint8_t code, uint16_t payload_length_received, uint8_t da
     PSP_protocol_head(PSP_REQ_TX_CONFIG, sizeof(tx_config));
     {
       // Force correct TX type based on firmware
-#if (defined RFMXX_868)
+#if (RFMTYPE == 868)
       tx_config.rfm_type = 1;
-#elif (defined RFMXX_915)
+#elif (RFMTYPE == 915)
       tx_config.rfm_type = 2;
 #else
       tx_config.rfm_type = 0;
