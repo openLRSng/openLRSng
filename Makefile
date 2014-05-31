@@ -48,11 +48,13 @@ CPU=atmega32u4
 USB_VID=0x2341
 USB_PID=0x8036
 VARIANT=leonardo
+BOOTLOADER=Caterina-Leonardo.hex
 else
 CPU=atmega328p
 USB_VID=null
 USB_PID=null
 VARIANT=standard
+BOOTLOADER=optiboot_atmega328.hex
 endif
 
 #
@@ -210,11 +212,8 @@ openLRSng.hex: $(OBJS)
 	@$(OBJCOPY) -O ihex -R .eeprom openLRSng.elf openLRSng.hex
 	@echo "NOTE: Deployment size is text + data."
 	@$(SIZE) openLRSng.elf
-ifneq ($(BOARD_TYPE),6)
 	@$(SED) "/:00000001FF/d" openLRSng.hex > openLRSngBL.hex
-	@$(CAT) bootloaders/optiboot_atmega328.hex >> openLRSngBL.hex
-endif
-
+	@$(CAT) bootloaders/$(BOOTLOADER) >> openLRSngBL.hex
 
 $(LIBRARIES_FOLDER)/libcore.a: $(ARDUINO_CORELIB_OBJS)
 	@$(AR) rcs $(LIBRARIES_FOLDER)/libcore.a $(ARDUINO_CORELIB_OBJS)
