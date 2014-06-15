@@ -981,3 +981,148 @@ void setupRfmInterrupt()
 
 #endif
 
+#if (BOARD_TYPE == 8) // openLRSminiRX
+#if (__AVR_ATmega328P__ != 1) || (F_CPU != 16000000)
+#error Wrong board selected, select Arduino Pro/Pro Mini 5V/16MHz w/ ATMega328
+#endif
+
+#if (COMPILE_TX == 1)
+// TX operation
+
+#define TelemetrySerial Serial
+
+#define USE_ICP1 // use ICP1 for PPM input for less jitter
+#define PPM_IN 8 // ICP1
+
+#define TX_AIN0 A4 // SDA
+#define TX_AIN1 A5 // SCL
+
+#define BUZZER_PAS  3  // OCR2B
+#define BUZZER_ACT A5
+#define BTN     A4
+
+void buzzerInit()
+{
+  pinMode(BUZZER_ACT, OUTPUT);
+  digitalWrite(BUZZER_ACT, LOW);
+  TCCR2A = (1<<WGM21); // mode=CTC
+  TCCR2B = (1<<CS22) | (1<<CS20); // prescaler = 128
+  pinMode(BUZZER_PAS, OUTPUT);
+  digitalWrite(BUZZER_PAS, LOW);
+}
+
+void buzzerOn(uint16_t freq)
+{
+  if (freq) {
+    uint32_t ocr = 125000L / freq;
+    digitalWrite(BUZZER_ACT,HIGH);
+    if (ocr>255) {
+      ocr=255;
+    }
+    if (!ocr) {
+      ocr=1;
+    }
+    OCR2A = ocr;
+    TCCR2A |= (1<<COM2B0); // enable output
+  } else {
+    digitalWrite(BUZZER_ACT,LOW);
+    TCCR2A &= ~(1<<COM2B0); // disable output
+  }
+}
+
+#else
+// RX operation
+#define PPM_OUT 9 // OCP1A
+#define RSSI_OUT 3 // PD3 OC2B
+
+#define PWM_1 9 // PB1 - also PPM
+#define PWM_2 A4 // PC4 - also SDA
+#define PWM_3 3 // PD3 - also RSSI
+#define PWM_4 A5 // PC5 - also SCL
+
+#define OUTPUTS 6 // outputs available
+
+const pinMask_t OUTPUT_MASKS[OUTPUTS] = {
+  {0x02,0x00,0x00}, {0x00,0x10,0x00}, {0x00,0x00,0x08},// CH1/PPM, CH2/SDA, CH3/RSSI
+  {0x00,0x20,0x00}, {0x00,0x00,0x01}, {0x00,0x00,0x02},// CH4/SCL, CH7/RXD, CH8/TXD
+};
+
+#define PPM_OUTPUT 0
+#define RSSI_OUTPUT 2
+#define ANALOG0_OUTPUT 1 // actually input
+#define ANALOG1_OUTPUT 3 // actually input
+#define SDA_OUTPUT 1
+#define SCL_OUTPUT 3
+#define RXD_OUTPUT 4
+#define TXD_OUTPUT 5
+
+const uint8_t OUTPUT_PIN[OUTPUTS] = { 9, A4, 3, A5, 0, 1};
+
+struct rxSpecialPinMap rxSpecialPins[] = {
+  { 0, PINMAP_PPM},
+  { 1, PINMAP_SDA},
+  { 1, PINMAP_ANALOG}, // AIN0
+  { 2, PINMAP_RSSI},
+  { 2, PINMAP_LBEEP},
+  { 3, PINMAP_SCL},
+  { 3, PINMAP_ANALOG}, // AIN1
+  { 4, PINMAP_RXD},
+  { 5, PINMAP_TXD},
+  { 5, PINMAP_SPKTRM},
+  { 5, PINMAP_SBUS},
+  { 5, PINMAP_SUMD},
+};
+
+#endif
+
+#define Red_LED A3
+#define Green_LED A2
+
+#if (COMPILE_TX != 1)
+#define Red_LED_ON    PORTC |=  _BV(3);
+#define Red_LED_OFF   PORTC &= ~_BV(3);
+#define Green_LED_ON  PORTC |=  _BV(2);
+#define Green_LED_OFF PORTC &= ~_BV(2);
+#endif
+
+#define buzzerOff(foo) buzzerOn(0)
+
+//## RFM22B Pinouts for Public Edition (M2)
+#define  nIRQ_1 (PIND & 0x04)==0x04 //D2
+#define  nIRQ_0 (PIND & 0x04)==0x00 //D2
+
+#define  nSEL_on PORTD |= (1<<4) //D4
+#define  nSEL_off PORTD &= 0xEF //D4
+
+#define  SCK_on  PORTB |= _BV(5)  //B5
+#define  SCK_off PORTB &= ~_BV(5) //B5
+
+#define  SDI_on  PORTB |= _BV(3)  //B3
+#define  SDI_off PORTB &= ~_BV(3) //B3
+
+#define  SDO_1 (PINB & _BV(4)) == _BV(4) //B4
+#define  SDO_0 (PINB & _BV(4)) == 0x00  //B4
+
+#define SDO_pin 12
+#define SDI_pin 11
+#define SCLK_pin 13
+#define IRQ_pin 2
+#define nSel_pin 4
+
+void setupSPI()
+{
+  pinMode(SDO_pin, INPUT);   //SDO
+  pinMode(SDI_pin, OUTPUT);   //SDI
+  pinMode(SCLK_pin, OUTPUT);   //SCLK
+  pinMode(IRQ_pin, INPUT);   //IRQ
+  pinMode(nSel_pin, OUTPUT);   //nSEL
+}
+
+#define IRQ_interrupt 0
+void setupRfmInterrupt()
+{
+  attachInterrupt(IRQ_interrupt, RFM22B_Int, FALLING);
+}
+
+#endif
+
