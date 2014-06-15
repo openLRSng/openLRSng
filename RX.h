@@ -240,9 +240,11 @@ void setupOutputs()
 
 void updateLBeep(bool packetLost)
 {
+#if defined(LLIND_OUTPUT)
   if (rx_config.pinMapping[LLIND_OUTPUT] == PINMAP_LLIND) {
     digitalWrite(OUTPUT_PIN[LLIND_OUTPUT],packetLost);
   }
+#endif
   if (rx_config.pinMapping[RSSI_OUTPUT] == PINMAP_LBEEP) {
     if (packetLost) {
       TCCR2A |= (1 << COM2B0); // enable tone

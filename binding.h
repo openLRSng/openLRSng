@@ -474,11 +474,9 @@ void rxInitDefaults(bool save)
 #elif (BOARD_TYPE == 5)
   uint8_t i;
   rx_config.rx_type = RX_OLRSNG4CH;
-  for (i = 0; i < 4; i++) {
+  for (i = 0; i < 6; i++) {
     rx_config.pinMapping[i] = i; // default to PWM out
   }
-  rx_config.pinMapping[4] = 4;
-  rx_config.pinMapping[5] = 5;
   rx_config.pinMapping[6] = PINMAP_RXD;
   rx_config.pinMapping[7] = PINMAP_TXD;
 #elif (BOARD_TYPE == 7)
@@ -491,7 +489,14 @@ void rxInitDefaults(bool save)
   rx_config.pinMapping[5] = PINMAP_LLIND;
   rx_config.pinMapping[6] = PINMAP_RXD;
   rx_config.pinMapping[7] = PINMAP_TXD;
-
+#elif (BOARD_TYPE == 8)
+  rx_config.rx_type = RX_MINI;
+  rx_config.pinMapping[0] = PINMAP_PPM;
+  rx_config.pinMapping[1] = PINMAP_ANALOG;
+  rx_config.pinMapping[2] = PINMAP_RSSI;
+  rx_config.pinMapping[3] = PINMAP_ANALOG;
+  rx_config.pinMapping[4] = PINMAP_RXD;
+  rx_config.pinMapping[5] = PINMAP_TXD;
 #else
 #error INVALID RX BOARD
 #endif

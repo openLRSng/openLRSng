@@ -29,6 +29,7 @@ typedef struct pinMask {
 #define RX_OLRSNG12CH 0x03
 #define RX_DTFUHF10CH 0x04
 #define RX_PTOWER     0x05
+#define RX_MINI       0x05
 
 #define PINMAP_PPM    0x20
 #define PINMAP_RSSI   0x21
@@ -1078,12 +1079,10 @@ struct rxSpecialPinMap rxSpecialPins[] = {
 #define Red_LED A3
 #define Green_LED A2
 
-#if (COMPILE_TX != 1)
 #define Red_LED_ON    PORTC |=  _BV(3);
 #define Red_LED_OFF   PORTC &= ~_BV(3);
 #define Green_LED_ON  PORTC |=  _BV(2);
 #define Green_LED_OFF PORTC &= ~_BV(2);
-#endif
 
 #define buzzerOff(foo) buzzerOn(0)
 
