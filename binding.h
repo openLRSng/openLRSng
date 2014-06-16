@@ -107,6 +107,10 @@ struct tx_config {
   uint8_t  chmap[16];
 } tx_config;
 
+// 0 - no PPM needed, 1=2ch ... 0x0f=16ch
+#define TX_CONFIG_GETMINCH() (tx_config.flags>>24)
+#define TX_CONFIG_SETMINCH(x) (tx_config.flags=tx_config.flags & 0x0fffffff | ((x&0x0f)<<24))
+
 struct RX_config {
   uint8_t  rx_type; // RX type fillled in by RX, do not change
   uint8_t  pinMapping[13];
@@ -351,6 +355,7 @@ void txInitDefaults()
 {
   tx_config.max_frequency = MAX_RFM_FREQUENCY;
   tx_config.flags = 0x00;
+  TX_CONFIG_SETMINCH(5); // 6ch
   for (uint8_t i = 0; i < 16; i++) {
     tx_config.chmap[i] = i;
   }
