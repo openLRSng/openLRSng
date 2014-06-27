@@ -115,10 +115,10 @@ void set_RSSI_output()
   uint8_t linkq = countSetBits(linkQuality & 0x7fff);
   if (linkq == 15) {
     // RSSI 0 - 255 mapped to 192 - ((255>>2)+192) == 192-255
-    compositeRSSI = (smoothRSSI >> 2) + 192;
+    compositeRSSI = (smoothRSSI >> 1) + 128;
   } else {
-    // linkquality gives 0 to 14*13 == 182
-    compositeRSSI = linkq * 13;
+    // linkquality gives 0 to 14*9 == 126
+    compositeRSSI = linkq * 9;
   }
   if (rx_config.RSSIpwm < 16) {
     cli();

@@ -412,11 +412,11 @@ void setup(void)
 uint8_t compositeRSSI(uint8_t rssi, uint8_t linkq)
 {
   if (linkq >= 15) {
-    // RSSI 0 - 255 mapped to 192 - ((255>>2)+192) == 192-255
-    return (rssi >> 2) + 192;
+    // RSSI 0 - 255 mapped to 128 - ((255>>2)+192) == 128-255
+    return (rssi >> 1) + 128;
   } else {
-    // linkquality gives 0 to 14*13 == 182
-    return linkq * 13;
+    // linkquality gives 0 to 14*0 == 126
+    return linkq * 9;
   }
 }
 
