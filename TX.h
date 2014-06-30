@@ -68,9 +68,17 @@ static inline void processPulse(uint16_t pulse)
     return;
   }
 
+#if (F_CPU == 16000000)
   if (!(tx_config.flags & MICROPPM)) {
     pulse >>= 1; // divide by 2 to get servo value on normal PPM
   }
+#elif (F_CPU == 8000000)
+  if (tx_config.flags & MICROPPM) {
+    pulse<<= 1; //  multiply microppm value by 2
+  }
+#else
+#error F_CPU invalid
+#endif
 
   if (pulse > 2500) {      // Verify if this is the sync pulse (2.5ms)
     if ((ppmCounter>(TX_CONFIG_GETMINCH()?TX_CONFIG_GETMINCH():1)) && (ppmCounter!=255)) {

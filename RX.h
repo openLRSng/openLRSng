@@ -55,24 +55,39 @@ void outputDownAll()
   PORTD &= clearMask.D;
 }
 
+#if (F_CPU == 16000000)
+#define PWM_MULTIPLIER 2
+#define PPM_PULSELEN   600
+#define PWM_DEJITTER   32
+#define PPM_FRAMELEN   40000
+#elif (F_CPU == 8000000)
+#define PWM_MULTIPLIER 1
+#define PPM_PULSELEN   300
+#define PWM_DEJITTER   16
+#define PPM_FRAMELEN   20000
+#else
+#error F_CPU not supported
+#endif
+
+
 volatile uint16_t nextICR1;
 
 ISR(TIMER1_OVF_vect)
 {
   if (ppmCountter < ppmChannels) {
     ICR1 = nextICR1;
-    nextICR1 = servoBits2Us(PPM[ppmCountter]) * 2;
+    nextICR1 = servoBits2Us(PPM[ppmCountter]) * PWM_MULTIPLIER;
     ppmSync -= nextICR1;
-    if (ppmSync < (rx_config.minsync * 2)) {
-      ppmSync = rx_config.minsync * 2;
+    if (ppmSync < (rx_config.minsync * PWM_MULTIPLIER)) {
+      ppmSync = rx_config.minsync * PWM_MULTIPLIER;
     }
     if ((disablePPM) || ((rx_config.flags & PPM_MAX_8CH) && (ppmCountter >= 8))) {
       OCR1A = 65535; //do not generate a pulse
     } else {
-      OCR1A = nextICR1 - 600;
+      OCR1A = nextICR1 - PPM_PULSELEN;
     }
 
-    while (TCNT1 < 32);
+    while (TCNT1 < PWM_DEJITTER);
     outputDownAll();
     if ((!disablePWM) && (ppmCountter > 0)) {
       outputUp(ppmCountter - 1);
@@ -85,11 +100,11 @@ ISR(TIMER1_OVF_vect)
     if (disablePPM) {
       OCR1A = 65535; //do not generate a pulse
     } else {
-      OCR1A = nextICR1 - 600;
+      OCR1A = nextICR1 - PPM_PULSELEN;
     }
-    ppmSync = 40000;
+    ppmSync = PPM_FRAMELEN;
 
-    while (TCNT1 < 32);
+    while (TCNT1 < PWM_DEJITTER);
     outputDownAll();
     if (!disablePWM) {
       outputUp(ppmChannels - 1);
@@ -214,11 +229,16 @@ void setupOutputs()
     pinMode(OUTPUT_PIN[RSSI_OUTPUT], OUTPUT);
     digitalWrite(OUTPUT_PIN[RSSI_OUTPUT], LOW);
     if (rx_config.pinMapping[RSSI_OUTPUT] == PINMAP_RSSI) {
-      TCCR2B = (1 << CS20);
       TCCR2A = (1 << WGM20);
     } else { // LBEEP
       TCCR2A = (1 << WGM21); // mode=CTC
+#if (F_CPU == 16000000)
       TCCR2B = (1 << CS22) | (1 << CS20); // prescaler = 128
+#elif (F_CPU == 8000000)
+      TCCR2B = (1 << CS22); // prescaler = 64
+#else
+#error F_CPU not supported
+#endif
       OCR2A = 62; // 1KHz
     }
   }
@@ -226,8 +246,8 @@ void setupOutputs()
   TCCR1B = (1 << WGM13) | (1 << WGM12) | (1 << CS11);
   OCR1A = 65535;  // no pulse =)
   ICR1 = 2000; // just initial value, will be constantly updated
-  ppmSync = 40000;
-  nextICR1 = 40000;
+  ppmSync = PPM_FRAMELEN;
+  nextICR1 = PPM_FRAMELEN;
   ppmCountter = 0;
   TIMSK1 |= (1 << TOIE1);
 

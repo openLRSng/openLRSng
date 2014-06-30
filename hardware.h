@@ -65,7 +65,7 @@ static const char *specialStrs[] = { "PPM","RSSI","SDA","SCL","RXD","TXD","AIN",
 
 #if (BOARD_TYPE == 0) // Flytron M1 TX
 #if (__AVR_ATmega328P__ != 1) || (F_CPU != 16000000)
-#error Wrong board selected, select Arduino Pro/Pro Mini 5V/16MHz w/ ATMega328
+#warning Possibly wrong board selected, select Arduino Pro/Pro Mini 5V/16MHz w/ ATMega328
 #endif
 
 #if (COMPILE_TX != 1)
@@ -148,7 +148,7 @@ void setupRfmInterrupt()
 
 #if (BOARD_TYPE == 1) // Flytron M1 RX
 #if (__AVR_ATmega328P__ != 1) || (F_CPU != 16000000)
-#error Wrong board selected, select Arduino Pro/Pro Mini 5V/16MHz w/ ATMega328
+#warning Possibly wrong board selected, select Arduino Pro/Pro Mini 5V/16MHz w/ ATMega328
 #endif
 
 #if (COMPILE_TX != 1)
@@ -232,7 +232,7 @@ void setupRfmInterrupt()
 
 #if (BOARD_TYPE == 2)
 #if (__AVR_ATmega328P__ != 1) || (F_CPU != 16000000)
-#error Wrong board selected, select Arduino Pro/Pro Mini 5V/16MHz w/ ATMega328
+#warning Possibly wrong board selected, select Arduino Pro/Pro Mini 5V/16MHz w/ ATMega328
 #endif
 
 #if (COMPILE_TX != 1)
@@ -319,7 +319,7 @@ void setupRfmInterrupt()
 
 #if (BOARD_TYPE == 3)
 #if (__AVR_ATmega328P__ != 1) || (F_CPU != 16000000)
-#error Wrong board selected, select Arduino Pro/Pro Mini 5V/16MHz w/ ATMega328
+#warning Possibly wrong board selected, select Arduino Pro/Pro Mini 5V/16MHz w/ ATMega328
 #endif
 
 #if (COMPILE_TX == 1)
@@ -341,7 +341,13 @@ void buzzerInit()
   pinMode(BUZZER_ACT, OUTPUT);
   digitalWrite(BUZZER_ACT, LOW);
   TCCR2A = (1<<WGM21); // mode=CTC
+#if (F_CPU == 16000000)
   TCCR2B = (1<<CS22) | (1<<CS20); // prescaler = 128
+#elif (F_CPU == 8000000)
+  TCCR2B = (1<<CS22); // prescaler = 64
+#else
+#errror F_CPU Invalid
+#endif
   pinMode(BUZZER_PAS, OUTPUT);
   digitalWrite(BUZZER_PAS, LOW);
 }
@@ -468,7 +474,7 @@ void setupRfmInterrupt()
 
 #if (BOARD_TYPE == 4) // kha:s openLRSngTX & clones
 #if (__AVR_ATmega328P__ != 1) || (F_CPU != 16000000)
-#error Wrong board selected, select Arduino Pro/Pro Mini 5V/16MHz w/ ATMega328
+#warning Possibly wrong board selected, select Arduino Pro/Pro Mini 5V/16MHz w/ ATMega328
 #endif
 
 #if (COMPILE_TX != 1)
@@ -493,7 +499,13 @@ void setupRfmInterrupt()
 void buzzerInit()
 {
   TCCR2A = (1<<WGM21); // mode=CTC
+#if (F_CPU == 16000000)
   TCCR2B = (1<<CS22) | (1<<CS20); // prescaler = 128
+#elif (F_CPU == 8000000)
+  TCCR2B = (1<<CS22); // prescaler = 64
+#else
+#errror F_CPU Invalid
+#endif
   pinMode(BUZZER_PAS, OUTPUT);
   digitalWrite(BUZZER_PAS, LOW);
 }
@@ -569,7 +581,7 @@ void setupRfmInterrupt()
 
 #if (BOARD_TYPE == 5) // openLRSngRX-4ch
 #if (__AVR_ATmega328P__ != 1) || (F_CPU != 16000000)
-#error Wrong board selected, select Arduino Pro/Pro Mini 5V/16MHz w/ ATMega328
+#warning Possibly wrong board selected, select Arduino Pro/Pro Mini 5V/16MHz w/ ATMega328
 #endif
 
 #if (COMPILE_TX == 1)
@@ -592,7 +604,13 @@ void buzzerInit()
   pinMode(BUZZER_ACT, OUTPUT);
   digitalWrite(BUZZER_ACT, LOW);
   TCCR2A = (1<<WGM21); // mode=CTC
+#if (F_CPU == 16000000)
   TCCR2B = (1<<CS22) | (1<<CS20); // prescaler = 128
+#elif (F_CPU == 8000000)
+  TCCR2B = (1<<CS22); // prescaler = 64
+#else
+#errror F_CPU Invalid
+#endif
   pinMode(BUZZER_PAS, OUTPUT);
   digitalWrite(BUZZER_PAS, LOW);
 }
@@ -836,7 +854,7 @@ ISR(PCINT0_vect)
 
 #if (BOARD_TYPE == 7) // PowerTowerRX
 #if (__AVR_ATmega328P__ != 1) || (F_CPU != 16000000)
-#error Wrong board selected, select Arduino Pro/Pro Mini 5V/16MHz w/ ATMega328
+#warning Possibly wrong board selected, select Arduino Pro/Pro Mini 5V/16MHz w/ ATMega328
 #endif
 
 #if (COMPILE_TX == 1)
@@ -984,7 +1002,7 @@ void setupRfmInterrupt()
 
 #if (BOARD_TYPE == 8) // openLRSminiRX
 #if (__AVR_ATmega328P__ != 1) || (F_CPU != 16000000)
-#error Wrong board selected, select Arduino Pro/Pro Mini 5V/16MHz w/ ATMega328
+#warning Possibly wrong board selected, select Arduino Pro/Pro Mini 5V/16MHz w/ ATMega328
 #endif
 
 #if (COMPILE_TX == 1)
@@ -1007,7 +1025,13 @@ void buzzerInit()
   pinMode(BUZZER_ACT, OUTPUT);
   digitalWrite(BUZZER_ACT, LOW);
   TCCR2A = (1<<WGM21); // mode=CTC
+#if (F_CPU == 16000000)
   TCCR2B = (1<<CS22) | (1<<CS20); // prescaler = 128
+#elif (F_CPU == 8000000)
+  TCCR2B = (1<<CS22); // prescaler = 64
+#else
+#errror F_CPU Invalid
+#endif
   pinMode(BUZZER_PAS, OUTPUT);
   digitalWrite(BUZZER_PAS, LOW);
 }

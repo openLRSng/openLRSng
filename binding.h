@@ -109,7 +109,7 @@ struct tx_config {
 
 // 0 - no PPM needed, 1=2ch ... 0x0f=16ch
 #define TX_CONFIG_GETMINCH() (tx_config.flags >> 28)
-#define TX_CONFIG_SETMINCH(x) (tx_config.flags = tx_config.flags & 0x0fffffff | (((uint32_t)(x) & 0x0f) << 28))
+#define TX_CONFIG_SETMINCH(x) (tx_config.flags = (tx_config.flags & 0x0fffffff) | (((uint32_t)(x) & 0x0f) << 28))
 
 struct RX_config {
   uint8_t  rx_type; // RX type fillled in by RX, do not change
