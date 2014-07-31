@@ -962,6 +962,7 @@ retry:
       // hop slowly to allow resync with TX
       linkQuality = 0;
       willhop = 1;
+      smoothRSSI = 0;
       set_RSSI_output();
       lastPacketTimeUs = timeUs;
     }
