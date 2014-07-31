@@ -19,6 +19,7 @@ uint8_t  compositeRSSI = 0;
 uint16_t lastAFCCvalue = 0;
 
 uint16_t linkQuality = 0;
+uint8_t  linkQ;
 
 uint8_t  ppmCountter = 0;
 uint16_t ppmSync = 40000;
@@ -134,28 +135,28 @@ void set_PPM_rssi()
       out = compositeRSSI;
       break;
     case 0x10:
-      out = (linkq << 4);
+      out = (linkQ << 4);
       break;
-    case 0x20:
+    default:
       out = smoothRSSI;
       break;
     }
     PPM[rx_config.RSSIpwm & 0x0f] = RSSI2Bits(out);
   } else if (rx_config.RSSIpwm < 63) {
-    PPM[(rx_config.RSSIpwm & 0x0f)] = (linq << 4);
+    PPM[(rx_config.RSSIpwm & 0x0f)] = (linkQ << 4);
     PPM[(rx_config.RSSIpwm & 0x0f)+1] = smoothRSSI;
   }
 }
 
 void set_RSSI_output()
 {
-  uint8_t linkq = countSetBits(linkQuality & 0x7fff);
-  if (linkq == 15) {
+  linkQ = countSetBits(linkQuality & 0x7fff);
+  if (linkQ == 15) {
     // RSSI 0 - 255 mapped to 192 - ((255>>2)+192) == 192-255
     compositeRSSI = (smoothRSSI >> 1) + 128;
   } else {
     // linkquality gives 0 to 14*9 == 126
-    compositeRSSI = linkq * 9;
+    compositeRSSI = linkQ * 9;
   }
 
   cli();
