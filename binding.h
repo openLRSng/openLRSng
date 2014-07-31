@@ -115,7 +115,7 @@ struct RX_config {
   uint8_t  rx_type; // RX type fillled in by RX, do not change
   uint8_t  pinMapping[13];
   uint8_t  flags;
-  uint8_t  RSSIpwm;
+  uint8_t  RSSIpwm; //0-15 inject composite, 16-31 inject quality, 32-47 inject RSSI, 48-63 inject quality & RSSI on two separate channels
   uint32_t beacon_frequency;
   uint8_t  beacon_deadtime;
   uint8_t  beacon_interval;

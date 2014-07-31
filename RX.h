@@ -125,6 +125,28 @@ uint16_t RSSI2Bits(uint8_t rssi)
   return ret;
 }
 
+void set_PPM_rssi()
+{
+  if (rx_config.RSSIpwm < 48) {
+    uint8_t out;
+    switch (rx_config.RSSIpwm & 0x30) {
+    case 0x00:
+      out = compositeRSSI;
+      break;
+    case 0x10:
+      out = (linkq << 4);
+      break;
+    case 0x20:
+      out = smoothRSSI;
+      break;
+    }
+    PPM[rx_config.RSSIpwm & 0x0f] = RSSI2Bits(out);
+  } else if (rx_config.RSSIpwm < 63) {
+    PPM[(rx_config.RSSIpwm & 0x0f)] = (linq << 4);
+    PPM[(rx_config.RSSIpwm & 0x0f)+1] = smoothRSSI;
+  }
+}
+
 void set_RSSI_output()
 {
   uint8_t linkq = countSetBits(linkQuality & 0x7fff);
@@ -135,11 +157,11 @@ void set_RSSI_output()
     // linkquality gives 0 to 14*9 == 126
     compositeRSSI = linkq * 9;
   }
-  if (rx_config.RSSIpwm < 16) {
-    cli();
-    PPM[rx_config.RSSIpwm] = RSSI2Bits(compositeRSSI);
-    sei();
-  }
+
+  cli();
+  set_PPM_rssi();
+  sei();
+
   if (rx_config.pinMapping[RSSI_OUTPUT] == PINMAP_RSSI) {
     if ((compositeRSSI == 0) || (compositeRSSI == 255)) {
       TCCR2A &= ~(1 << COM2B1); // disable RSSI PWM output
@@ -155,11 +177,15 @@ void failsafeApply()
 {
   if (failsafePPM[0] != 0xffff) {
     for (int16_t i = 0; i < PPM_CHANNELS; i++) {
-      if (i != rx_config.RSSIpwm) {
-        cli();
-        PPM[i] = failsafePPM[i];
-        sei();
+      if (i == (rx_config.RSSIpwm & 0x0f)) {
+        continue;
       }
+      if ((i == (rx_config.RSSIpwm & 0x0f) + 1) && (rx_config.RSSIpwm > 47)) {
+        continue;
+      }
+      cli();
+      PPM[i] = failsafePPM[i];
+      sei();
     }
   }
 }
@@ -169,7 +195,10 @@ void setupOutputs()
   uint8_t i;
 
   ppmChannels = getChannelCount(&bind_data);
-  if (rx_config.RSSIpwm == ppmChannels) {
+  if ((rx_config.RSSIpwm & 0x0f) == ppmChannels) {
+    ppmChannels += 1;
+  }
+  if ((rx_config.RSSIpwm > 47) && ((rx_config.RSSIpwm & 0x0f) == ppmChannels-1)) {
     ppmChannels += 1;
   }
 
@@ -783,9 +812,7 @@ retry:
       }
       Serial.println();
 #endif
-      if (rx_config.RSSIpwm < 16) {
-        PPM[rx_config.RSSIpwm] = RSSI2Bits(compositeRSSI);
-      }
+      set_PPM_rssi();
       sei();
       if (rx_buf[0] & 0x01) {
         if (!fs_saved) {
