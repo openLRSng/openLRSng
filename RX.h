@@ -143,8 +143,8 @@ void set_PPM_rssi()
     }
     PPM[rx_config.RSSIpwm & 0x0f] = RSSI2Bits(out);
   } else if (rx_config.RSSIpwm < 63) {
-    PPM[(rx_config.RSSIpwm & 0x0f)] = (linkQ << 4);
-    PPM[(rx_config.RSSIpwm & 0x0f)+1] = smoothRSSI;
+    PPM[(rx_config.RSSIpwm & 0x0f)] = RSSI2Bits(linkQ << 4);
+    PPM[(rx_config.RSSIpwm & 0x0f)+1] = RSSI2Bits(smoothRSSI);
   }
 }
 
