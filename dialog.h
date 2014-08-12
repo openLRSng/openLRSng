@@ -511,13 +511,13 @@ void handleRXmenu(char c)
     case 'c':
     case 'd':
       c -= 'a' - 'A';
-    // Fallthru
+      // Fallthru
     case 'A':
     case 'B':
     case 'C':
     case 'D':
       c -= 'A' - 10 - '0';
-    // Fallthru
+      // Fallthru
     case '9':
     case '8':
     case '7':

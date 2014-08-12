@@ -260,6 +260,7 @@ void setupOutputs()
     digitalWrite(OUTPUT_PIN[RSSI_OUTPUT], LOW);
     if (rx_config.pinMapping[RSSI_OUTPUT] == PINMAP_RSSI) {
       TCCR2A = (1 << WGM20);
+      TCCR2B = (1 << CS20);
     } else { // LBEEP
       TCCR2A = (1 << WGM21); // mode=CTC
 #if (F_CPU == 16000000)
