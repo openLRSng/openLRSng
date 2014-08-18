@@ -223,9 +223,7 @@ void PSP_process_data(uint8_t code, uint16_t payload_length_received, uint8_t da
 
     PSP_serialize_uint8((ppmAge < 255) ? ppmAge++ : ppmAge);
     for (uint8_t i = 0; i < 16; i++) {
-      cli();
       PSP_serialize_uint16(servoBits2Us(getChannel(i)));
-      sei();
     }
   }
   break;

@@ -567,7 +567,11 @@ uint16_t getChannel(uint8_t ch)
 {
   ch = tx_config.chmap[ch];
   if (ch < 16) {
-    return PPM[ch];
+    uint16_t v;
+    cli();  // disable interrupts when copying servo positions, to avoid race on 2 byte variable written by ISR
+    v = PPM[ch];
+    sei();
+    return v;
   } else {
     switch (ch) {
 #ifdef TX_AIN_IS_DIGITAL
@@ -749,12 +753,10 @@ void loop(void)
             serial_okToSend = 4;  // resend
           }
         }
-        cli(); // disable interrupts when copying servo positions, to avoid race on 2 byte variable
         for (uint8_t i=0; i < 16; i++) {
           PPMout[i] = getChannel(tx_config.chmap[i]);
         }
         packChannels(bind_data.flags & 7, PPMout, tx_buf + 1);
-        sei();
       }
       //Green LED will be on during transmission
       Green_LED_ON;
