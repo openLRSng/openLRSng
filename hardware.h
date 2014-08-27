@@ -29,8 +29,8 @@ typedef struct pinMask {
 #define RX_OLRSNG12CH 0x03
 #define RX_DTFUHF10CH 0x04
 #define RX_PTOWER     0x05
-#define RX_MICRO      0x05
-#define RX_FLYTRONM3  0x06
+#define RX_MICRO      0x06
+#define RX_FLYTRONM3  0x07
 
 #define PINMAP_PPM    0x20
 #define PINMAP_RSSI   0x21
