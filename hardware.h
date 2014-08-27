@@ -29,7 +29,7 @@ typedef struct pinMask {
 #define RX_OLRSNG12CH 0x03
 #define RX_DTFUHF10CH 0x04
 #define RX_PTOWER     0x05
-#define RX_MINI       0x05
+#define RX_MICRO      0x05
 
 #define PINMAP_PPM    0x20
 #define PINMAP_RSSI   0x21
@@ -1000,7 +1000,7 @@ void setupRfmInterrupt()
 
 #endif
 
-#if (BOARD_TYPE == 8) // openLRSminiRX
+#if (BOARD_TYPE == 8) // openLRSmicroRX
 #if (__AVR_ATmega328P__ != 1) || (F_CPU != 16000000)
 #warning Possibly wrong board selected, select Arduino Pro/Pro Mini 5V/16MHz w/ ATMega328
 #endif

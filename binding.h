@@ -495,7 +495,7 @@ void rxInitDefaults(bool save)
   rx_config.pinMapping[6] = PINMAP_RXD;
   rx_config.pinMapping[7] = PINMAP_TXD;
 #elif (BOARD_TYPE == 8)
-  rx_config.rx_type = RX_MINI;
+  rx_config.rx_type = RX_MICRO;
   rx_config.pinMapping[0] = PINMAP_PPM;
   rx_config.pinMapping[1] = PINMAP_ANALOG;
   rx_config.pinMapping[2] = PINMAP_RSSI;
