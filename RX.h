@@ -83,9 +83,17 @@ ISR(TIMER1_OVF_vect)
       ppmSync = rx_config.minsync * PWM_MULTIPLIER;
     }
     if ((disablePPM) || ((rx_config.flags & PPM_MAX_8CH) && (ppmCountter >= 8))) {
+#ifdef USE_OCR1B
+      OCR1B = 65535; //do not generate a pulse
+#else
       OCR1A = 65535; //do not generate a pulse
+#endif
     } else {
+#ifdef USE_OCR1B
+      OCR1B = nextICR1 - PPM_PULSELEN;
+#else
       OCR1A = nextICR1 - PPM_PULSELEN;
+#endif
     }
 
     while (TCNT1 < PWM_DEJITTER);
@@ -99,9 +107,17 @@ ISR(TIMER1_OVF_vect)
     ICR1 = nextICR1;
     nextICR1 = ppmSync;
     if (disablePPM) {
+#ifdef USE_OCR1B
+      OCR1B = 65535; //do not generate a pulse
+#else
       OCR1A = 65535; //do not generate a pulse
+#endif
     } else {
+#ifdef USE_OCR1B
+      OCR1B = nextICR1 - PPM_PULSELEN;
+#else
       OCR1A = nextICR1 - PPM_PULSELEN;
+#endif
     }
     ppmSync = PPM_FRAMELEN;
 
@@ -246,7 +262,11 @@ void setupOutputs()
 
   if (rx_config.pinMapping[PPM_OUTPUT] == PINMAP_PPM) {
     digitalWrite(OUTPUT_PIN[PPM_OUTPUT], HIGH);
+#ifdef USE_OCR1B
+    TCCR1A = (1 << WGM11) | (1 << COM1B1);
+#else
     TCCR1A = (1 << WGM11) | (1 << COM1A1);
+#endif
   } else {
     TCCR1A = (1 << WGM11);
   }
@@ -275,7 +295,11 @@ void setupOutputs()
   }
 
   TCCR1B = (1 << WGM13) | (1 << WGM12) | (1 << CS11);
+#ifdef USE_OCR1B
+  OCR1B = 65535;  // no pulse =)
+#else
   OCR1A = 65535;  // no pulse =)
+#endif
   ICR1 = 2000; // just initial value, will be constantly updated
   ppmSync = PPM_FRAMELEN;
   nextICR1 = PPM_FRAMELEN;

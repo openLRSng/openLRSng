@@ -465,7 +465,16 @@ void failsafeLoad(void)
 
 void rxInitDefaults(bool save)
 {
-#if (BOARD_TYPE == 3)
+#if (BOARD_TYPE == 2)
+  rx_config.rx_type = RX_FLYTRONM3;
+  rx_config.pinMapping[0] = PINMAP_PPM;
+  rx_config.pinMapping[1] = PINMAP_RSSI;
+  rx_config.pinMapping[2] = 0;
+  rx_config.pinMapping[3] = PINMAP_ANALOG;
+  rx_config.pinMapping[4] = PINMAP_ANALOG;
+  rx_config.pinMapping[5] = PINMAP_RXD;
+  rx_config.pinMapping[6] = PINMAP_TXD;  
+#elif (BOARD_TYPE == 3)
   uint8_t i;
   rx_config.rx_type = RX_FLYTRON8CH;
   rx_config.pinMapping[0] = PINMAP_RSSI; // the CH0 on 8ch RX

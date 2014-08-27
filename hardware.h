@@ -30,6 +30,7 @@ typedef struct pinMask {
 #define RX_DTFUHF10CH 0x04
 #define RX_PTOWER     0x05
 #define RX_MICRO      0x05
+#define RX_FLYTRONM3  0x06
 
 #define PINMAP_PPM    0x20
 #define PINMAP_RSSI   0x21
@@ -235,28 +236,13 @@ void setupRfmInterrupt()
 #warning Possibly wrong board selected, select Arduino Pro/Pro Mini 5V/16MHz w/ ATMega328
 #endif
 
-#if (COMPILE_TX != 1)
-#error TX module cannot be used as RX
-#endif
-
-#define TelemetrySerial Serial
-
+#if (COMPILE_TX == 1)
 #define PPM_IN           3
 #define RF_OUT_INDICATOR A0
 #define BUZZER_ACT       10
 #define BTN              11
-#define Red_LED          13
-#define Green_LED        12
 #define TX_AIN0          A4 // SDA
 #define TX_AIN1          A5 // SCL
-
-
-#define Red_LED_ON  PORTB |= _BV(5);
-#define Red_LED_OFF  PORTB &= ~_BV(5);
-
-#define Green_LED_ON   PORTB |= _BV(4);
-#define Green_LED_OFF  PORTB &= ~_BV(4);
-
 #define PPM_Pin_Interrupt_Setup  PCMSK2 = 0x08;PCICR|=(1<<PCIE2);
 #define PPM_Signal_Interrupt PCINT2_vect
 #define PPM_Signal_Edge_Check ((PIND & 0x08)==0x08)
@@ -277,6 +263,59 @@ void buzzerOn(uint16_t freq)
 }
 
 #define buzzerOff(foo) buzzerOn(0)
+
+#else // RX operation
+#define USE_OCR1B // OC1A is used for RFM22, so we use OC1B instead which is buzzer ;)
+#define PPM_OUT 10 // OC1B this is the buzzer input
+#define RSSI_OUT 3 // PD3 OC2B -this is the PPM pin on the radio connection
+
+#define OUTPUTS 7 // outputs available
+
+const pinMask_t OUTPUT_MASKS[OUTPUTS] = {
+  {0x04,0x00,0x00},{0x00,0x00,0x08},{0x00,0x01,0x00}, // PPM, RSSI, CH1
+  {0x00,0x10,0x00},{0x00,0x20,0x00},{0x00,0x00,0x01}, // SDA, SCL, RXD
+  {0x00,0x00,0x02},                                   // TXD
+};
+
+const uint8_t OUTPUT_PIN[OUTPUTS] = { 10, 3, A0, A4, A5, 0, 1};
+
+#define PPM_OUTPUT  0
+#define RSSI_OUTPUT 1
+#define LLIND_OUTPUT 2
+#define ANALOG0_OUTPUT 3
+#define ANALOG1_OUTPUT 4
+#define SDA_OUTPUT 3
+#define SCL_OUTPUT 4
+#define RXD_OUTPUT 5
+#define TXD_OUTPUT 6
+
+struct rxSpecialPinMap rxSpecialPins[] = {
+  { 0, PINMAP_PPM},
+  { 1, PINMAP_LBEEP},
+  { 1, PINMAP_RSSI},
+  { 2, PINMAP_LLIND},
+  { 3, PINMAP_SDA},
+  { 3, PINMAP_ANALOG}, // AIN0
+  { 4, PINMAP_SCL},
+  { 4, PINMAP_ANALOG}, // AIN1
+  { 5, PINMAP_RXD},
+  { 6, PINMAP_TXD},
+  { 6, PINMAP_SPKTRM},
+  { 6, PINMAP_SBUS},
+  { 6, PINMAP_SUMD},
+};
+#endif
+
+#define TelemetrySerial Serial
+
+#define Red_LED          13
+#define Green_LED        12
+
+#define Red_LED_ON  PORTB |= _BV(5);
+#define Red_LED_OFF  PORTB &= ~_BV(5);
+
+#define Green_LED_ON   PORTB |= _BV(4);
+#define Green_LED_OFF  PORTB &= ~_BV(4);
 
 //## RFM22B Pinouts for Public Edition (M2)
 #define  nIRQ_1 (PIND & 0x04)==0x04 //D2
