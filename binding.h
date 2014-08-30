@@ -35,6 +35,7 @@
 #define ALWAYS_BIND         0x02
 #define SLAVE_MODE          0x04
 #define IMMEDIATE_OUTPUT    0x08
+#define STATIC_BEACON       0x10
 #define WATCHDOG_USED       0x80 // read only flag, only sent to configurator
 
 // BIND_DATA flag masks
@@ -473,7 +474,7 @@ void rxInitDefaults(bool save)
   rx_config.pinMapping[3] = PINMAP_ANALOG;
   rx_config.pinMapping[4] = PINMAP_ANALOG;
   rx_config.pinMapping[5] = PINMAP_RXD;
-  rx_config.pinMapping[6] = PINMAP_TXD;  
+  rx_config.pinMapping[6] = PINMAP_TXD;
 #elif (BOARD_TYPE == 3)
   uint8_t i;
   rx_config.rx_type = RX_FLYTRON8CH;

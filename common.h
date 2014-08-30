@@ -601,7 +601,7 @@ void beacon_tone(int16_t hz, int16_t len) //duration is now in half seconds.
   }
 }
 
-void beacon_send(void)
+void beacon_send(bool static_tone)
 {
   Green_LED_ON
   ItStatus1 = spiReadRegister(0x03);   // read status, clear interrupt
@@ -637,34 +637,40 @@ void beacon_send(void)
   spiWriteRegister(0x07, RF22B_PWRSTATE_TX);    // to tx mode
   delay(10);
 
-  //close encounters tune
-  //  G, A, F, F(lower octave), C
-  //octave 3:  392  440  349  175   261
+  if (static_tone) {
+    uint8_t i=0;
+    while (i++<20) {
+      beacon_tone(440,1);
+      watchdogReset();
+    }
+  } else {
+    //close encounters tune
+    //  G, A, F, F(lower octave), C
+    //octave 3:  392  440  349  175   261
 
-  beacon_tone(392, 1);
-  watchdogReset();
+    beacon_tone(392, 1);
+    watchdogReset();
 
-  spiWriteRegister(0x6d, 0x05);   // 5 set mid power 25mW
-  delay(10);
-  beacon_tone(440,1);
-  watchdogReset();
+    spiWriteRegister(0x6d, 0x05);   // 5 set mid power 25mW
+    delay(10);
+    beacon_tone(440,1);
+    watchdogReset();
 
-  spiWriteRegister(0x6d, 0x04);   // 4 set mid power 13mW
-  delay(10);
-  beacon_tone(349, 1);
-  watchdogReset();
+    spiWriteRegister(0x6d, 0x04);   // 4 set mid power 13mW
+    delay(10);
+    beacon_tone(349, 1);
+    watchdogReset();
 
-  spiWriteRegister(0x6d, 0x02);   // 2 set min power 3mW
-  delay(10);
-  beacon_tone(175,1);
-  watchdogReset();
+    spiWriteRegister(0x6d, 0x02);   // 2 set min power 3mW
+    delay(10);
+    beacon_tone(175,1);
+    watchdogReset();
 
-  spiWriteRegister(0x6d, 0x00);   // 0 set min power 1.3mW
-  delay(10);
-  beacon_tone(261, 2);
-  watchdogReset();
-
-
+    spiWriteRegister(0x6d, 0x00);   // 0 set min power 1.3mW
+    delay(10);
+    beacon_tone(261, 2);
+    watchdogReset();
+  }
   spiWriteRegister(0x07, RF22B_PWRSTATE_READY);
   Green_LED_OFF
 }

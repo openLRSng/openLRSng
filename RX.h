@@ -1008,7 +1008,7 @@ retry:
       if ((rx_config.beacon_frequency) && (lastBeaconTimeMs)) {
         if (((timeMs - lastBeaconTimeMs) < 0x80000000) && // last beacon is future during deadtime
             (timeMs - lastBeaconTimeMs) > (1000UL * rx_config.beacon_interval)) {
-          beacon_send();
+          beacon_send((rx_config.flags & STATIC_BEACON));
           init_rfm(0);   // go back to normal RX
           rx_reset();
           lastBeaconTimeMs = millis() | 1; // avoid 0 in time
