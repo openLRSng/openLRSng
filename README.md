@@ -48,6 +48,8 @@ TRANSMITTER HW:
 
 RECEIVER HW:
 ============
+  - RX_BOARD_TYPE 2 (TX module as RX) (328P 16MHz)
+
   - RX_BOARD_TYPE 3 (Arduino Mini/nano 328 16MHz)
     - Flytron openLRS RX
     - OrangeRX UHF RX (NOTE both LEDs are RED!!)
