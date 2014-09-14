@@ -794,12 +794,14 @@ retry:
       }
 
       lastAFCCvalue = rfmGetAFCC();
+      Green_LED_ON;
     } else {
       uint8_t ret, slave_buf[22];
       ret = myI2C_readFrom(32, slave_buf, getPacketSize(&bind_data) + 1, MYI2C_WAIT);
       if (ret) {
         slaveState = 255;
         slaveFailedMs = millis();
+        slaveReceived = 0;
         goto retry; //slave failed when reading packet...
       } else {
         memcpy(rx_buf, slave_buf + 1, getPacketSize(&bind_data));
@@ -812,7 +814,6 @@ retry:
     linkQuality |= 1;
 
     Red_LED_OFF;
-    Green_LED_ON;
 
     updateLBeep(false);
 
