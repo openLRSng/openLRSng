@@ -25,6 +25,7 @@
 #define DEFAULT_BAUDRATE 115200
 
 // TX_CONFIG flag masks
+#define ALT_POWER           0x08
 #define MUTE_TX             0x10 // do not beep on telemetry loss
 #define MICROPPM            0x20
 #define INVERTED_PPMIN      0x40

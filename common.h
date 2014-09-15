@@ -1,6 +1,7 @@
 //####### COMMON FUNCTIONS #########
 
 void rfmSetCarrierFrequency(uint32_t f);
+void rfmSetPower(uint8_t p);
 uint8_t rfmGetRSSI(void);
 void RF22B_init_parameter(void);
 uint8_t spiReadRegister(uint8_t address);
@@ -440,6 +441,11 @@ void rfmSetCarrierFrequency(uint32_t f)
   spiWriteRegister(0x75, 0x40 + (hbsel ? 0x20 : 0) + (fb & 0x1f));
   spiWriteRegister(0x76, (fc >> 8));
   spiWriteRegister(0x77, (fc & 0xff));
+}
+
+void rfmSetPower(uint8_t p)
+{
+  spiWriteRegister(0x6d, p);
 }
 
 void init_rfm(uint8_t isbind)

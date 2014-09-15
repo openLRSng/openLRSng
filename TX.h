@@ -3,6 +3,9 @@
  ****************************************************/
 uint8_t RF_channel = 0;
 
+uint8_t altPwrIndex = 0; // every nth packet at lower power
+uint8_t altPwrCount = 0;
+
 uint8_t FSstate = 0; // 1 = waiting timer, 2 = send FS, 3 sent waiting btn release
 uint32_t FStime = 0;  // time when button went down...
 
@@ -394,6 +397,15 @@ void setup(void)
 
   setupPPMinput(); // need to do this to make sure ppm polarity is correct if profile was changed
 
+  altPwrIndex=0;
+  if(tx_config.flags & ALT_POWER) {
+    if (bind_data.hopchannel[6] && bind_data.hopchannel[13] && bind_data.hopchannel[20]) {
+      altPwrIndex=7;
+    } else {
+      altPwrIndex=5;
+    }
+  }
+
   init_rfm(0);
   rfmSetChannel(RF_channel);
   rx_reset();
@@ -762,6 +774,15 @@ void loop(void)
       Green_LED_ON;
 
       // Send the data over RF
+      if (altPwrIndex && bind_data.rf_power) {
+        if (altPwrCount++ == altPwrIndex) {
+          altPwrCount=0;
+          rfmSetPower(bind_data.rf_power-1);
+        } else {
+          rfmSetPower(bind_data.rf_power);
+        }
+      }
+
       rfmSetChannel(RF_channel);
 
       tx_packet_async(tx_buf, getPacketSize(&bind_data));
