@@ -586,6 +586,7 @@ uint16_t getChannel(uint8_t ch)
     return v;
   } else {
     switch (ch) {
+#ifdef TX_AIN0
 #ifdef TX_AIN_IS_DIGITAL
     case 16:
       return digitalRead(TX_AIN0) ? 1012 : 12;
@@ -596,6 +597,7 @@ uint16_t getChannel(uint8_t ch)
       return analogRead(TX_AIN0);
     case 17:
       return analogRead(TX_AIN1);
+#endif
 #endif
     default:
       return 512;

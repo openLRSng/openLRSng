@@ -75,18 +75,10 @@ static const char *specialStrs[] = { "PPM","RSSI","SDA","SCL","RXD","TXD","AIN",
 
 #define TelemetrySerial Serial
 
-#define PPM_IN     A5
-#define BUZZER_ACT 9
-#define BTN        10
-#define Red_LED    12
-#define Green_LED  11
-
-#define Red_LED_ON  PORTB |= _BV(4);
-#define Red_LED_OFF  PORTB &= ~_BV(4);
-
-#define Green_LED_ON   PORTB |= _BV(3);
-#define Green_LED_OFF  PORTB &= ~_BV(3);
-
+#define PPM_IN           A5
+#define RF_OUT_INDICATOR A0
+#define BUZZER_ACT       9
+#define BTN              10
 #define PPM_Pin_Interrupt_Setup  PCMSK1 = 0x20;PCICR|=(1<<PCIE1);
 #define PPM_Signal_Interrupt PCINT1_vect
 #define PPM_Signal_Edge_Check ((PINC & 0x20)==0x20)
@@ -107,6 +99,16 @@ void buzzerOn(uint16_t freq)
 }
 
 #define buzzerOff(foo) buzzerOn(0)
+
+#define Red_LED    12
+#define Green_LED  11
+
+#define Red_LED_ON  PORTB |= _BV(4);
+#define Red_LED_OFF  PORTB &= ~_BV(4);
+
+#define Green_LED_ON   PORTB |= _BV(3);
+#define Green_LED_OFF  PORTB &= ~_BV(3);
+
 
 //## RFM22B Pinouts for Public Edition (M1 or Rx v1)
 #define  nIRQ_1 (PIND & 0x08)==0x08 //D3
@@ -139,7 +141,7 @@ void setupSPI()
   pinMode(nSel_pin, OUTPUT);   //nSEL
 }
 
-#define IRQ_interrupt 0
+#define IRQ_interrupt 1
 void setupRfmInterrupt()
 {
   attachInterrupt(IRQ_interrupt, RFM22B_Int, FALLING);
