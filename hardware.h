@@ -76,7 +76,7 @@ static const char *specialStrs[] = { "PPM","RSSI","SDA","SCL","RXD","TXD","AIN",
 #define TelemetrySerial Serial
 
 #define PPM_IN           A5
-#define RF_OUT_INDICATOR A0
+#define RF_OUT_INDICATOR A4
 #define BUZZER_ACT       9
 #define BTN              10
 #define PPM_Pin_Interrupt_Setup  PCMSK1 = 0x20;PCICR|=(1<<PCIE1);
