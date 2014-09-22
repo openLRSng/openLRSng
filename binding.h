@@ -363,21 +363,6 @@ void txInitDefaults()
   }
 }
 
-void txWriteEeprom()
-{
-  accessEEPROM(0,true);
-  accessEEPROM(1,true);
-}
-
-void txReadEeprom()
-{
-  if ((!accessEEPROM(0, false)) || (!accessEEPROM(1, false))) {
-    txInitDefaults();
-    bindInitDefaults();
-    txWriteEeprom();
-  }
-}
-
 void bindRandomize(void)
 {
   uint8_t emergency_counter = 0;
@@ -417,6 +402,22 @@ again:
     }
 
     bind_data.hopchannel[c] = ch;
+  }
+}
+
+void txWriteEeprom()
+{
+  accessEEPROM(0,true);
+  accessEEPROM(1,true);
+}
+
+void txReadEeprom()
+{
+  if ((!accessEEPROM(0, false)) || (!accessEEPROM(1, false))) {
+    txInitDefaults();
+    bindInitDefaults();
+    bindRandomize();
+    txWriteEeprom();
   }
 }
 #endif
