@@ -17,6 +17,9 @@ CONFIGURATOR UTILITY / BINARY FIRMWARE NOTE:
 
 TRANSMITTER HW:
 ===============
+  - TX_BOARD_TYPE 0 (Arduino Mini/nano 328 16MHz)
+    - Flytron openLRS M1 (100mW) TX
+
   - TX_BOARD_TYPE 2 (Arduino Mini/nano 328 16MHz)
     - Flytron openLRS M2 (100mW)/M3(1W) TX
     - OrangeRX UHF TX unit
