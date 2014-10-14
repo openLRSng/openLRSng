@@ -86,7 +86,10 @@
 
 #if (COMPILE_TX == 1)
 #include "binary_com.h"
+#include "rxc.h"
+#ifdef CLI_ENABLED
 #include "dialog.h"
+#endif
 #include "frskytx.h"
 #include "TX.h"
 #else

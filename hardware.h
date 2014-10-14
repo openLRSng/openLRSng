@@ -62,6 +62,8 @@ static const char *specialStrs[] = { "PPM","RSSI","SDA","SCL","RXD","TXD","AIN",
 #define SPECIALSTR(x) (specialStrs[(x)&0x0f]) // note must be changed if not 16 strings
 #endif
 
+#define CLI_ENABLED
+
 //####### Board Pinouts #########
 
 #if (BOARD_TYPE == 0) // Flytron M1 TX
@@ -796,6 +798,8 @@ void setupRfmInterrupt()
 #if (COMPILE_TX != 1)
 #error TX module cannot be used as RX
 #endif
+
+#undef CLI_ENABLED
 
 #define TelemetrySerial Serial1
 

@@ -193,8 +193,12 @@ void bindMode(void)
 #ifdef CLI
       case '\n':
       case '\r':
+#ifdef CLI_ENABLED
         Serial.println(F("Enter menu..."));
         handleCLI();
+#else
+        Serial.println(F("CLI not available, use configurator!"));
+#endif
         break;
 #endif
       case '#':

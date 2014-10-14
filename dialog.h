@@ -9,135 +9,7 @@ char    CLI_buffer[EDIT_BUFFER_SIZE + 1];
 uint8_t CLI_buffer_position = 0;
 bool    CLI_magic_set = 0;
 
-#ifdef HEXGET
-const static char hexTab[16] = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F' };
-#endif
 const static char *chConfStr[8] = { "N/A", "4+4", "8", "8+4", "12", "12+4", "16", "N/A" };
-
-#define RXC_MAX_SPECIAL_PINS 16
-struct rxSpecialPinMap rxcSpecialPins[RXC_MAX_SPECIAL_PINS];
-uint8_t rxcSpecialPinCount;
-uint8_t rxcNumberOfOutputs;
-uint16_t rxcVersion;
-
-#ifdef HEXGET
-void hexDump(void *in, uint16_t bytes)
-{
-  uint16_t check=0;
-  uint8_t  *p = (uint8_t*)in;
-  Serial.print("@S:");
-  Serial.print(bytes);
-  if (bytes) {
-    Serial.print("H:");
-    while (bytes) {
-      Serial.print(hexTab[*(p)>>4]);
-      Serial.print(hexTab[*(p)&15]);
-      Serial.print(',');
-      check = ((check << 1) + ((check & 0x8000) ? 1 : 0));
-      check ^= *p;
-      p++;
-      bytes--;
-    }
-  }
-  Serial.print("T:");
-  Serial.print(check,16);
-  Serial.println(":");
-}
-
-void hexGet(void *out, uint16_t expected)
-{
-  uint32_t start = millis();
-  uint16_t bytes = 0;
-  uint8_t  state = 0;
-  uint16_t numin = 0;
-  uint8_t  buffer[expected];
-  uint16_t check = 0;
-  char     ch;
-  while ((millis() - start) < 2000) {
-    if (Serial.available()) {
-      ch=Serial.read();
-      switch (state) {
-      case 0: // wait for S
-        if (ch == 'S') {
-          state = 1;
-        } else {
-          goto fail;
-        }
-        break;
-      case 1: // wait for ':'
-      case 3: // -"-
-      case 6: // -"-
-        if (ch == ':') {
-          state++;
-        } else {
-          goto fail;
-        }
-        break;
-      case 2: // bytecount receving (decimal number)
-        if ((ch >= '0') && (ch <= '9')) {
-          bytes = bytes * 10 + (ch -'0');
-        } else if (ch == 'H') {
-          if (bytes == expected) {
-            state = 3;
-            numin = 0;
-            bytes = 0;
-            check = 0;
-          } else {
-            goto fail;
-          }
-        } else {
-          goto fail;
-        }
-        break;
-      case 4: // reading bytes (hex)
-        if ((ch >= '0') && (ch <= '9')) {
-          numin = numin * 16 + (ch - '0');
-        } else if ((ch >= 'A') && (ch <= 'F')) {
-          numin = numin * 16 + (ch - 'A' + 10);
-        } else if (ch == ',') {
-          buffer[bytes++] = numin;
-          check = ((check << 1) + ((check & 0x8000) ? 1 : 0));
-          check ^= (numin & 0xff);
-          numin = 0;
-          if (bytes == expected) {
-            state = 5;
-          }
-        } else {
-          goto fail;
-        }
-        break;
-      case 5:
-        if (ch == 'T') {
-          state = 6;
-          numin = 0;
-        } else {
-          goto fail;
-        }
-        break;
-      case 7:
-        if ((ch >= '0') && (ch <= '9')) {
-          numin = numin * 16 + (ch - '0');
-        } else if ((ch >= 'A') && (ch <= 'F')) {
-          numin = numin * 16 + (ch - 'A' + 10);
-        } else if (ch == ':') {
-          if (check == numin) {
-            Serial.println("BINARY LOAD OK");
-            memcpy(out, buffer, expected);
-            return;
-          }
-          goto fail;
-        }
-      }
-    }
-  }
-fail:
-  Serial.println("Timeout or error!!");
-  delay(10);
-  while (Serial.available()) {
-    Serial.read();
-  }
-}
-#endif
 
 void printYesNo(uint8_t yes)
 {
@@ -435,22 +307,11 @@ void handleRXmenu(char c)
   if (CLI_menu == -1) {
     switch (c) {
     case '!':
-#ifdef HEXGET
-      hexDump(&rx_config, sizeof(rx_config));
-#else
+    case '@':
       Serial.println("NOT ENABLED");
-#endif
       break;
     case '\n':
     case '\r':
-      RX_menu_headers();
-      break;
-    case '@':
-#ifdef HEXGET
-      hexGet(&rx_config, sizeof(rx_config));
-#else
-      Serial.println("NOT ENABLED");
-#endif
       RX_menu_headers();
       break;
     case 's':
@@ -732,64 +593,6 @@ void handleRXmenu(char c)
   }
 }
 
-uint8_t rxcConnect()
-{
-  uint8_t tx_buf[1 + sizeof(rx_config)];
-  uint32_t last_time = micros();
-
-  init_rfm(1);
-  do {
-    tx_buf[0] = 't';
-    tx_packet(tx_buf, 1);
-    RF_Mode = Receive;
-    rx_reset();
-    delay(250);
-  } while ((RF_Mode == Receive) && (!Serial.available()) && ((micros() - last_time) < 30000000));
-
-  if (RF_Mode == Receive) {
-    return 2;
-  }
-
-  spiSendAddress(0x7f);   // Send the package read command
-  tx_buf[0] = spiReadData();
-  if (tx_buf[0] != 'T') {
-    return 3;
-  }
-
-  rxcVersion = (uint16_t)spiReadData() * 256;
-  rxcVersion += spiReadData();
-
-  rxcNumberOfOutputs = spiReadData();
-  rxcSpecialPinCount = spiReadData();
-  if (rxcSpecialPinCount > RXC_MAX_SPECIAL_PINS) {
-    return 3;
-  }
-
-  for (uint8_t i = 0; i < sizeof(struct rxSpecialPinMap) * rxcSpecialPinCount; i++) {
-    *(((uint8_t*)&rxcSpecialPins) + i) = spiReadData();
-  }
-
-  tx_buf[0] = 'p'; // ask for config dump
-  tx_packet(tx_buf, 1);
-  RF_Mode = Receive;
-  rx_reset();
-  delay(50);
-
-  if (RF_Mode == Receive) {
-    return 2;
-  }
-  spiSendAddress(0x7f);   // Send the package read command
-  tx_buf[0] = spiReadData();
-  if (tx_buf[0] != 'P') {
-    return 3;
-  }
-
-  for (uint8_t i = 0; i < sizeof(rx_config); i++) {
-    *(((uint8_t*)&rx_config) + i) = spiReadData();
-  }
-  return 1;
-}
-
 void CLI_RX_config()
 {
   Serial.println(F("Connecting to RX, power up the RX (with bind plug if not using always bind)"));
@@ -822,21 +625,11 @@ void handleCLImenu(char c)
   if (CLI_menu == -1) {
     switch (c) {
     case '!':
-#ifdef HEXGET
-      hexDump(&bind_data, sizeof(bind_data));
-#else
+    case '@':
       Serial.println("NOT ENABLED");
-#endif
       break;
     case '\n':
     case '\r':
-      break;
-    case '@':
-#ifdef HEXGET
-      hexGet(&bind_data, sizeof(bind_data));
-#else
-      Serial.println("NOT ENABLED");
-#endif
       break;
     case 's':
     case 'S':
@@ -1021,14 +814,3 @@ void handleCLI()
   }
 }
 
-void binaryMode()
-{
-  // Just entered binary mode, flip the bool
-  binary_mode_active = true;
-
-  while (binary_mode_active == true) { // LOCK user here until exit command is received
-    if (Serial.available()) {
-      PSP_read();
-    }
-  }
-}
