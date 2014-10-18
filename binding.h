@@ -23,6 +23,7 @@
 #define DEFAULT_DATARATE 2
 
 #define DEFAULT_BAUDRATE 115200
+#define DEFAULT_SERIAL_DOWNLINK 9 // Must be 9 unless using Mavlink telem. max = COM_BUF_MAXSIZE, 29 is good for APM @ datarate 2
 
 // TX_CONFIG flag masks
 #define ALT_POWER           0x08
@@ -44,7 +45,8 @@
 #define TELEMETRY_PASSTHRU  0x08
 #define TELEMETRY_FRSKY     0x10 // covers smartport if used with &
 #define TELEMETRY_SMARTPORT 0x18
-#define TELEMETRY_MASK      0x18
+#define TELEMETRY_MAVLINK	0x20
+#define TELEMETRY_MASK      0x38
 #define CHANNELS_4_4        0x01
 #define CHANNELS_8          0x02
 #define CHANNELS_8_4        0x03
@@ -71,8 +73,6 @@
 #define MAX_INTERVAL 255
 
 #define BINDING_POWER     0x06 // not lowest since may result fail with RFM23BP
-
-#define TELEMETRY_PACKETSIZE 9
 
 #define BIND_MAGIC (0xDEC1BE15 + (OPENLRSNG_VERSION & 0xfff0))
 #define BINDING_VERSION ((OPENLRSNG_VERSION & 0x0ff0)>>4)
@@ -138,6 +138,7 @@ struct bind_data {
   uint8_t hopchannel[MAXHOPS];
   uint8_t modem_params;
   uint8_t flags;
+  uint8_t serial_downlink; // 0-COM_BUF_MAXSIZE, max byte count for serial downlink
 } bind_data;
 
 struct rfm22_modem_regs {
@@ -313,6 +314,7 @@ void bindInitDefaults(void)
 {
   bind_data.version = BINDING_VERSION;
   bind_data.serial_baudrate = DEFAULT_BAUDRATE;
+  bind_data.serial_downlink = DEFAULT_SERIAL_DOWNLINK;
   bind_data.rf_power = DEFAULT_RF_POWER;
   bind_data.rf_frequency = DEFAULT_CARRIER_FREQUENCY;
   bind_data.rf_channel_spacing = DEFAULT_CHANNEL_SPACING;

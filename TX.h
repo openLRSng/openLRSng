@@ -1,6 +1,9 @@
 /****************************************************
  * OpenLRSng transmitter code
  ****************************************************/
+uint32_t mavlink_last_inject_time = 0;
+uint16_t rxerrors = 0;
+
 uint8_t RF_channel = 0;
 
 uint8_t altPwrIndex = 0; // every nth packet at lower power
@@ -154,9 +157,7 @@ void bindMode(void)
 
   init_rfm(1);
 
-  while (Serial.available()) {
-    Serial.read();    // flush serial
-  }
+  Serial.flush();
 
   Red_LED_OFF;
 
@@ -316,13 +317,13 @@ static inline void checkFS(void)
 }
 
 uint8_t tx_buf[21];
-uint8_t rx_buf[9];
+uint8_t rx_buf[COM_BUF_MAXSIZE];
 
-#define SERIAL_BUFSIZE 32
-uint8_t serial_buffer[SERIAL_BUFSIZE];
-uint8_t serial_resend[9];
-uint8_t serial_head;
-uint8_t serial_tail;
+#define SERIAL_BUF_RX_SIZE 64
+#define SERIAL_BUF_TX_SIZE 128
+uint8_t serial_rxbuffer[SERIAL_BUF_RX_SIZE];
+uint8_t serial_txbuffer[SERIAL_BUF_TX_SIZE];
+uint8_t serial_resend[COM_BUF_MAXSIZE];
 uint8_t serial_okToSend; // 2 if it is ok to send serial instead of servo
 
 void setup(void)
@@ -354,7 +355,9 @@ void setup(void)
 
 #ifdef __AVR_ATmega32U4__
   Serial.begin(0); // Suppress warning on overflow on Leonardo
+  TelemetrySerial.setBuffers(serial_rxbuffer, SERIAL_BUF_RX_SIZE, serial_txbuffer, SERIAL_BUF_TX_SIZE);
 #else
+  Serial.setBuffers(serial_rxbuffer, SERIAL_BUF_RX_SIZE, serial_txbuffer, SERIAL_BUF_TX_SIZE);
   Serial.begin(115200);
 #endif
   profileInit();
@@ -374,9 +377,7 @@ void setup(void)
   digitalWrite(BTN, HIGH);
   Red_LED_ON ;
 
-  while (Serial.available()) {
-    Serial.read();
-  }
+  Serial.flush();
 
   Serial.print("OpenLRSng TX starting ");
   printVersion(version);
@@ -414,8 +415,6 @@ void setup(void)
   rfmSetChannel(RF_channel);
   rx_reset();
 
-  serial_head = 0;
-  serial_tail = 0;
   serial_okToSend = 0;
 
   for (uint8_t i = 0; i <= activeProfile; i++) {
@@ -634,13 +633,11 @@ void loop(void)
     Red_LED_OFF;
   }
 
-  while (TelemetrySerial.available()) {
-    uint8_t ch = TelemetrySerial.read();
-    if (serialMode) {
+
+  if (serialMode) {
+    while (TelemetrySerial.available()) {
+      uint8_t ch = TelemetrySerial.read();
       processChannelsFromSerial(ch);
-    } else if (((serial_tail + 1) % SERIAL_BUFSIZE) != serial_head) {
-      serial_buffer[serial_tail] = ch;
-      serial_tail = (serial_tail + 1) % SERIAL_BUFSIZE;
     }
   }
 
@@ -661,13 +658,22 @@ void loop(void)
     linkQuality |= 1;
     RF_Mode = Receive;
     spiSendAddress(0x7f); // Send the package read command
-    for (int16_t i = 0; i < 9; i++) {
+    for (int16_t i = 0; i < bind_data.serial_downlink; i++) {
       rx_buf[i] = spiReadData();
     }
 
     if ((tx_buf[0] ^ rx_buf[0]) & 0x40) {
       tx_buf[0] ^= 0x40; // swap sequence to ack
-      if ((rx_buf[0] & 0x38) == 0x38) {
+
+      if ((bind_data.flags & TELEMETRY_MASK) == TELEMETRY_MAVLINK) { // Mavlink Rx only sends transparent serial data
+        const uint8_t byteCount = rx_buf[0] & 0x3F;
+
+        uint8_t i;
+        for (i = 0; i < byteCount; i++) {
+          const uint8_t ch = rx_buf[i + 1];
+          TelemetrySerial.write(ch);
+        }
+      } else if ((rx_buf[0] & 0x38) == 0x38) {
         uint8_t i;
         // transparent serial data...
         for (i = 0; i<= (rx_buf[0] & 7);) {
@@ -724,6 +730,7 @@ void loop(void)
           if (!(tx_config.flags & MUTE_TX)) {
             buzzerOn(BZ_FREQ);
           }
+          rxerrors++;
           lastTelemetry = 0;
         } else {
           // telemetry link re-established
@@ -733,18 +740,18 @@ void loop(void)
 
       // Construct packet to be sent
       tx_buf[0] &= 0xc0; //preserve seq. bits
-      if ((serial_tail != serial_head) && (serial_okToSend == 2)) {
+      if (TelemetrySerial.available() > 0 && (serial_okToSend == 2)) {
         tx_buf[0] ^= 0x80; // signal new data on line
         uint8_t bytes = 0;
         uint8_t maxbytes = 8;
         if (getPacketSize(&bind_data) < 9) {
           maxbytes = getPacketSize(&bind_data) - 1;
         }
-        while ((bytes < maxbytes) && (serial_head != serial_tail)) {
+        while ((bytes < maxbytes) && TelemetrySerial.available() > 0) {
           bytes++;
-          tx_buf[bytes] = serial_buffer[serial_head];
-          serial_resend[bytes] = serial_buffer[serial_head];
-          serial_head = (serial_head + 1) % SERIAL_BUFSIZE;
+          const uint8_t ch = (uint8_t)TelemetrySerial.read();
+          tx_buf[bytes] = ch;
+          serial_resend[bytes] = ch;
         }
         tx_buf[0] |= (0x37 + bytes);
         serial_resend[0] = bytes;

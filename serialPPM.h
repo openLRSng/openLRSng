@@ -73,7 +73,7 @@ void sendSBUSFrame(uint8_t failsafe, uint8_t lostpack)
     for (uint8_t i = 0; i<23; i++) {
       Serial.write(sbus.bytes[i]);
     }
-    Serial.write(SBUS_TAIL);
+    Serial.write((const char*)SBUS_TAIL);
   }
 }
 
