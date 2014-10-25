@@ -190,6 +190,17 @@ void set_RSSI_output()
   }
 }
 
+void updateSwitches()
+{
+  uint8_t i;
+  for (i = 0; i < OUTPUTS; i++) {
+    uint8_t map = rx_config.pinMapping[i];
+    if ((map & 0xf0) == 0x10) { // 16-31
+      digitalWrite(OUTPUT_PIN[i], (PPM[map & 0x0f] > 255) ? HIGH : LOW);
+    }
+  }
+}
+
 void failsafeApply()
 {
   if (failsafePPM[0] != 0xffff) {
@@ -204,6 +215,7 @@ void failsafeApply()
       PPM[i] = failsafePPM[i];
       sei();
     }
+    updateSwitches();
   }
 }
 
@@ -333,18 +345,6 @@ void updateLBeep(bool packetLost)
     }
   }
 }
-
-static inline void updateSwitches()
-{
-  uint8_t i;
-  for (i = 0; i < OUTPUTS; i++) {
-    uint8_t map = rx_config.pinMapping[i];
-    if ((map & 0xf0) == 0x10) { // 16-31
-      digitalWrite(OUTPUT_PIN[i], (PPM[map & 0x0f] > 255) ? HIGH : LOW);
-    }
-  }
-}
-
 
 uint8_t bindReceive(uint32_t timeout)
 {
@@ -945,9 +945,9 @@ retry:
         fatalBlink(3);
       }
 #endif
-
-      updateSwitches();
     }
+
+    updateSwitches();
 
     RF_Mode = Receive;
     rx_reset();
