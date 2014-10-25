@@ -190,13 +190,14 @@ void set_RSSI_output()
   }
 }
 
+static const uint16_t switchThresholds[3] = { 178, 500, 844 };
 void updateSwitches()
 {
   uint8_t i;
   for (i = 0; i < OUTPUTS; i++) {
     uint8_t map = rx_config.pinMapping[i];
     if ((map & 0xf0) == 0x10) { // 16-31
-      digitalWrite(OUTPUT_PIN[i], (PPM[map & 0x0f] > 255) ? HIGH : LOW);
+      digitalWrite(OUTPUT_PIN[i], (PPM[map & 0x0f] > switchThresholds[i%3]) ? HIGH : LOW);
     }
   }
 }
