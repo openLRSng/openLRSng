@@ -60,6 +60,10 @@ void bindPrint(void)
   case TELEMETRY_SMARTPORT:
     Serial.println(F("smartPort"));
     break;
+  case TELEMETRY_MAVLINK:
+    Serial.println(F("Transparent (Mavlink)"));
+    break;
+
   }
 
   Serial.print(F("9) Serial baudrate:"));
@@ -73,6 +77,11 @@ void bindPrint(void)
 
   Serial.print(F("B) Micro (half) PPM    :"));
   printYesNo(tx_config.flags & MICROPPM);
+
+  if ((bind_data.flags & TELEMETRY_MASK) == TELEMETRY_MAVLINK) { // Only able to adjust serial downlink when using mavlink telemetry feature
+    Serial.print(F("D) Telemetry packet size: "));
+    Serial.println(bind_data.serial_downlink);
+  }
 
   Serial.print(F("Calculated packet interval: "));
   Serial.print(getInterval(&bind_data));
@@ -199,6 +208,9 @@ void CLI_menu_headers(void)
     break;
   case 9:
     Serial.println(F("Set serial baudrate: "));
+    break;
+  case 11:
+    Serial.println(F("Set telemetry packet size: "));
     break;
   }
 
@@ -351,7 +363,7 @@ void handleRXmenu(char c)
           tx_buf[i + 1] = spiReadData();
         }
         memcpy(&rx_config, tx_buf + 1, sizeof(rx_config));
-        if (tx_buf[0]=='I') {
+        if (tx_buf[0] == 'I') {
           Serial.println(F("*****************************"));
           Serial.println(F("RX Acked - revert successful!"));
           Serial.println(F("*****************************"));
@@ -677,9 +689,7 @@ void handleCLImenu(char c)
     case '8':
       Serial.println(F("Toggled telemetry!"));
       {
-        uint8_t newf = (bind_data.flags + TELEMETRY_PASSTHRU) & TELEMETRY_MASK;
-        bind_data.flags &= ~TELEMETRY_MASK;
-        bind_data.flags |= newf;
+        bind_data.flags = (bind_data.flags + TELEMETRY_PASSTHRU) % (TELEMETRY_MAVLINK + 8); // last mode + first.
       }
       CLI_menu = -1;
       break;
@@ -702,6 +712,11 @@ void handleCLImenu(char c)
       Serial.println(F("Toggled microPPM"));
       tx_config.flags ^= MICROPPM;
       CLI_menu = -1;
+      break;
+    case 'd':
+    case 'D':
+      CLI_menu = 11;
+      CLI_menu_headers();
       break;
     case 'z':
     case 'Z':
@@ -775,6 +790,14 @@ void handleCLImenu(char c)
         case 9:
           if ((value >0) && (value <= 115200)) {
             bind_data.serial_baudrate = value;
+            valid_input = 1;
+          }
+          break;
+        case 11:
+          if ((bind_data.flags & TELEMETRY_MASK) == TELEMETRY_MAVLINK && (value >= 9) && (value < COM_BUF_MAXSIZE)) {
+            bind_data.serial_downlink = value;
+            valid_input = 1;
+          } else {
             valid_input = 1;
           }
           break;

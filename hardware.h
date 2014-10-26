@@ -75,6 +75,7 @@ static const char *specialStrs[] = { "PPM","RSSI","SDA","SCL","RXD","TXD","AIN",
 #error TX module cannot be used as RX
 #endif
 
+DefineSerialPort(Serial, 0);
 #define TelemetrySerial Serial
 
 #define PPM_IN           A5
@@ -160,6 +161,7 @@ void setupRfmInterrupt()
 #error M1 RX not verified yet
 #endif
 
+DefineSerialPort(Serial, 0);
 #define TelemetrySerial Serial
 
 #define PPM_IN     5
@@ -251,6 +253,9 @@ void setupRfmInterrupt()
 #define PPM_Signal_Interrupt PCINT2_vect
 #define PPM_Signal_Edge_Check ((PIND & 0x08)==0x08)
 
+DefineSerialPort(Serial, 0);
+#define TelemetrySerial Serial
+
 void buzzerInit()
 {
   pinMode(BUZZER_ACT, OUTPUT);
@@ -308,9 +313,11 @@ struct rxSpecialPinMap rxSpecialPins[] = {
   { 6, PINMAP_SBUS},
   { 6, PINMAP_SUMD},
 };
+
+DefineSerialPort(Serial, 0);
+
 #endif
 
-#define TelemetrySerial Serial
 
 #define Red_LED          13
 #define Green_LED        12
@@ -366,6 +373,7 @@ void setupRfmInterrupt()
 #endif
 
 #if (COMPILE_TX == 1)
+DefineSerialPort(Serial, 0);
 #define TelemetrySerial Serial
 
 #define USE_ICP1 // use ICP1 for PPM input for less jitter
@@ -420,6 +428,8 @@ void buzzerOn(uint16_t freq)
 #define RSSI_OUT 3 // PD3 OC2B
 
 #define OUTPUTS 13 // outputs available
+
+DefineSerialPort(Serial, 0);
 
 const pinMask_t OUTPUT_MASKS[OUTPUTS] = {
   {0x00,0x00,0x08},{0x00,0x00,0x20},{0x00,0x00,0x40}, // RSSI, CH1, CH2
@@ -524,6 +534,7 @@ void setupRfmInterrupt()
 #error TX module cannot be used as RX
 #endif
 
+DefineSerialPort(Serial, 0);
 #define TelemetrySerial Serial
 
 #define USE_ICP1 // use ICP1 for PPM input for less jitter
@@ -630,6 +641,7 @@ void setupRfmInterrupt()
 #if (COMPILE_TX == 1)
 // TX operation
 
+DefineSerialPort(Serial, 0);
 #define TelemetrySerial Serial
 
 #define USE_ICP1 // use ICP1 for PPM input for less jitter
@@ -690,6 +702,8 @@ void buzzerOn(uint16_t freq)
 #define PWM_6 A1 // PC1
 
 #define OUTPUTS 8 // outputs available
+
+DefineSerialPort(Serial, 0);
 
 const pinMask_t OUTPUT_MASKS[OUTPUTS] = {
   {0x02,0x00,0x00}, {0x00,0x10,0x00}, {0x00,0x00,0x08},// CH1/PPM, CH2/SDA, CH3/RSSI
@@ -801,7 +815,8 @@ void setupRfmInterrupt()
 
 #undef CLI_ENABLED
 
-#define TelemetrySerial Serial1
+DefineSerialPort(Serial10, 1);
+#define TelemetrySerial Serial10
 
 #define USE_ICP1 // use ICP1 for PPM input for less jitter
 #define PPM_IN 4 // ICP1
@@ -905,6 +920,7 @@ ISR(PCINT0_vect)
 #if (COMPILE_TX == 1)
 // TX operation
 
+DefineSerialPort(Serial, 0);
 #define TelemetrySerial Serial
 
 #define USE_ICP1 // use ICP1 for PPM input for less jitter
@@ -945,6 +961,8 @@ void buzzerOn(uint16_t freq)
 #define PWM_6 A1 // PC1 - Buzzer
 
 #define OUTPUTS 8 // outputs available
+
+DefineSerialPort(Serial, 0);
 
 const pinMask_t OUTPUT_MASKS[OUTPUTS] = {
   {0x02,0x00,0x00}, {0x00,0x10,0x00}, {0x00,0x00,0x08},// CH1/PPM, CH2/SDA, CH3/RSSI
@@ -1053,6 +1071,7 @@ void setupRfmInterrupt()
 #if (COMPILE_TX == 1)
 // TX operation
 
+DefineSerialPort(Serial, 0);
 #define TelemetrySerial Serial
 
 #define USE_ICP1 // use ICP1 for PPM input for less jitter
@@ -1111,6 +1130,8 @@ void buzzerOn(uint16_t freq)
 #define PWM_4 A5 // PC5 - also SCL
 
 #define OUTPUTS 6 // outputs available
+
+DefineSerialPort(Serial, 0);
 
 const pinMask_t OUTPUT_MASKS[OUTPUTS] = {
   {0x02,0x00,0x00}, {0x00,0x10,0x00}, {0x00,0x00,0x08},// CH1/PPM, CH2/SDA, CH3/RSSI

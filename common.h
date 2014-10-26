@@ -34,7 +34,7 @@ uint32_t getInterval(struct bind_data *bd)
   ret = (BYTES_AT_BAUD_TO_USEC(getPacketSize(bd), modem_params[bd->modem_params].bps) + 2000);
 
   if (bd->flags & TELEMETRY_MASK) {
-    ret += (BYTES_AT_BAUD_TO_USEC(TELEMETRY_PACKETSIZE, modem_params[bd->modem_params].bps) + 1000);
+    ret += (BYTES_AT_BAUD_TO_USEC(bd->serial_downlink, modem_params[bd->modem_params].bps) + 1000);
   }
 
   // round up to ms
