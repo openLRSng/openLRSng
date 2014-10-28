@@ -56,6 +56,7 @@
 //#define BOARD_TYPE 4 // 4 = OpenLRSngTX / HawkEye UHF TX
 //#define BOARD_TYPE 5 // 5 = OpenLRSngRX-4/6ch (DTF UHF/HawkEye) (RX and TX supported)
 //#define BOARD_TYPE 6 // 6 = DTF UHF/HawkEye DeluxeTX (Atmega32u4)
+//#define BOARD_TYPE 9 // 9 = BroversityRX
 
 //### Module type selection (default = 433, only needed for modified HW)
 //#define RFMTYPE 868
