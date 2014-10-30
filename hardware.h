@@ -1235,7 +1235,7 @@ void buzzerOn(uint16_t freq)
 #define PPM_OUT 9 // OCP1A
 #define RSSI_OUT 3 // PD3 OC2B
 
-#define USE_DIVERSITY
+#define ANTENNA_DIVERSITY
 
 #define PWM_1 9 // PB1 - also PPM
 #define PWM_2 A0 // PC0 - Ch2

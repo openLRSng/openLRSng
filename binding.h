@@ -51,8 +51,8 @@
 #define CHANNELS_12         0x04
 #define CHANNELS_12_4       0x05
 #define CHANNELS_16         0x06
+#define DIVERSITY_ENABLED   0x80
 #define DEFAULT_FLAGS       (CHANNELS_8 | TELEMETRY_PASSTHRU)
-
 
 // helper macro for European PMR channels
 #define EU_PMR_CH(x) (445993750L + 12500L * (x)) // valid for ch1-ch8
