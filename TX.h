@@ -809,14 +809,16 @@ void loop(void)
     }
   }
 
-  if ((bind_data.flags & TELEMETRY_MASK) && (RF_Mode == Transmitted)) {
-    linkQuality <<= 1;
-    RF_Mode = Receive;
-    rx_reset();
-    // tell loop to sample downlink RSSI
-    sampleRSSI = micros();
-    if (sampleRSSI == 0) {
-      sampleRSSI = 1;
+  if (tx_done() == 1) {
+    if (bind_data.flags & TELEMETRY_MASK) {
+      linkQuality <<= 1;
+      RF_Mode = Receive;
+      rx_reset();
+      // tell loop to sample downlink RSSI
+      sampleRSSI = micros();
+      if (sampleRSSI == 0) {
+	sampleRSSI = 1;
+      }
     }
   }
 

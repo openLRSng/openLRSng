@@ -29,7 +29,7 @@ uint32_t getInterval(struct bind_data *bd)
   uint32_t ret;
   // Sending a x byte packet on bps y takes about (emperical)
   // usec = (x + 15) * 8200000 / baudrate
-#define BYTES_AT_BAUD_TO_USEC(bytes, bps, div) ((uint32_t)((bytes) + (div?17:15)) * 8200000L / (uint32_t)(bps))
+#define BYTES_AT_BAUD_TO_USEC(bytes, bps, div) ((uint32_t)((bytes) + (div?20:15)) * 8200000L / (uint32_t)(bps))
 
   ret = (BYTES_AT_BAUD_TO_USEC(getPacketSize(bd), modem_params[bd->modem_params].bps, bd->flags&DIVERSITY_ENABLED) + 2000);
 
@@ -591,14 +591,17 @@ void tx_packet(uint8_t* pkt, uint8_t size)
 
 uint8_t tx_done()
 {
-  if (RF_Mode != Transmit) {
+  if (RF_Mode == Transmitted) {
 #ifdef TX_TIMING
     Serial.print("TX took:");
     Serial.println(micros() - tx_start);
 #endif
+    RF_Mode = Available;
     return 1; // success
   }
-  if ((micros() - tx_start) > 100000) {
+  if ((RF_Mode == Transmit) && ((micros() - tx_start) > 100000)) {
+    spiWriteRegister(0x07, RF22B_PWRSTATE_READY);
+    RF_Mode = Available;
     return 2; // timeout
   }
   return 0;
