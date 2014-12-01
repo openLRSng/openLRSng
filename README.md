@@ -93,6 +93,14 @@ Use a 3v3 FTDI (or other USB to TTL serial adapter) and Arduino >= 1.0.
   o for deluxeTX "arduino boardtype" must be set to "Leonardo"
 
 
+GENERATED FIRMWARE FILES:
+=========================
+Makefile generates TX/RX firmware files for each frequency 433/868/915 as well as all hardware types [RX/TX]-[#].hex.
+
+The "*-bl.hex" files contain bootloader and can be used when flashing via ICSP.
+  o 328p model (all but type 6) use optiboot bootloader and thus needs fuses set to: Low: FF High: DE Ext: 05.
+  o type 6 uses 'caterina' and fuses should be set to: Low: FF High: D8 Ext: CB.
+
 USERS GUIDE
 ===========
 
