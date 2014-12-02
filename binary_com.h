@@ -165,7 +165,7 @@ void PSP_process_data(uint8_t code, uint16_t payload_length_received, uint8_t da
   case PSP_REQ_ACTIVE_PROFILE:
     PSP_protocol_head(PSP_REQ_ACTIVE_PROFILE, 1);
     {
-      PSP_serialize_uint8(activeProfile);
+      PSP_serialize_uint8(eepromProfile);
     }
     break;
   case PSP_REQ_RX_FAILSAFE: {

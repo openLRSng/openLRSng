@@ -533,6 +533,9 @@ void setupRfmInterrupt()
 #define TX_AIN0 A4 // SDA
 #define TX_AIN1 A5 // SCL
 
+#define TX_MODE1 A1
+#define TX_MODE2 A2
+
 #define BUZZER_PAS 3 // OCR2B
 #define BTN A0
 #define Red_LED 6

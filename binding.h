@@ -101,6 +101,7 @@ static uint8_t default_hop_list[] = {DEFAULT_HOPLIST};
 #define PPM_CHANNELS 16
 
 uint8_t activeProfile = 0;
+uint8_t eepromProfile = 0;
 
 struct tx_config {
   uint8_t  rfm_type;
@@ -243,9 +244,9 @@ start:
       addressNeedle = sizeof(tx_config) + 2;
       addressNeedle += (sizeof(tx_config) + sizeof(bind_data) + 4) * activeProfile;
     } else if (dataType == 2) {
-      dataAddress = &activeProfile;
+      dataAddress = &eepromProfile;
       dataSize = 1;
-      addressNeedle = (sizeof(tx_config) + sizeof(bind_data) + 4) * 4; // activeProfile is stored behind all 4 profiles
+      addressNeedle = (sizeof(tx_config) + sizeof(bind_data) + 4) * 4; // eepromProfile is stored behind all 4 profiles
     }
 #else
     if (dataType == 0) {
@@ -328,7 +329,9 @@ void bindInitDefaults(void)
 }
 
 #if (COMPILE_TX == 1)
-#define TX_PROFILE_COUNT 4
+#define TX_PROFILE_COUNT  4
+#define TX_PROFILE_MASK   0x03
+#define TX_PROFILE_SWITCH 0x80
 
 void profileSet()
 {
@@ -338,18 +341,39 @@ void profileSet()
 void profileInit()
 {
   accessEEPROM(2, false);
-  if (activeProfile >= TX_PROFILE_COUNT) {
+  if (eepromProfile & TX_PROFILE_SWITCH) {
+#ifdef TX_MODE1
+    uint8_t mode = (digitalRead(TX_MODE1)?1:0) | (digitalRead(TX_MODE2)?2:0);
+    switch (mode) {
+      case 2: activeProfile = 0; // MODE1 grounded
+        break;
+      case 1: activeProfile = 1; // MODE2 grounded
+        break;
+      case 3: activeProfile = 2; // both high
+        break;
+      case 0: activeProfile = 3; // both ground
+        break;
+    }
+#else
     activeProfile = 0;
-    profileSet();
+#endif
+  } else {
+    activeProfile = (eepromProfile & TX_PROFILE_MASK);
+    if (activeProfile > TX_PROFILE_COUNT) {
+      eepromProfile = 0;
+      activeProfile = 0;
+      profileSet();
+    }
   }
 }
 
 void profileSwap(uint8_t profile)
 {
   profileInit();
-  if ((activeProfile != profile) && (profile < TX_PROFILE_COUNT)) {
-    activeProfile = profile;
+  if (eepromProfile != profile) {
+    eepromProfile = profile;
     profileSet();
+    activeProfile = profile & TX_PROFILE_MASK;
   }
 }
 

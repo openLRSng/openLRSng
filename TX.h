@@ -257,7 +257,7 @@ void checkButton(void)
       }
 
       buzzerOff();
-      if (swapProfile) {
+      if ((!(eepromProfile & TX_PROFILE_SWITCH)) && swapProfile ) {
         profileSwap((activeProfile + 1) % TX_PROFILE_COUNT);
         txReadEeprom();
         return;
