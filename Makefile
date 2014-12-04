@@ -94,7 +94,7 @@ CAT=cat
 # Styling
 #
 ASTYLE=astyle
-ASTYLEOPTIONS=--style=1tbs --indent=spaces=2 --suffix=none
+ASTYLEOPTIONS=--options=none --style=1tbs --indent=spaces=2 --suffix=none --lineend=linux
 
 #
 # Compile flags

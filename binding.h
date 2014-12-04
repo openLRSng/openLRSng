@@ -345,14 +345,18 @@ void profileInit()
 #ifdef TX_MODE1
     uint8_t mode = (digitalRead(TX_MODE1)?1:0) | (digitalRead(TX_MODE2)?2:0);
     switch (mode) {
-      case 2: activeProfile = 0; // MODE1 grounded
-        break;
-      case 1: activeProfile = 1; // MODE2 grounded
-        break;
-      case 3: activeProfile = 2; // both high
-        break;
-      case 0: activeProfile = 3; // both ground
-        break;
+    case 2:
+      activeProfile = 0; // MODE1 grounded
+      break;
+    case 1:
+      activeProfile = 1; // MODE2 grounded
+      break;
+    case 3:
+      activeProfile = 2; // both high
+      break;
+    case 0:
+      activeProfile = 3; // both ground
+      break;
     }
 #else
     activeProfile = 0;

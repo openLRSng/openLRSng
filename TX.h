@@ -817,7 +817,7 @@ void loop(void)
       // tell loop to sample downlink RSSI
       sampleRSSI = micros();
       if (sampleRSSI == 0) {
-	sampleRSSI = 1;
+        sampleRSSI = 1;
       }
     }
   }
