@@ -309,6 +309,18 @@ struct rxSpecialPinMap rxSpecialPins[] = {
   { 6, PINMAP_SBUS},
   { 6, PINMAP_SUMD},
 };
+
+void rxInitHWConfig()
+{
+  rx_config.rx_type = RX_FLYTRONM3;
+  rx_config.pinMapping[0] = PINMAP_PPM;
+  rx_config.pinMapping[1] = PINMAP_RSSI;
+  rx_config.pinMapping[2] = 0;
+  rx_config.pinMapping[3] = PINMAP_ANALOG;
+  rx_config.pinMapping[4] = PINMAP_ANALOG;
+  rx_config.pinMapping[5] = PINMAP_RXD;
+  rx_config.pinMapping[6] = PINMAP_TXD;
+}
 #endif
 
 #define TelemetrySerial Serial
@@ -458,6 +470,19 @@ struct rxSpecialPinMap rxSpecialPins[] = {
   { 12, PINMAP_SUMD},
 };
 
+void rxInitHWConfig()
+{
+  uint8_t i;
+  rx_config.rx_type = RX_FLYTRON8CH;
+  rx_config.pinMapping[0] = PINMAP_RSSI; // the CH0 on 8ch RX
+  for (i = 1; i < 9; i++) {
+    rx_config.pinMapping[i] = i - 1; // default to PWM out
+  }
+  rx_config.pinMapping[9] = PINMAP_ANALOG;
+  rx_config.pinMapping[10] = PINMAP_ANALOG;
+  rx_config.pinMapping[11] = PINMAP_RXD;
+  rx_config.pinMapping[12] = PINMAP_TXD;
+}
 #endif
 
 #define Red_LED    A3
@@ -734,6 +759,16 @@ struct rxSpecialPinMap rxSpecialPins[] = {
   { 7, PINMAP_SUMD},
 };
 
+void rxInitHWConfig()
+{
+  uint8_t i;
+  rx_config.rx_type = RX_OLRSNG4CH;
+  for (i = 0; i < 6; i++) {
+    rx_config.pinMapping[i] = i; // default to PWM out
+  }
+  rx_config.pinMapping[6] = PINMAP_RXD;
+  rx_config.pinMapping[7] = PINMAP_TXD;
+}
 #endif
 
 #define Red_LED 6
@@ -989,6 +1024,18 @@ struct rxSpecialPinMap rxSpecialPins[] = {
   { 7, PINMAP_SUMD},
 };
 
+void rxInitHWConfig()
+{
+  rx_config.rx_type = RX_PTOWER;
+  rx_config.pinMapping[0] = PINMAP_PPM;
+  rx_config.pinMapping[1] = PINMAP_SDA;
+  rx_config.pinMapping[2] = PINMAP_RSSI;
+  rx_config.pinMapping[3] = PINMAP_SCL;
+  // Skipping pinMapping[4] as it is NC
+  rx_config.pinMapping[5] = PINMAP_LLIND;
+  rx_config.pinMapping[6] = PINMAP_RXD;
+  rx_config.pinMapping[7] = PINMAP_TXD;
+}
 #endif
 
 #define Red_LED 6
@@ -1147,6 +1194,16 @@ struct rxSpecialPinMap rxSpecialPins[] = {
   { 5, PINMAP_SUMD},
 };
 
+void rxInitHWConfig()
+{
+  rx_config.rx_type = RX_MICRO;
+  rx_config.pinMapping[0] = PINMAP_PPM;
+  rx_config.pinMapping[1] = PINMAP_ANALOG;
+  rx_config.pinMapping[2] = PINMAP_RSSI;
+  rx_config.pinMapping[3] = PINMAP_ANALOG;
+  rx_config.pinMapping[4] = PINMAP_RXD;
+  rx_config.pinMapping[5] = PINMAP_TXD;
+}
 #endif
 
 #define Red_LED A3
@@ -1285,6 +1342,21 @@ struct rxSpecialPinMap rxSpecialPins[] = {
   { 10, PINMAP_SUMD},
 };
 
+void rxInitHWConfig()
+{
+  rx_config.rx_type = RX_BRORX;
+  rx_config.pinMapping[0] = PINMAP_PPM;
+  rx_config.pinMapping[1] = 0;
+  rx_config.pinMapping[2] = 1;
+  rx_config.pinMapping[3] = 2;
+  rx_config.pinMapping[4] = 3;
+  rx_config.pinMapping[5] = PINMAP_SDA;
+  rx_config.pinMapping[6] = PINMAP_SCL;
+  rx_config.pinMapping[7] = PINMAP_LLIND;
+  rx_config.pinMapping[8] = PINMAP_RSSI;
+  rx_config.pinMapping[9] = PINMAP_RXD;
+  rx_config.pinMapping[10] = PINMAP_TXD;
+}
 #endif
 
 #define Red_LED 6

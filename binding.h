@@ -101,7 +101,7 @@ static uint8_t default_hop_list[] = {DEFAULT_HOPLIST};
 #define PPM_CHANNELS 16
 
 uint8_t activeProfile = 0;
-uint8_t eepromProfile = 0;
+uint8_t defaultProfile = 0;
 
 struct tx_config {
   uint8_t  rfm_type;
@@ -194,20 +194,6 @@ void CRC16_add(uint8_t c) // CCITT polynome
   }
 }
 
-// Halt and blink failure code
-void fatalBlink(uint8_t blinks)
-{
-  while (1) {
-    for (uint8_t i=0; i < blinks; i++) {
-      Red_LED_ON;
-      delay(100);
-      Red_LED_OFF;
-      delay(100);
-    }
-    delay(300);
-  }
-}
-
 #if (COMPILE_TX != 1)
 extern uint16_t failsafePPM[PPM_CHANNELS];
 #endif
@@ -244,9 +230,9 @@ start:
       addressNeedle = sizeof(tx_config) + 2;
       addressNeedle += (sizeof(tx_config) + sizeof(bind_data) + 4) * activeProfile;
     } else if (dataType == 2) {
-      dataAddress = &eepromProfile;
+      dataAddress = &defaultProfile;
       dataSize = 1;
-      addressNeedle = (sizeof(tx_config) + sizeof(bind_data) + 4) * 4; // eepromProfile is stored behind all 4 profiles
+      addressNeedle = (sizeof(tx_config) + sizeof(bind_data) + 4) * 4; // defaultProfile is stored behind all 4 profiles
     }
 #else
     if (dataType == 0) {
@@ -330,8 +316,6 @@ void bindInitDefaults(void)
 
 #if (COMPILE_TX == 1)
 #define TX_PROFILE_COUNT  4
-#define TX_PROFILE_MASK   0x03
-#define TX_PROFILE_SWITCH 0x80
 
 void profileSet()
 {
@@ -341,7 +325,7 @@ void profileSet()
 void profileInit()
 {
   accessEEPROM(2, false);
-  if (eepromProfile & TX_PROFILE_SWITCH) {
+  if (defaultProfile >= TX_PROFILE_COUNT) {
 #ifdef TX_MODE1
     uint8_t mode = (digitalRead(TX_MODE1)?1:0) | (digitalRead(TX_MODE2)?2:0);
     switch (mode) {
@@ -362,27 +346,23 @@ void profileInit()
     activeProfile = 0;
 #endif
   } else {
-    activeProfile = (eepromProfile & TX_PROFILE_MASK);
-    if (activeProfile > TX_PROFILE_COUNT) {
-      eepromProfile = 0;
-      activeProfile = 0;
-      profileSet();
-    }
+    activeProfile = defaultProfile;
   }
 }
 
-void profileSwap(uint8_t profile)
+void setDefaultProfile(uint8_t profile)
 {
-  profileInit();
-  if (eepromProfile != profile) {
-    eepromProfile = profile;
+  if (defaultProfile != profile) {
+    defaultProfile = profile;
     profileSet();
-    activeProfile = profile & TX_PROFILE_MASK;
   }
 }
 
 void txInitDefaults()
 {
+  defaultProfile = 0;
+  profileSet();
+
   tx_config.max_frequency = MAX_RFM_FREQUENCY;
   tx_config.flags = 0x00;
   TX_CONFIG_SETMINCH(5); // 6ch
@@ -494,70 +474,12 @@ void failsafeLoad(void)
   }
 }
 
+void rxInitHWConfig();
+
 void rxInitDefaults(bool save)
 {
-#if (BOARD_TYPE == 2)
-  rx_config.rx_type = RX_FLYTRONM3;
-  rx_config.pinMapping[0] = PINMAP_PPM;
-  rx_config.pinMapping[1] = PINMAP_RSSI;
-  rx_config.pinMapping[2] = 0;
-  rx_config.pinMapping[3] = PINMAP_ANALOG;
-  rx_config.pinMapping[4] = PINMAP_ANALOG;
-  rx_config.pinMapping[5] = PINMAP_RXD;
-  rx_config.pinMapping[6] = PINMAP_TXD;
-#elif (BOARD_TYPE == 3)
-  uint8_t i;
-  rx_config.rx_type = RX_FLYTRON8CH;
-  rx_config.pinMapping[0] = PINMAP_RSSI; // the CH0 on 8ch RX
-  for (i = 1; i < 9; i++) {
-    rx_config.pinMapping[i] = i - 1; // default to PWM out
-  }
-  rx_config.pinMapping[9] = PINMAP_ANALOG;
-  rx_config.pinMapping[10] = PINMAP_ANALOG;
-  rx_config.pinMapping[11] = PINMAP_RXD;
-  rx_config.pinMapping[12] = PINMAP_TXD;
-#elif (BOARD_TYPE == 5)
-  uint8_t i;
-  rx_config.rx_type = RX_OLRSNG4CH;
-  for (i = 0; i < 6; i++) {
-    rx_config.pinMapping[i] = i; // default to PWM out
-  }
-  rx_config.pinMapping[6] = PINMAP_RXD;
-  rx_config.pinMapping[7] = PINMAP_TXD;
-#elif (BOARD_TYPE == 7)
-  rx_config.rx_type = RX_PTOWER;
-  rx_config.pinMapping[0] = PINMAP_PPM;
-  rx_config.pinMapping[1] = PINMAP_SDA;
-  rx_config.pinMapping[2] = PINMAP_RSSI;
-  rx_config.pinMapping[3] = PINMAP_SCL;
-  // Skipping pinMapping[4] as it is NC
-  rx_config.pinMapping[5] = PINMAP_LLIND;
-  rx_config.pinMapping[6] = PINMAP_RXD;
-  rx_config.pinMapping[7] = PINMAP_TXD;
-#elif (BOARD_TYPE == 8)
-  rx_config.rx_type = RX_MICRO;
-  rx_config.pinMapping[0] = PINMAP_PPM;
-  rx_config.pinMapping[1] = PINMAP_ANALOG;
-  rx_config.pinMapping[2] = PINMAP_RSSI;
-  rx_config.pinMapping[3] = PINMAP_ANALOG;
-  rx_config.pinMapping[4] = PINMAP_RXD;
-  rx_config.pinMapping[5] = PINMAP_TXD;
-#elif (BOARD_TYPE == 9)
-  rx_config.rx_type = RX_BRORX;
-  rx_config.pinMapping[0] = PINMAP_PPM;
-  rx_config.pinMapping[1] = 0;
-  rx_config.pinMapping[2] = 1;
-  rx_config.pinMapping[3] = 2;
-  rx_config.pinMapping[4] = 3;
-  rx_config.pinMapping[5] = PINMAP_SDA;
-  rx_config.pinMapping[6] = PINMAP_SCL;
-  rx_config.pinMapping[7] = PINMAP_LLIND;
-  rx_config.pinMapping[8] = PINMAP_RSSI;
-  rx_config.pinMapping[9] = PINMAP_RXD;
-  rx_config.pinMapping[10] = PINMAP_TXD;
-#else
-#error INVALID RX BOARD
-#endif
+
+  rxInitHWConfig();
 
   rx_config.flags = ALWAYS_BIND;
   rx_config.RSSIpwm = 255; // off

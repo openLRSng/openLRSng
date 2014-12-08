@@ -80,9 +80,9 @@
 #include <Arduino.h>
 
 #include "version.h"
+#include "binding.h"
 #include "hardware.h"
 #include "wd.h"
-#include "binding.h"
 #include "common.h"
 
 #if (COMPILE_TX == 1)

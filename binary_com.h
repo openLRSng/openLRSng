@@ -165,7 +165,7 @@ void PSP_process_data(uint8_t code, uint16_t payload_length_received, uint8_t da
   case PSP_REQ_ACTIVE_PROFILE:
     PSP_protocol_head(PSP_REQ_ACTIVE_PROFILE, 1);
     {
-      PSP_serialize_uint8(eepromProfile);
+      PSP_serialize_uint8(activeProfile);
     }
     break;
   case PSP_REQ_RX_FAILSAFE: {
@@ -325,7 +325,7 @@ void PSP_process_data(uint8_t code, uint16_t payload_length_received, uint8_t da
   case PSP_SET_ACTIVE_PROFILE:
     PSP_protocol_head(PSP_SET_ACTIVE_PROFILE, 1);
 
-    profileSwap(data_buffer[0]);
+    activeProfile=data_buffer[0];
     txReadEeprom();
     PSP_serialize_uint8(0x01); // done
     break;

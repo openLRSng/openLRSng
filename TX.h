@@ -257,8 +257,8 @@ void checkButton(void)
       }
 
       buzzerOff();
-      if ((!(eepromProfile & TX_PROFILE_SWITCH)) && swapProfile ) {
-        profileSwap((activeProfile + 1) % TX_PROFILE_COUNT);
+      if (swapProfile) {
+        setDefaultProfile((defaultProfile + 1) % (TX_PROFILE_COUNT+1));
         txReadEeprom();
         return;
       }
@@ -343,7 +343,13 @@ void setup(void)
   pinMode(Red_LED2, OUTPUT); //RED LED
   pinMode(Green_LED2, OUTPUT); //GREEN LED
 #endif
-  pinMode(BTN, INPUT); //Buton
+  pinMode(BTN, INPUT); //Button
+#ifdef TX_MODE1
+  pinMode(TX_MODE1, INPUT);
+  pinMode(TX_MODE2, INPUT);
+  digitalWrite(TX_MODE1, HIGH);
+  digitalWrite(TX_MODE2, HIGH);
+#endif
   pinMode(PPM_IN, INPUT); //PPM from TX
   digitalWrite(PPM_IN, HIGH); // enable pullup for TX:s with open collector output
 #if defined (RF_OUT_INDICATOR)
