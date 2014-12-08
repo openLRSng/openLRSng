@@ -822,10 +822,8 @@ void loop(void)
 #ifdef TX_MODE1
         if (tx_config.flags & SW_POWER) {
           if (!digitalRead(TX_MODE1)) {
-            Red_LED_ON
+            Red_LED_ON;
             power=7;
-          } else {
-            Red_LED_OFF
           }
         }
 #endif
@@ -836,6 +834,13 @@ void loop(void)
       rfmSetChannel(RF_channel);
       tx_packet_async(tx_buf, getPacketSize(&bind_data));
 
+#ifdef TX_MODE1
+      if (tx_config.flags & SW_POWER) {
+	if (!digitalRead(TX_MODE1)) {
+	  Red_LED_OFF;
+	}
+      }
+#endif
       //Hop to the next frequency
       RF_channel++;
 
@@ -845,7 +850,7 @@ void loop(void)
 
     } else {
       if (ppmAge == 8) {
-        Red_LED_ON
+        Red_LED_ON;
       }
       ppmAge = 9;
       // PPM data outdated - do not send packets
