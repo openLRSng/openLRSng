@@ -218,6 +218,32 @@ void bindMode(void)
   }
 }
 
+void setupProfile()
+{
+  profileInit();
+  if (activeProfile==TX_PROFILE_COUNT) {
+#ifdef TX_MODE1
+    uint8_t mode = (digitalRead(TX_MODE1)?1:0) | (digitalRead(TX_MODE2)?2:0);
+    switch (mode) {
+    case 2:
+      activeProfile = 0; // MODE1 grounded
+      break;
+    case 1:
+      activeProfile = 1; // MODE2 grounded
+      break;
+    case 3:
+      activeProfile = 2; // both high
+      break;
+    case 0:
+      activeProfile = 3; // both ground
+      break;
+    }
+#else
+    activeProfile = 0;
+#endif
+  }
+}
+
 void checkButton(void)
 {
   uint32_t time, loop_time;
@@ -259,7 +285,9 @@ void checkButton(void)
       buzzerOff();
       if (swapProfile) {
         setDefaultProfile((defaultProfile + 1) % (TX_PROFILE_COUNT+1));
+        setupProfile();
         txReadEeprom();
+        delay(500);
         return;
       }
       bindRandomize();
@@ -363,7 +391,7 @@ void setup(void)
 #else
   Serial.begin(115200);
 #endif
-  profileInit();
+  setupProfile();
   txReadEeprom();
 
   setupPPMinput();
@@ -785,18 +813,27 @@ void loop(void)
       //Green LED will be on during transmission
       Green_LED_ON;
 
-      // Send the data over RF
-      if (altPwrIndex && bind_data.rf_power) {
-        if (altPwrCount++ == altPwrIndex) {
+      {
+        uint8_t power = bind_data.rf_power;
+        if (altPwrIndex && power && (altPwrCount++ == altPwrIndex)) {
           altPwrCount=0;
-          rfmSetPower(bind_data.rf_power-1);
-        } else {
-          rfmSetPower(bind_data.rf_power);
+          power--;
         }
+#ifdef TX_MODE1
+        if (tx_config.flags & SW_POWER) {
+          if (!digitalRead(TX_MODE1)) {
+            Red_LED_ON
+            power=7;
+          } else {
+            Red_LED_OFF
+          }
+        }
+#endif
+        rfmSetPower(power);
       }
 
+      // Send the data over RF
       rfmSetChannel(RF_channel);
-
       tx_packet_async(tx_buf, getPacketSize(&bind_data));
 
       //Hop to the next frequency

@@ -21,6 +21,7 @@ bool binary_mode_active = false;
 #define PSP_REQ_RX_FAILSAFE             9
 #define PSP_REQ_TX_CONFIG               10
 #define PSP_REQ_PPM_IN                  11
+#define PSP_REQ_DEFAULT_PROFILE         12
 
 #define PSP_SET_BIND_DATA               101
 #define PSP_SET_RX_CONFIG               102
@@ -31,6 +32,7 @@ bool binary_mode_active = false;
 #define PSP_SET_ACTIVE_PROFILE          107
 #define PSP_SET_RX_FAILSAFE             108
 #define PSP_SET_TX_CONFIG               109
+#define PSP_SET_DEFAULT_PROFILE         110
 
 #define PSP_SET_EXIT                    199
 
@@ -227,6 +229,12 @@ void PSP_process_data(uint8_t code, uint16_t payload_length_received, uint8_t da
     }
   }
   break;
+  case PSP_REQ_DEFAULT_PROFILE:
+    PSP_protocol_head(PSP_REQ_DEFAULT_PROFILE, 1);
+    {
+      PSP_serialize_uint8(defaultProfile);
+    }
+    break;
   // SET
   case PSP_SET_BIND_DATA:
     PSP_protocol_head(PSP_SET_BIND_DATA, 1);
@@ -368,6 +376,12 @@ void PSP_process_data(uint8_t code, uint16_t payload_length_received, uint8_t da
     } else {
       PSP_serialize_uint8(0x00);
     }
+    break;
+  case PSP_SET_DEFAULT_PROFILE:
+    PSP_protocol_head(PSP_SET_DEFAULT_PROFILE, 1);
+
+    setDefaultProfile(data_buffer[0]);
+    PSP_serialize_uint8(0x01); // done
     break;
   case PSP_SET_EXIT:
     PSP_protocol_head(PSP_SET_EXIT, 1);

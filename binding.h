@@ -25,6 +25,7 @@
 #define DEFAULT_BAUDRATE 115200
 
 // TX_CONFIG flag masks
+#define SW_POWER            0x04 // enable powertoggle via switch (JR dTX)
 #define ALT_POWER           0x08
 #define MUTE_TX             0x10 // do not beep on telemetry loss
 #define MICROPPM            0x20
@@ -325,44 +326,21 @@ void profileSet()
 void profileInit()
 {
   accessEEPROM(2, false);
-  if (defaultProfile >= TX_PROFILE_COUNT) {
-#ifdef TX_MODE1
-    uint8_t mode = (digitalRead(TX_MODE1)?1:0) | (digitalRead(TX_MODE2)?2:0);
-    switch (mode) {
-    case 2:
-      activeProfile = 0; // MODE1 grounded
-      break;
-    case 1:
-      activeProfile = 1; // MODE2 grounded
-      break;
-    case 3:
-      activeProfile = 2; // both high
-      break;
-    case 0:
-      activeProfile = 3; // both ground
-      break;
-    }
-#else
-    activeProfile = 0;
-#endif
-  } else {
-    activeProfile = defaultProfile;
+  if (defaultProfile > TX_PROFILE_COUNT) {
+    defaultProfile = TX_PROFILE_COUNT;
+    profileSet();
   }
+  activeProfile = defaultProfile;
 }
 
 void setDefaultProfile(uint8_t profile)
 {
-  if (defaultProfile != profile) {
-    defaultProfile = profile;
-    profileSet();
-  }
+  defaultProfile = profile;
+  profileSet();
 }
 
 void txInitDefaults()
 {
-  defaultProfile = 0;
-  profileSet();
-
   tx_config.max_frequency = MAX_RFM_FREQUENCY;
   tx_config.flags = 0x00;
   TX_CONFIG_SETMINCH(5); // 6ch
