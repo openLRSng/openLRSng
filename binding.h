@@ -448,7 +448,9 @@ void failsafeSave(void)
 void failsafeLoad(void)
 {
   if (!accessEEPROM(2, false)) {
-    failsafePPM[0]=0xffff;
+    for (uint8_t i = 0; i < 16; i++) {
+      failsafePPM[i]=0xffff;
+    }
   }
 }
 
@@ -471,7 +473,9 @@ void rxInitDefaults(bool save)
 
   if (save) {
     accessEEPROM(0, true);
-    failsafePPM[0] = 0xffff;
+    for (uint8_t i = 0; i < 16; i++) {
+      failsafePPM[i]=0xffff;
+    }
     failsafeSave();
   }
 }

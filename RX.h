@@ -204,14 +204,12 @@ void updateSwitches()
 
 void failsafeApply()
 {
-  if (failsafePPM[0] != 0xffff) {
-    for (int16_t i = 0; i < PPM_CHANNELS; i++) {
-      if (i == (rx_config.RSSIpwm & 0x0f)) {
-        continue;
-      }
-      if ((i == (rx_config.RSSIpwm & 0x0f) + 1) && (rx_config.RSSIpwm > 47)) {
-        continue;
-      }
+  for (int16_t i = 0; i < PPM_CHANNELS; i++) {
+    if ((i == (rx_config.RSSIpwm & 0x0f)) ||
+        ((i == (rx_config.RSSIpwm & 0x0f) + 1) && (rx_config.RSSIpwm > 47))) {
+      continue;
+    }
+    if (failsafePPM[i] != 0xffff) {
       cli();
       PPM[i] = failsafePPM[i];
       sei();
@@ -408,29 +406,29 @@ uint8_t bindReceive(uint32_t timeout)
         tx_packet(&rxb, 1); // ACK that we updated settings
       } else if (rxb == 'f') {
         uint8_t rxc_buf[33];
-        if (failsafePPM[0]!=0xffff) {
-          rxc_buf[0]='F';
-          for (uint8_t i = 0; i < 16; i++) {
-            uint16_t us = servoBits2Us(failsafePPM[i]);
-            rxc_buf[i * 2 + 1] = (us >> 8);
-            rxc_buf[i * 2 + 2] = (us & 0xff);
+        rxc_buf[0]='F';
+        for (uint8_t i = 0; i < 16; i++) {
+          uint16_t us = 0;
+          if (failsafePPM[i] != 0xffff) {
+            us = servoBits2Us(failsafePPM[i]);
           }
-        } else {
-          rxc_buf[0]='f';
+          rxc_buf[i * 2 + 1] = (us >> 8);
+          rxc_buf[i * 2 + 2] = (us & 0xff);
         }
         tx_packet(rxc_buf, 33);
       } else if (rxb == 'g') {
         for (uint8_t i = 0; i < 16 ; i++) {
-          uint16_t val;
-          val = (uint16_t)spiReadData() << 8;
-          val += spiReadData();
-          failsafePPM[i] = servoUs2Bits(val);
+          uint16_t val = ((uint16_t)spiReadData() << 8) + spiReadData();
+          val = val ? servoUs2Bits(val) : 0xffff;
+          failsafePPM[i] = val;
         }
         rxb = 'G';
         failsafeSave();
         tx_packet(&rxb, 1);
       } else if (rxb == 'G') {
-        failsafePPM[0] = 0xffff;
+        for (uint8_t i = 0; i < 16 ; i++) {
+          failsafePPM[i] = 0xffff;
+        }
         failsafeSave();
         rxb = 'G';
         tx_packet(&rxb, 1);
