@@ -222,7 +222,7 @@ void setupProfile()
 {
   profileInit();
   if (activeProfile==TX_PROFILE_COUNT) {
-#ifdef TX_MODE1
+#if defined(TX_MODE2)
     uint8_t mode = (digitalRead(TX_MODE1)?1:0) | (digitalRead(TX_MODE2)?2:0);
     switch (mode) {
     case 2:
@@ -238,6 +238,8 @@ void setupProfile()
       activeProfile = 3; // both ground
       break;
     }
+#elif defined(TX_MODE1)
+    activeProfile = digitalRead(TX_MODE1) ? 0 : 1;
 #else
     activeProfile = 0;
 #endif
@@ -374,8 +376,10 @@ void setup(void)
   pinMode(BTN, INPUT); //Button
 #ifdef TX_MODE1
   pinMode(TX_MODE1, INPUT);
-  pinMode(TX_MODE2, INPUT);
   digitalWrite(TX_MODE1, HIGH);
+#endif
+#ifdef TX_MODE2
+  pinMode(TX_MODE2, INPUT);
   digitalWrite(TX_MODE2, HIGH);
 #endif
   pinMode(PPM_IN, INPUT); //PPM from TX
@@ -836,9 +840,9 @@ void loop(void)
 
 #ifdef TX_MODE1
       if (tx_config.flags & SW_POWER) {
-	if (!digitalRead(TX_MODE1)) {
-	  Red_LED_OFF;
-	}
+        if (!digitalRead(TX_MODE1)) {
+          Red_LED_OFF;
+        }
       }
 #endif
       //Hop to the next frequency
