@@ -99,8 +99,6 @@ void smartportSend(uint8_t *p)
       crc += p[i]; //0-1FF
       crc += crc >> 8; //0-100
       crc &= 0x00ff;
-      crc += crc >> 8; //0-0FF
-      crc &= 0x00ff;
     }
   }
 }
