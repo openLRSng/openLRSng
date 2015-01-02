@@ -209,9 +209,9 @@ void failsafeApply()
         ((i == (rx_config.RSSIpwm & 0x0f) + 1) && (rx_config.RSSIpwm > 47))) {
       continue;
     }
-    if (failsafePPM[i] != 0xffff) {
+    if (failsafePPM[i] & 0xfff) {
       cli();
-      PPM[i] = failsafePPM[i];
+      PPM[i] = servoUs2Bits(failsafePPM[i] & 0xfff);
       sei();
     }
     updateSwitches();
@@ -322,7 +322,7 @@ void setupOutputs()
   ppmCountter = 0;
   TIMSK1 |= (1 << TOIE1);
 
-  if ((rx_config.flags & IMMEDIATE_OUTPUT) && failsafePPM[0]!=0xffff) {
+  if ((rx_config.flags & IMMEDIATE_OUTPUT) && (failsafePPM[0] & 0xfff)) {
     failsafeApply();
     disablePPM=0;
     disablePWM=0;
@@ -408,26 +408,21 @@ uint8_t bindReceive(uint32_t timeout)
         uint8_t rxc_buf[33];
         rxc_buf[0]='F';
         for (uint8_t i = 0; i < 16; i++) {
-          uint16_t us = 0;
-          if (failsafePPM[i] != 0xffff) {
-            us = servoBits2Us(failsafePPM[i]);
-          }
-          rxc_buf[i * 2 + 1] = (us >> 8);
+          uint16_t us = failsafePPM[i];
+	  rxc_buf[i * 2 + 1] = (us >> 8);
           rxc_buf[i * 2 + 2] = (us & 0xff);
         }
         tx_packet(rxc_buf, 33);
       } else if (rxb == 'g') {
         for (uint8_t i = 0; i < 16 ; i++) {
-          uint16_t val = ((uint16_t)spiReadData() << 8) + spiReadData();
-          val = val ? servoUs2Bits(val) : 0xffff;
-          failsafePPM[i] = val;
+          failsafePPM[i] = ((uint16_t)spiReadData() << 8) + spiReadData();
         }
         rxb = 'G';
         failsafeSave();
         tx_packet(&rxb, 1);
       } else if (rxb == 'G') {
         for (uint8_t i = 0; i < 16 ; i++) {
-          failsafePPM[i] = 0xffff;
+          failsafePPM[i] = 0;
         }
         failsafeSave();
         rxb = 'G';
@@ -851,8 +846,10 @@ retry:
       if (rx_buf[0] & 0x01) {
         if (!fs_saved) {
           for (int16_t i = 0; i < PPM_CHANNELS; i++) {
-            failsafePPM[i] = PPM[i];
-          }
+            if (!(failsafePPM[i] & 0x1000)) {
+	      failsafePPM[i] = servoBits2Us(PPM[i]);
+	    }
+	  }
           failsafeSave();
           fs_saved = 1;
         }
