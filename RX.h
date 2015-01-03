@@ -409,7 +409,7 @@ uint8_t bindReceive(uint32_t timeout)
         rxc_buf[0]='F';
         for (uint8_t i = 0; i < 16; i++) {
           uint16_t us = failsafePPM[i];
-	  rxc_buf[i * 2 + 1] = (us >> 8);
+          rxc_buf[i * 2 + 1] = (us >> 8);
           rxc_buf[i * 2 + 2] = (us & 0xff);
         }
         tx_packet(rxc_buf, 33);
@@ -847,9 +847,9 @@ retry:
         if (!fs_saved) {
           for (int16_t i = 0; i < PPM_CHANNELS; i++) {
             if (!(failsafePPM[i] & 0x1000)) {
-	      failsafePPM[i] = servoBits2Us(PPM[i]);
-	    }
-	  }
+              failsafePPM[i] = servoBits2Us(PPM[i]);
+            }
+          }
           failsafeSave();
           fs_saved = 1;
         }
