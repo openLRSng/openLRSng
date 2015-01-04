@@ -625,6 +625,27 @@ void beacon_tone(int16_t hz, int16_t len) //duration is now in half seconds.
   }
 }
 
+uint8_t beaconGetRSSI()
+{
+  uint16_t rssiSUM=0;
+  Green_LED_ON
+
+  rfmSetCarrierFrequency(rx_config.beacon_frequency);
+  spiWriteRegister(0x79, 0); // ch 0 to avoid offset
+  delay(1);
+  rssiSUM+=rfmGetRSSI();
+  delay(1);
+  rssiSUM+=rfmGetRSSI();
+  delay(1);
+  rssiSUM+=rfmGetRSSI();
+  delay(1);
+  rssiSUM+=rfmGetRSSI();
+
+  Green_LED_OFF
+
+  return rssiSUM>>2;
+}
+
 void beacon_send(bool static_tone)
 {
   Green_LED_ON

@@ -9,7 +9,9 @@ uint32_t lastPacketTimeUs = 0;
 uint32_t lastRSSITimeUs = 0;
 uint32_t linkLossTimeMs;
 
-uint32_t lastBeaconTimeMs;
+uint32_t nextBeaconTimeMs;
+
+uint16_t beaconRSSIavg = 255;
 
 uint8_t  RSSI_count = 0;
 uint16_t RSSI_sum = 0;
@@ -834,6 +836,8 @@ retry:
     if ((rx_buf[0] & 0x3e) == 0x00) {
       cli();
       unpackChannels(bind_data.flags & 7, PPM, rx_buf + 1);
+      set_PPM_rssi();
+      sei();
 #ifdef DEBUG_DUMP_PPM
       for (uint8_t i = 0; i < 8; i++) {
         Serial.print(PPM[i]);
@@ -841,8 +845,6 @@ retry:
       }
       Serial.println();
 #endif
-      set_PPM_rssi();
-      sei();
       if (rx_buf[0] & 0x01) {
         if (!fs_saved) {
           for (int16_t i = 0; i < PPM_CHANNELS; i++) {
@@ -876,6 +878,7 @@ retry:
     if (linkAcquired == 0) {
       linkAcquired = 1;
     }
+
     failsafeActive = 0;
     disablePWM = 0;
     disablePPM = 0;
@@ -980,7 +983,7 @@ retry:
       willhop = 1;
       if (numberOfLostPackets == 0) {
         linkLossTimeMs = timeMs;
-        lastBeaconTimeMs = 0;
+        nextBeaconTimeMs = 0;
       }
       numberOfLostPackets++;
       lastPacketTimeUs += getInterval(&bind_data);
@@ -1001,7 +1004,7 @@ retry:
       if (rx_config.failsafeDelay && (!failsafeActive) && ((timeMs - linkLossTimeMs) > delayInMs(rx_config.failsafeDelay))) {
         failsafeActive = 1;
         failsafeApply();
-        lastBeaconTimeMs = (timeMs + delayInMsLong(rx_config.beacon_deadtime)) | 1; //beacon activating...
+        nextBeaconTimeMs = (timeMs + delayInMsLong(rx_config.beacon_deadtime)) | 1; //beacon activating...
       }
       if (rx_config.pwmStopDelay && (!disablePWM) && ((timeMs - linkLossTimeMs) > delayInMs(rx_config.pwmStopDelay))) {
         disablePWM = 1;
@@ -1010,14 +1013,12 @@ retry:
         disablePPM = 1;
       }
 
-      if ((rx_config.beacon_frequency) && (lastBeaconTimeMs)) {
-        if (((timeMs - lastBeaconTimeMs) < 0x80000000) && // last beacon is future during deadtime
-            (timeMs - lastBeaconTimeMs) > (1000UL * rx_config.beacon_interval)) {
-          beacon_send((rx_config.flags & STATIC_BEACON));
-          init_rfm(0);   // go back to normal RX
-          rx_reset();
-          lastBeaconTimeMs = millis() | 1; // avoid 0 in time
-        }
+      if ((rx_config.beacon_frequency) && (nextBeaconTimeMs) &&
+          ((timeMs - nextBeaconTimeMs) < 0x80000000)) {
+        beacon_send((rx_config.flags & STATIC_BEACON));
+        init_rfm(0);   // go back to normal RX
+        rx_reset();
+        nextBeaconTimeMs = (millis() +  (1000UL * rx_config.beacon_interval)) | 1; // avoid 0 in time
       }
     }
   } else {
@@ -1044,6 +1045,18 @@ retry:
     if ((RF_channel == MAXHOPS) || (bind_data.hopchannel[RF_channel] == 0)) {
       RF_channel = 0;
     }
+
+    if ((rx_config.beacon_frequency) && (nextBeaconTimeMs)) {
+      // Listen for RSSI on beacon channel briefly for 'trigger'
+      uint8_t brssi = beaconGetRSSI();
+      if (brssi > ((beaconRSSIavg>>2) + 20)) {
+        nextBeaconTimeMs = millis() + 1000L;
+      }
+      beaconRSSIavg = (beaconRSSIavg * 3 + brssi * 4) >> 2;
+
+      rfmSetCarrierFrequency(bind_data.rf_frequency);
+    }
+
     rfmSetChannel(RF_channel);
     slaveHop();
     willhop = 0;
