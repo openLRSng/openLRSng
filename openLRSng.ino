@@ -92,6 +92,7 @@
 #include "dialog.h"
 #endif
 #include "frskytx.h"
+#include "chpicker.h"
 #include "TX.h"
 #else
 #include "I2C.h"
