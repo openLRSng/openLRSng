@@ -30,7 +30,7 @@ uint8_t chooseChannelsPerRSSI()
   rx_reset();
   for (uint8_t ch=1; ch<255; ch++) {
     uint32_t start = millis();
-    if ((bind_data.rf_frequency + ch * bind_data.rf_channel_spacing * 10000) > tx_config.max_frequency) {
+    if ((bind_data.rf_frequency + (uint32_t)ch * (uint32_t)bind_data.rf_channel_spacing * 10000UL) > tx_config.max_frequency) {
       chRSSImax[ch] = 255;
       continue; // do not break so we set all maxes to 255 to block them out
     }
