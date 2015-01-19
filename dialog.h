@@ -658,7 +658,7 @@ void handleCLImenu(char c)
     case 'r':
     case 'R':
       // randomize channels and key
-      bindRandomize();
+      bindRandomize(true);
       Serial.println("Key and channels randomized\n");
       break;
     case 'f':
