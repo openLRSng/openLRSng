@@ -383,7 +383,7 @@ again:
       }
 
       // don't allow frequencies higher then tx_config.max_frequency
-      uint32_t real_frequency = bind_data.rf_frequency + ch * bind_data.rf_channel_spacing * 10000;
+      uint32_t real_frequency = bind_data.rf_frequency + (uint32_t)ch * (uint32_t)bind_data.rf_channel_spacing * 10000UL;
       if (real_frequency > tx_config.max_frequency) {
         goto again;
       }
