@@ -235,7 +235,7 @@ void PSP_process_data(uint8_t code, uint16_t payload_length_received, uint8_t da
       PSP_serialize_uint8(defaultProfile);
     }
     break;
-  // SET
+    // SET
   case PSP_SET_BIND_DATA:
     PSP_protocol_head(PSP_SET_BIND_DATA, 1);
 

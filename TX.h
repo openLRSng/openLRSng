@@ -292,10 +292,8 @@ void checkButton(void)
         delay(500);
         return;
       }
-      bindRandomize();
-      while(1) {
-        chooseChannelsPerRSSI(12);
-      }
+      bindRandomize(false);
+      chooseChannelsPerRSSI();
       txWriteEeprom();
     }
 just_bind:

@@ -349,7 +349,7 @@ void txInitDefaults()
   }
 }
 
-void bindRandomize(void)
+void bindRandomize(bool randomChannels)
 {
   uint8_t emergency_counter = 0;
   uint8_t c;
@@ -364,30 +364,32 @@ void bindRandomize(void)
     bind_data.rf_magic = (bind_data.rf_magic << 8) + (random() % 255);
   }
 
-  // TODO: verify if this works properly
-  for (c = 0; (c < MAXHOPS) && (bind_data.hopchannel[c] != 0); c++) {
+  if (randomChannels) {
+    // TODO: verify if this works properly
+    for (c = 0; (c < MAXHOPS) && (bind_data.hopchannel[c] != 0); c++) {
 again:
-    if (emergency_counter++ == 255) {
-      bindInitDefaults();
-      return;
-    }
+      if (emergency_counter++ == 255) {
+        bindInitDefaults();
+        return;
+      }
 
-    uint8_t ch = (random() % 50) + 1;
+      uint8_t ch = (random() % 50) + 1;
 
-    // don't allow same channel twice
-    for (uint8_t i = 0; i < c; i++) {
-      if (bind_data.hopchannel[i] == ch) {
+      // don't allow same channel twice
+      for (uint8_t i = 0; i < c; i++) {
+        if (bind_data.hopchannel[i] == ch) {
+          goto again;
+        }
+      }
+
+      // don't allow frequencies higher then tx_config.max_frequency
+      uint32_t real_frequency = bind_data.rf_frequency + ch * bind_data.rf_channel_spacing * 10000;
+      if (real_frequency > tx_config.max_frequency) {
         goto again;
       }
-    }
 
-    // don't allow frequencies higher then tx_config.max_frequency
-    uint32_t real_frequency = bind_data.rf_frequency + ch * bind_data.rf_channel_spacing * 10000;
-    if (real_frequency > tx_config.max_frequency) {
-      goto again;
+      bind_data.hopchannel[c] = ch;
     }
-
-    bind_data.hopchannel[c] = ch;
   }
 }
 
@@ -402,7 +404,7 @@ void txReadEeprom()
   if ((!accessEEPROM(0, false)) || (!accessEEPROM(1, false))) {
     txInitDefaults();
     bindInitDefaults();
-    bindRandomize();
+    bindRandomize(true);
     txWriteEeprom();
   }
 }

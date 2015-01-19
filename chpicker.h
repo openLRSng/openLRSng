@@ -16,25 +16,34 @@ inline void isort(uint8_t *a, uint8_t n)
   }
 }
 
-uint8_t chooseChannelsPerRSSI(uint8_t n)
+uint8_t chooseChannelsPerRSSI()
 {
   uint8_t chRSSImax[255];
   uint8_t picked[20];
-  Serial.println("Entering adaptive channel selection");
+  uint8_t n;
+
+  for (n = 0; (n < MAXHOPS) && (bind_data.hopchannel[n] != 0); n++);
+
+  Serial.println("Entering adaptive channel selection, picking:");
+  Serial.println(n);
   init_rfm(0);
   rx_reset();
   for (uint8_t ch=1; ch<255; ch++) {
     uint32_t start = millis();
+    if ((bind_data.rf_frequency + ch * bind_data.rf_channel_spacing * 10000) > tx_config.max_frequency) {
+      chRSSImax[ch] = 255;
+      continue; // do not break so we set all maxes to 255 to block them out
+    }
     rfmSetChannel(ch);
     delay(1);
-    chRSSImax[ch]=0;
-    while ((millis()-start) < 500) {
+    chRSSImax[ch] = 0;
+    while ((millis() - start) < 500) {
       uint8_t rssi = rfmGetRSSI();
       if (rssi > chRSSImax[ch]) {
         chRSSImax[ch] = rssi;
       }
     }
-    if (ch&1) {
+    if (ch & 1) {
       Green_LED_OFF
       Red_LED_ON
     } else {
@@ -43,27 +52,27 @@ uint8_t chooseChannelsPerRSSI(uint8_t n)
     }
   }
 
-  for (uint8_t i=0; i < n; i++) {
-    uint8_t lowest, lowestRSSI=255;
-    for (uint8_t ch=1; ch<255; ch++) {
+  for (uint8_t i = 0; i < n; i++) {
+    uint8_t lowest = 1, lowestRSSI = 255;
+    for (uint8_t ch = 1; ch < 255; ch++) {
       if (chRSSImax[ch] < lowestRSSI) {
         lowestRSSI = chRSSImax[ch];
         lowest = ch;
       }
     }
     picked[i] = lowest;
-    chRSSImax[lowest]=255;
-    if (lowest>1) {
-      chRSSImax[lowest-1]=255;
+    chRSSImax[lowest] = 255;
+    if (lowest > 1) {
+      chRSSImax[lowest - 1]=255;
     }
-    if (lowest>2) {
-      chRSSImax[lowest-2]=200;
+    if (lowest > 2) {
+      chRSSImax[lowest - 2]=200;
     }
-    if (lowest<254) {
-      chRSSImax[lowest+1]=255;
+    if (lowest < 254) {
+      chRSSImax[lowest + 1]=255;
     }
-    if (lowest<253) {
-      chRSSImax[lowest+2]=200;
+    if (lowest < 253) {
+      chRSSImax[lowest + 2]=200;
     }
   }
 
@@ -74,9 +83,10 @@ uint8_t chooseChannelsPerRSSI(uint8_t n)
     swap(picked, i, i + n / 2);
   }
 
-  for (uint8_t i=0; i < n; i++) {
+  for (uint8_t i = 0; i < n; i++) {
     Serial.print(picked[i]);
     Serial.print(',');
+    bind_data.hopchannel[i] = picked[i];
   }
   Serial.println();
 
