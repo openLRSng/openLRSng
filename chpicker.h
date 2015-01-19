@@ -1,23 +1,25 @@
 //OpenLRSng adaptive channel picker
 
-// development only...
-#define CHANNELS_TO_PICK 12
-
-void isort(uint8_t *a, uint8_t n)
+inline void swap(uint8_t *a, uint8_t i, uint8_t j)
 {
-  for (uint8_t i=1; i<n; i++) {
-    for (uint8_t j = i; j> 0 && a[j] < a[j-1]; j--) {
-      uint8_t v = a[j];
-      a[j] = a[j-1];
-      a[j-1] = v;
+  uint8_t c = a[i];
+  a[i] = a[j];
+  a[j] = c;
+}
+
+inline void isort(uint8_t *a, uint8_t n)
+{
+  for (uint8_t i = 1; i < n; i++) {
+    for (uint8_t j = i; j > 0 && a[j] < a[j-1]; j--) {
+      swap(a, j, j - 1);
     }
   }
 }
 
-uint8_t chooseChannelsPerRSSI()
+uint8_t chooseChannelsPerRSSI(uint8_t n)
 {
   uint8_t chRSSImax[255];
-  uint8_t picked[CHANNELS_TO_PICK];
+  uint8_t picked[20];
   Serial.println("Entering adaptive channel selection");
   init_rfm(0);
   rx_reset();
@@ -41,7 +43,7 @@ uint8_t chooseChannelsPerRSSI()
     }
   }
 
-  for (uint8_t i=0; i < CHANNELS_TO_PICK; i++) {
+  for (uint8_t i=0; i < n; i++) {
     uint8_t lowest, lowestRSSI=255;
     for (uint8_t ch=1; ch<255; ch++) {
       if (chRSSImax[ch] < lowestRSSI) {
@@ -65,9 +67,14 @@ uint8_t chooseChannelsPerRSSI()
     }
   }
 
-  isort(picked,CHANNELS_TO_PICK);
+  isort(picked, n);
 
-  for (uint8_t i=0; i < CHANNELS_TO_PICK; i++) {
+  // this is empirically a decent way to shuffle changes to give decent hops
+  for (uint8_t i = 0; i < (n / 2); i += 2) {
+    swap(picked, i, i + n / 2);
+  }
+
+  for (uint8_t i=0; i < n; i++) {
     Serial.print(picked[i]);
     Serial.print(',');
   }

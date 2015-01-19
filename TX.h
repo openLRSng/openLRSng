@@ -294,7 +294,7 @@ void checkButton(void)
       }
       bindRandomize();
       while(1) {
-        chooseChannelsPerRSSI();
+        chooseChannelsPerRSSI(12);
       }
       txWriteEeprom();
     }
