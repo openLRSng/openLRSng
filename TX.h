@@ -642,6 +642,23 @@ uint16_t getChannel(uint8_t ch)
       return analogRead(TX_AIN1);
 #endif
 #endif
+    case 18: // mode switch
+#if defined(TX_MODE2)
+      uint8_t mode = (digitalRead(TX_MODE1)?1:0) | (digitalRead(TX_MODE2)?2:0);
+      switch (mode) {
+      case 2:
+	return 12;
+      case 1:
+	return 1012;
+      case 3:
+	return 345;
+      case 0:
+	return 678;
+      }
+#elif defined(TX_MODE1)
+      return (digitalRead(TX_MODE1) ? 12 : 1012);
+#endif
+      // fallthru
     default:
       return 512;
     }
