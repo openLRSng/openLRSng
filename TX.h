@@ -223,8 +223,7 @@ void setupProfile()
   profileInit();
   if (activeProfile==TX_PROFILE_COUNT) {
 #if defined(TX_MODE2)
-    uint8_t mode = (digitalRead(TX_MODE1)?1:0) | (digitalRead(TX_MODE2)?2:0);
-    switch (mode) {
+    switch ((digitalRead(TX_MODE1)?1:0) | (digitalRead(TX_MODE2)?2:0)) {
     case 2:
       activeProfile = 0; // MODE1 grounded
       break;
@@ -620,49 +619,54 @@ void processChannelsFromSerial(uint8_t c)
 
 uint16_t getChannel(uint8_t ch)
 {
+  uint16_t v=512;
   ch = tx_config.chmap[ch];
   if (ch < 16) {
-    uint16_t v;
     cli();  // disable interrupts when copying servo positions, to avoid race on 2 byte variable written by ISR
     v = PPM[ch];
     sei();
-    return v;
   } else {
     switch (ch) {
 #ifdef TX_AIN0
 #ifdef TX_AIN_IS_DIGITAL
     case 16:
-      return digitalRead(TX_AIN0) ? 1012 : 12;
+      v = digitalRead(TX_AIN0) ? 1012 : 12;
+      break;
     case 17:
-      return digitalRead(TX_AIN1) ? 1012 : 12;
+      v = digitalRead(TX_AIN1) ? 1012 : 12;
+      break;
 #else
     case 16:
-      return analogRead(TX_AIN0);
+      v = analogRead(TX_AIN0);
+      break;
     case 17:
-      return analogRead(TX_AIN1);
+      v = analogRead(TX_AIN1);
+      break;
 #endif
 #endif
     case 18: // mode switch
 #if defined(TX_MODE2)
-      uint8_t mode = (digitalRead(TX_MODE1)?1:0) | (digitalRead(TX_MODE2)?2:0);
-      switch (mode) {
+      switch ((digitalRead(TX_MODE1)?1:0) | (digitalRead(TX_MODE2)?2:0)) {
       case 2:
-	return 12;
+	v = 12;
+	break;
       case 1:
-	return 1012;
+	v =  1012;
+	break;
       case 3:
-	return 345;
+	v =  345;
+	break;
       case 0:
-	return 678;
+	v = 678;
+	break;
       }
 #elif defined(TX_MODE1)
-      return (digitalRead(TX_MODE1) ? 12 : 1012);
+      v = (digitalRead(TX_MODE1) ? 12 : 1012);
 #endif
-      // fallthru
-    default:
-      return 512;
+      break;
     }
   }
+  return v;
 }
 
 void loop(void)
