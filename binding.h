@@ -401,7 +401,7 @@ void txWriteEeprom()
 
 void txReadEeprom()
 {
-  if ((!accessEEPROM(0, false)) || (!accessEEPROM(1, false))) {
+  if ((!accessEEPROM(0, false)) || (!accessEEPROM(1, false)) || (bind_data.version != BINDING_VERSION)) {
     txInitDefaults();
     bindInitDefaults();
     bindRandomize(true);
