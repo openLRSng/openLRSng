@@ -625,6 +625,8 @@ uint16_t getChannel(uint8_t ch)
     cli();  // disable interrupts when copying servo positions, to avoid race on 2 byte variable written by ISR
     v = PPM[ch];
     sei();
+  } else if ((ch > 0xf1) && (ch < 0xfd)) {
+    v = 12 + (ch - 0xf2) * 100;
   } else {
     switch (ch) {
 #ifdef TX_AIN0
@@ -648,21 +650,33 @@ uint16_t getChannel(uint8_t ch)
 #if defined(TX_MODE2)
       switch ((digitalRead(TX_MODE1)?1:0) | (digitalRead(TX_MODE2)?2:0)) {
       case 2:
-	v = 12;
-	break;
+        v = 12;
+        break;
       case 1:
-	v =  1012;
-	break;
+        v =  1012;
+        break;
       case 3:
-	v =  345;
-	break;
+        v =  345;
+        break;
       case 0:
-	v = 678;
-	break;
+        v = 678;
+        break;
       }
 #elif defined(TX_MODE1)
       v = (digitalRead(TX_MODE1) ? 12 : 1012);
 #endif
+      break;
+    case 0xf0:
+      v = 0;
+      break;
+    case 0xf1:
+      v = 6;
+      break;
+    case 0xfd:
+      v = 1018;
+      break;
+    case 0xfe:
+      v = 1023;
       break;
     }
   }
