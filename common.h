@@ -13,10 +13,16 @@ volatile uint16_t PPM[PPM_CHANNELS] = { 512, 512, 512, 512, 512, 512, 512, 512 ,
 
 const static uint8_t pktsizes[8] = { 0, 7, 11, 12, 16, 17, 21, 0 };
 
-
 uint8_t getPacketSize(struct bind_data *bd)
 {
-  return (bd->flags & BIGPACKET) ? PACKETSIZE_BIG : pktsizes[(bd->flags & 0x07)];
+  uint8_t r = pktsizes[(bd->flags & 0x07)];
+  if ((bd->flags & TELEMETRY_MASK) && (r < PACKETSIZE_TELEMETRY)) {
+    r = PACKETSIZE_TELEMETRY;
+  }
+  if (bd->flags & BIGPACKET) {
+    r = PACKETSIZE_BIG;
+  }
+  return r;
 }
 
 uint8_t getTelemetryPacketSize(struct bind_data *bd)
