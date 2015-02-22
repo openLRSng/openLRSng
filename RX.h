@@ -460,17 +460,25 @@ int8_t checkIfConnected(uint8_t pin1, uint8_t pin2)
   return ret;
 }
 
-uint8_t rx_buf[21]; // RX buffer (uplink)
+uint8_t rx_buf[PACKETSIZE_BIG]; // RX buffer (uplink)
 // First byte of RX buf is
 // MSB..LSB [1bit uplink seqno.] [1bit downlink seqno] [6bits type)
 // type 0x00 normal servo, 0x01 failsafe set
-// type 0x38..0x3f uplinkked serial data
+// type 0x20..0x3f uplinkked serial data (1-32 bytes)
+//
+// MS000000 normal RC
+// MS000001 failsafe store
+// MS1xxxxx serial data (xxxxx + 1) bytes
+//
 
-uint8_t tx_buf[9]; // TX buffer (downlink)(type plus 8 x data)
+uint8_t tx_buf[PACKETSIZE_BIG]; // TX buffer (downlink)(type plus 8 x data)
 // First byte is meta
 // MSB..LSB [1 bit uplink seq] [1bit downlink seqno] [6b telemtype]
 // 0x00 link info [RSSI] [AFCC]*2 etc...
-// type 0x38-0x3f downlink serial data 1-8 bytes
+// type 0x20..0x3f downlink serial data 1-32 bytes
+//
+// MS000000 link info (rssi etc.)
+// MS1xxxxx serial data (xxxxx + 1) bytes
 
 #define SERIAL_BUFSIZE 32
 uint8_t serial_buffer[SERIAL_BUFSIZE];
@@ -800,7 +808,7 @@ retry:
       lastAFCCvalue = rfmGetAFCC();
       Green_LED_ON;
     } else {
-      uint8_t ret, slave_buf[22];
+      uint8_t ret, slave_buf[PACKETSIZE_BIG + 1];
       ret = myI2C_readFrom(32, slave_buf, getPacketSize(&bind_data) + 1, MYI2C_WAIT);
       if (ret) {
         slaveState = 255;
@@ -860,13 +868,13 @@ retry:
       }
     } else {
       // something else than servo data...
-      if ((rx_buf[0] & 0x38) == 0x38) {
+      if (rx_buf[0] & 0x20) {
         if ((rx_buf[0] ^ tx_buf[0]) & 0x80) {
           // We got new data... (not retransmission)
           uint8_t i;
           tx_buf[0] ^= 0x80; // signal that we got it
           if (rx_config.pinMapping[TXD_OUTPUT] == PINMAP_TXD) {
-            for (i = 0; i <= (rx_buf[0] & 7);) {
+            for (i = 0; i <= (rx_buf[0] & 31);) {
               i++;
               Serial.write(rx_buf[i]);
             }
@@ -891,12 +899,13 @@ retry:
         tx_buf[0] ^= 0x40; // swap sequence as we have new data
         if (serial_head != serial_tail) {
           uint8_t bytes = 0;
-          while ((bytes < 8) && (serial_head != serial_tail)) {
+          uint8_t maxbytes = getTelemetryPacketSize(&bind_data) - 1;
+          while ((bytes < maxbytes) && (serial_head != serial_tail)) {
             bytes++;
             tx_buf[bytes] = serial_buffer[serial_head];
             serial_head = (serial_head + 1) % SERIAL_BUFSIZE;
           }
-          tx_buf[0] |= (0x37 + bytes);
+          tx_buf[0] |= (0x1f + bytes);
         } else {
           // tx_buf[0] lowest 6 bits left at 0
           tx_buf[1] = lastRSSIvalue;
@@ -927,13 +936,13 @@ retry:
       }
 #ifdef TEST_NO_ACK_BY_CH1
       if (PPM[0]<900) {
-        tx_packet_async(tx_buf, 9);
+        tx_packet_async(tx_buf, getTelemetryPacketSize(&bind_data));
         while(!tx_done()) {
           checkSerial();
         }
       }
 #else
-      tx_packet_async(tx_buf, 9);
+      tx_packet_async(tx_buf, getTelemetryPacketSize(&bind_data));
       while(!tx_done()) {
         checkSerial();
       }

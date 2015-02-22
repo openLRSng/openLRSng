@@ -345,12 +345,12 @@ static inline void checkFS(void)
   }
 }
 
-uint8_t tx_buf[21];
-uint8_t rx_buf[9];
+uint8_t tx_buf[PACKETSIZE_BIG];
+uint8_t rx_buf[PACKETSIZE_BIG];
 
 #define SERIAL_BUFSIZE 32
 uint8_t serial_buffer[SERIAL_BUFSIZE];
-uint8_t serial_resend[9];
+uint8_t serial_resend[PACKETSIZE_BIG];
 uint8_t serial_head;
 uint8_t serial_tail;
 uint8_t serial_okToSend; // 2 if it is ok to send serial instead of servo
@@ -735,16 +735,16 @@ void loop(void)
     linkQuality |= 1;
     RF_Mode = Receive;
     spiSendAddress(0x7f); // Send the package read command
-    for (int16_t i = 0; i < 9; i++) {
+    for (int16_t i = 0; i < getTelemetryPacketSize(&bind_data); i++) {
       rx_buf[i] = spiReadData();
     }
 
     if ((tx_buf[0] ^ rx_buf[0]) & 0x40) {
       tx_buf[0] ^= 0x40; // swap sequence to ack
-      if ((rx_buf[0] & 0x38) == 0x38) {
+      if (rx_buf[0] & 0x20) {
         uint8_t i;
         // transparent serial data...
-        for (i = 0; i<= (rx_buf[0] & 7);) {
+        for (i = 0; i<= (rx_buf[0] & 31);) {
           i++;
           if (bind_data.flags & TELEMETRY_FRSKY) {
             frskyUserData(rx_buf[i]);
@@ -810,17 +810,15 @@ void loop(void)
       if ((serial_tail != serial_head) && (serial_okToSend == 2)) {
         tx_buf[0] ^= 0x80; // signal new data on line
         uint8_t bytes = 0;
-        uint8_t maxbytes = 8;
-        if (getPacketSize(&bind_data) < 9) {
-          maxbytes = getPacketSize(&bind_data) - 1;
-        }
+        uint8_t maxbytes = getPacketSize(&bind_data) -1;
+
         while ((bytes < maxbytes) && (serial_head != serial_tail)) {
           bytes++;
           tx_buf[bytes] = serial_buffer[serial_head];
           serial_resend[bytes] = serial_buffer[serial_head];
           serial_head = (serial_head + 1) % SERIAL_BUFSIZE;
         }
-        tx_buf[0] |= (0x37 + bytes);
+        tx_buf[0] |= (0x1f + bytes);
         serial_resend[0] = bytes;
         serial_okToSend = 3; // sent but not acked
       } else if (serial_okToSend == 4) {
@@ -828,7 +826,7 @@ void loop(void)
         for (i = 0; i < serial_resend[0]; i++) {
           tx_buf[i + 1] = serial_resend[i + 1];
         }
-        tx_buf[0] |= (0x37 + serial_resend[0]);
+        tx_buf[0] |= (0x1f + serial_resend[0]);
         serial_okToSend = 3; // sent but not acked
       } else {
         uint16_t PPMout[16];

@@ -52,6 +52,7 @@
 #define CHANNELS_12         0x04
 #define CHANNELS_12_4       0x05
 #define CHANNELS_16         0x06
+#define BIGPACKET           0x20 // use 33 byte packets for more telemetry...
 #define DIVERSITY_ENABLED   0x80
 #define DEFAULT_FLAGS       (CHANNELS_8 | TELEMETRY_PASSTHRU)
 
@@ -73,7 +74,8 @@
 
 #define BINDING_POWER     0x06 // not lowest since may result fail with RFM23BP
 
-#define TELEMETRY_PACKETSIZE 9
+#define PACKETSIZE_TELEMETRY 17
+#define PACKETSIZE_BIG       33
 
 #define BIND_MAGIC (0xDEC1BE15 + (OPENLRSNG_VERSION & 0xfff0))
 #define BINDING_VERSION ((OPENLRSNG_VERSION & 0x0ff0)>>4)

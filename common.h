@@ -16,7 +16,12 @@ const static uint8_t pktsizes[8] = { 0, 7, 11, 12, 16, 17, 21, 0 };
 
 uint8_t getPacketSize(struct bind_data *bd)
 {
-  return pktsizes[(bd->flags & 0x07)];
+  return (bd->flags & BIGPACKET) ? PACKETSIZE_BIG : pktsizes[(bd->flags & 0x07)];
+}
+
+uint8_t getTelemetryPacketSize(struct bind_data *bd)
+{
+  return (bd->flags & BIGPACKET) ? PACKETSIZE_BIG : PACKETSIZE_TELEMETRY;
 }
 
 uint8_t getChannelCount(struct bind_data *bd)
@@ -31,10 +36,11 @@ uint32_t getInterval(struct bind_data *bd)
   // usec = (x + 15) * 8200000 / baudrate
 #define BYTES_AT_BAUD_TO_USEC(bytes, bps, div) ((uint32_t)((bytes) + (div?20:15)) * 8200000L / (uint32_t)(bps))
 
-  ret = (BYTES_AT_BAUD_TO_USEC(getPacketSize(bd), modem_params[bd->modem_params].bps, bd->flags&DIVERSITY_ENABLED) + 2000);
+  ret = (BYTES_AT_BAUD_TO_USEC(getPacketSize(bd), modem_params[bd->modem_params].bps, bd->flags & DIVERSITY_ENABLED) + 2000);
 
   if (bd->flags & TELEMETRY_MASK) {
-    ret += (BYTES_AT_BAUD_TO_USEC(TELEMETRY_PACKETSIZE, modem_params[bd->modem_params].bps, bd->flags&DIVERSITY_ENABLED) + 1000);
+    ret += (BYTES_AT_BAUD_TO_USEC(getTelemetryPacketSize(bd), modem_params[bd->modem_params].bps, bd->flags & DIVERSITY_ENABLED) + 1000);
+    ret += getTelemetryPacketSize(bd) * 70; // compensate for time needed on RFM data access
   }
 
   // round up to ms
