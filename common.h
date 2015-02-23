@@ -110,23 +110,22 @@ void unpackChannels(uint8_t config, volatile uint16_t PPM[], uint8_t *p)
   }
 }
 
-// conversion between microseconds 800-2200 and value 0-1023
-// 808-1000 == 0 - 11     (16us per step)
-// 1000-1999 == 12 - 1011 ( 1us per step)
-// 2000-2192 == 1012-1023 (16us per step)
-
+// conversion between microseconds 800-2200 and value 1-1023
+// 820-1000  == 1 - 11    (17us per step)
+// 1000-2000 == 12 - 1012 ( 1us per step)
+// 2000-2180 == 1012-1023 (17us per step)
 uint16_t servoUs2Bits(uint16_t x)
 {
   uint16_t ret;
 
   if (x < 800) {
-    ret = 0;
+    ret = 1;
   } else if (x < 1000) {
-    ret = (x - 799) / 16;
-  } else if (x < 2000) {
+    ret = (x - 807) / 17 + 1;
+  } else if (x <= 2000) {
     ret = (x - 988);
-  } else if (x < 2200) {
-    ret = (x - 1992) / 16 + 1011;
+  } else if (x < 2192) {
+    ret = (x - 1990) / 17 + 1012;
   } else {
     ret = 1023;
   }
@@ -139,11 +138,11 @@ uint16_t servoBits2Us(uint16_t x)
   uint16_t ret;
 
   if (x < 12) {
-    ret = 808 + x * 16;
-  } else if (x < 1012) {
+    ret = 800 + x * 17;
+  } else if (x <= 1012) {
     ret = x + 988;
   } else if (x < 1024) {
-    ret = 2000 + (x - 1011) * 16;
+    ret = 1996 + (x - 1012) * 17;
   } else {
     ret = 2192;
   }
