@@ -10,11 +10,11 @@ void sendSpektrumFrame()
   if ((now - sOutLast) > 10000) {
     uint8_t  ch = ((spektrumSendHi++) & 1) ? 7 : 0;
     sOutLast = now;
-    Serial.write(SPKTRM_SYNC1);
-    Serial.write(SPKTRM_SYNC2);
+    Serial.write((uint8_t)SPKTRM_SYNC1);
+    Serial.write((uint8_t)SPKTRM_SYNC2);
     for (uint8_t i = 0; i < 7; i++) {
-      Serial.write((ch << 2) | ((PPM[ch] >> 8) & 0x03));
-      Serial.write(PPM[ch] & 0xff);
+      Serial.write((uint8_t)((ch << 2) | ((PPM[ch] >> 8) & 0x03)));
+      Serial.write((uint8_t)(PPM[ch] & 0xff));
       ch++;
     }
   }
@@ -69,11 +69,11 @@ void sendSBUSFrame(uint8_t failsafe, uint8_t lostpack)
     sbus.msg.ch14 = PPM[14]<<1;
     sbus.msg.ch15 = PPM[15]<<1;
     sbus.msg.status = (failsafe ? 0x08 : 0) | (lostpack ? 0x04: 0);
-    Serial.write(SBUS_SYNC);
+    Serial.write((uint8_t)SBUS_SYNC);
     for (uint8_t i = 0; i<23; i++) {
       Serial.write(sbus.bytes[i]);
     }
-    Serial.write(SBUS_TAIL);
+    Serial.write((uint8_t)SBUS_TAIL);
   }
 }
 
@@ -99,7 +99,7 @@ void sendSUMDFrame(uint8_t failsafe)
       sumdWriteCRC(val >> 8);
       sumdWriteCRC(val & 0xff);
     }
-    Serial.write(CRC16_value >> 8);
-    Serial.write(CRC16_value & 0xff);
+    Serial.write((uint8_t)(CRC16_value >> 8));
+    Serial.write((uint8_t)(CRC16_value & 0xff));
   }
 }
