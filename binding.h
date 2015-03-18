@@ -329,7 +329,7 @@ void profileInit()
 {
   accessEEPROM(2, false);
   if (defaultProfile > TX_PROFILE_COUNT) {
-    defaultProfile = TX_PROFILE_COUNT;
+    defaultProfile = 0;
     profileSet();
   }
   activeProfile = defaultProfile;
