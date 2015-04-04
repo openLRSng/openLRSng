@@ -844,7 +844,7 @@ void loop(void)
           }
         }
         for (uint8_t i=0; i < 16; i++) {
-          PPMout[i] = getChannel(tx_config.chmap[i]);
+          PPMout[i] = getChannel(i);
         }
         packChannels(bind_data.flags & 7, PPMout, tx_buf + 1);
       }

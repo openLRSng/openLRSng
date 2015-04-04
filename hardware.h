@@ -248,6 +248,8 @@ void setupRfmInterrupt()
 #define BTN              11
 #define TX_AIN0          A4 // SDA
 #define TX_AIN1          A5 // SCL
+#define TX_MODE1         5
+#define TX_MODE2         6
 #define PPM_Pin_Interrupt_Setup  PCMSK2 = 0x08;PCICR|=(1<<PCIE2);
 #define PPM_Signal_Interrupt PCINT2_vect
 #define PPM_Signal_Edge_Check ((PIND & 0x08)==0x08)
@@ -387,6 +389,8 @@ void setupRfmInterrupt()
 
 #define TX_AIN0 A4 // SDA
 #define TX_AIN1 A5 // SCL
+#define TX_MODE1 11
+#define TX_MODE2 12
 
 #define BUZZER_ACT 6
 #define BUZZER_PAS 3
