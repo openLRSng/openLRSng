@@ -406,7 +406,7 @@ void buzzerInit()
 #elif (F_CPU == 8000000)
   TCCR2B = (1<<CS22); // prescaler = 64
 #else
-#errror F_CPU Invalid
+#error F_CPU Invalid
 #endif
   pinMode(BUZZER_PAS, OUTPUT);
   digitalWrite(BUZZER_PAS, LOW);
@@ -580,7 +580,7 @@ void buzzerInit()
 #elif (F_CPU == 8000000)
   TCCR2B = (1<<CS22); // prescaler = 64
 #else
-#errror F_CPU Invalid
+#error F_CPU Invalid
 #endif
   pinMode(BUZZER_PAS, OUTPUT);
   digitalWrite(BUZZER_PAS, LOW);
@@ -685,7 +685,7 @@ void buzzerInit()
 #elif (F_CPU == 8000000)
   TCCR2B = (1<<CS22); // prescaler = 64
 #else
-#errror F_CPU Invalid
+#error F_CPU Invalid
 #endif
   pinMode(BUZZER_PAS, OUTPUT);
   digitalWrite(BUZZER_PAS, LOW);
@@ -1130,7 +1130,7 @@ void buzzerInit()
 #elif (F_CPU == 8000000)
   TCCR2B = (1<<CS22); // prescaler = 64
 #else
-#errror F_CPU Invalid
+#error F_CPU Invalid
 #endif
   pinMode(BUZZER_PAS, OUTPUT);
   digitalWrite(BUZZER_PAS, LOW);
