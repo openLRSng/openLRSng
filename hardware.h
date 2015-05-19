@@ -852,6 +852,8 @@ void setupRfmInterrupt()
 #define TX_AIN_IS_DIGITAL
 #define TX_AIN0 2 // SDA
 #define TX_AIN1 3 // SCL
+#define TX_MODE1 2
+#define TX_MODE2 3
 
 #define BUZZER_PAS 10 // OCR4B
 #define BTN A0
