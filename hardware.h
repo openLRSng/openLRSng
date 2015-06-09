@@ -402,9 +402,9 @@ void buzzerInit()
   digitalWrite(BUZZER_ACT, LOW);
   TCCR2A = (1<<WGM21); // mode=CTC
 #if (F_CPU == 16000000)
-  TCCR2B = (1<<CS22) | (1<<CS20); // prescaler = 128
+  TCCR2B = (1<<CS22) | (1<<CS21); // prescaler = 256
 #elif (F_CPU == 8000000)
-  TCCR2B = (1<<CS22); // prescaler = 64
+  TCCR2B = (1<<CS22) | (1<<CS20); // prescaler = 128
 #else
 #errror F_CPU Invalid
 #endif
@@ -412,11 +412,13 @@ void buzzerInit()
   digitalWrite(BUZZER_PAS, LOW);
 }
 
+#define BUZZER_OCR OCR2A
+
 void buzzerOn(uint16_t freq)
 {
   if (freq) {
     digitalWrite(BUZZER_ACT,HIGH);
-    uint32_t ocr = 125000L / freq;
+    uint32_t ocr = 62500L / freq;
     if (ocr>255) {
       ocr=255;
     }
@@ -576,9 +578,9 @@ void buzzerInit()
 {
   TCCR2A = (1<<WGM21); // mode=CTC
 #if (F_CPU == 16000000)
-  TCCR2B = (1<<CS22) | (1<<CS20); // prescaler = 128
+  TCCR2B = (1<<CS22) | (1<<CS21); // prescaler = 256
 #elif (F_CPU == 8000000)
-  TCCR2B = (1<<CS22); // prescaler = 64
+  TCCR2B = (1<<CS22) | (1<<CS20); // prescaler = 128
 #else
 #errror F_CPU Invalid
 #endif
@@ -589,7 +591,7 @@ void buzzerInit()
 void buzzerOn(uint16_t freq)
 {
   if (freq) {
-    uint32_t ocr = 125000L / freq;
+    uint32_t ocr = 62500L / freq;
     if (ocr>255) {
       ocr=255;
     }
@@ -681,9 +683,9 @@ void buzzerInit()
   digitalWrite(BUZZER_ACT, LOW);
   TCCR2A = (1<<WGM21); // mode=CTC
 #if (F_CPU == 16000000)
-  TCCR2B = (1<<CS22) | (1<<CS20); // prescaler = 128
+  TCCR2B = (1<<CS22) | (1<<CS21); // prescaler = 256
 #elif (F_CPU == 8000000)
-  TCCR2B = (1<<CS22); // prescaler = 64
+  TCCR2B = (1<<CS22) | (1<<CS20); // prescaler = 128
 #else
 #errror F_CPU Invalid
 #endif
@@ -691,10 +693,12 @@ void buzzerInit()
   digitalWrite(BUZZER_PAS, LOW);
 }
 
+#define BUZZER_OCR OCR2A
+
 void buzzerOn(uint16_t freq)
 {
   if (freq) {
-    uint32_t ocr = 125000L / freq;
+    uint32_t ocr = 62500L / freq;
     digitalWrite(BUZZER_ACT,HIGH);
     if (ocr>255) {
       ocr=255;
@@ -864,15 +868,17 @@ void setupRfmInterrupt()
 
 void buzzerInit()
 {
-  TCCR4B = (1<<CS43); // prescaler = 128
+  TCCR4B = (1<<CS43) | (1<<CS40); // prescaler = 256
   pinMode(BUZZER_PAS, OUTPUT);
   digitalWrite(BUZZER_PAS, LOW);
 }
 
+#define BUZZER_OCR OCR4C
+
 void buzzerOn(uint16_t freq)
 {
   if (freq) {
-    uint32_t ocr = 125000L / freq;
+    uint32_t ocr = 62500L / freq;
     if (ocr>255) {
       ocr=255;
     }
@@ -1130,9 +1136,9 @@ void buzzerInit()
   digitalWrite(BUZZER_ACT, LOW);
   TCCR2A = (1<<WGM21); // mode=CTC
 #if (F_CPU == 16000000)
-  TCCR2B = (1<<CS22) | (1<<CS20); // prescaler = 128
+  TCCR2B = (1<<CS22) | (1<<CS21); // prescaler = 256
 #elif (F_CPU == 8000000)
-  TCCR2B = (1<<CS22); // prescaler = 64
+  TCCR2B = (1<<CS22) | (1<<CS20); // prescaler = 128
 #else
 #errror F_CPU Invalid
 #endif
@@ -1140,10 +1146,12 @@ void buzzerInit()
   digitalWrite(BUZZER_PAS, LOW);
 }
 
+#define BUZZER_OCR OCR2A
+
 void buzzerOn(uint16_t freq)
 {
   if (freq) {
-    uint32_t ocr = 125000L / freq;
+    uint32_t ocr = 62500L / freq;
     digitalWrite(BUZZER_ACT,HIGH);
     if (ocr>255) {
       ocr=255;

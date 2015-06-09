@@ -245,6 +245,59 @@ void setupProfile()
   }
 }
 
+#ifdef BUZZER_OCR
+
+#define PULLIN_TIME 100
+#define MAPOUTMAX 255 // ~250Hz
+#define MAPOUTMIN 32  // ~1950Hz
+
+void finderMode()
+{
+  uint8_t rssi_bottom, rssi_top, rssi, pullin;
+  init_rfm(0);
+  rfmSetChannel(0);
+  rfmSetCarrierFrequency(435000);
+  rx_reset();
+  delay(10);
+
+  rssi_bottom = 50;
+  rssi_top = 200;
+
+  pullin = PULLIN_TIME;
+
+  buzzerOn(1000);
+  while (1) {
+    {
+      uint16_t rssi_sum = 0;
+      for (uint8_t i = 0; i < 64; i++) {
+        rssi_sum += rfmGetRSSI();
+        delay(1);
+      }
+      rssi = rssi_sum >> 6;
+    }
+
+    if (rssi<rssi_bottom) rssi_bottom=rssi;
+    if (rssi>rssi_top) rssi_top=rssi;
+
+    if (0 == pullin) {
+      pullin = PULLIN_TIME;
+      if ((rssi_top - rssi) > 50) {
+        rssi_top--;
+      }
+      if ((rssi - rssi_bottom) > 50) {
+        rssi_bottom++;
+      }
+    } else {
+      pullin--;
+    }
+
+    // map RSSI from rssi_bottom..rssi_top to 255..32
+    BUZZER_OCR = MAPOUTMAX - (((MAPOUTMAX - MAPOUTMIN) * (uint16_t)rssi) / (rssi_top - rssi_bottom));
+  }
+}
+
+#endif
+
 void checkButton(void)
 {
   uint32_t time, loop_time;
@@ -271,7 +324,13 @@ void checkButton(void)
       loop_time = millis();
 
       while (0 == digitalRead(BTN)) {     // wait for button to release
-        if (loop_time > time + 9800) {
+        if (loop_time > time + 20000) {
+#ifdef BUZZER_OCR
+          buzzerOn(0);
+          delay(1000);
+          finderMode();
+#endif
+        } else if (loop_time > time + 9800) {
           buzzerOn(BZ_FREQ);
           swapProfile = 1;
         } else {
