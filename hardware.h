@@ -765,7 +765,6 @@ struct rxSpecialPinMap rxSpecialPins[] = {
 
 void rxInitHWConfig()
 {
-  uint8_t i;
   rx_config.rx_type = RX_OLRSNG4CH;
   rx_config.pinMapping[0] = PINMAP_PPM;
   rx_config.pinMapping[1] = PINMAP_ANALOG;
