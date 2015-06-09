@@ -256,7 +256,7 @@ void finderMode()
   uint8_t rssi_bottom, rssi_top, rssi, pullin;
   init_rfm(0);
   rfmSetChannel(0);
-  rfmSetCarrierFrequency(435000);
+  rfmSetCarrierFrequency(435000000);
   rx_reset();
   delay(10);
 
@@ -291,8 +291,14 @@ void finderMode()
       pullin--;
     }
 
+    // Serial.print(rssi_bottom); Serial.print(',');
+    // Serial.print(rssi); Serial.print(',');
+    // Serial.print(rssi_top); Serial.print(',');
+
     // map RSSI from rssi_bottom..rssi_top to 255..32
-    BUZZER_OCR = MAPOUTMAX - (((MAPOUTMAX - MAPOUTMIN) * (uint16_t)rssi) / (rssi_top - rssi_bottom));
+    uint8_t mapped = MAPOUTMAX -  ((MAPOUTMAX - MAPOUTMIN) * ((uint16_t)rssi - rssi_bottom) / (rssi_top - rssi_bottom));
+    BUZZER_OCR = mapped;
+    // Serial.println(mapped);
   }
 }
 
@@ -333,6 +339,7 @@ void checkButton(void)
         } else if (loop_time > time + 9800) {
           buzzerOn(BZ_FREQ);
           swapProfile = 1;
+          loop_time = millis();
         } else {
           if ((millis() - loop_time) > 200) {
             loop_time = millis();
