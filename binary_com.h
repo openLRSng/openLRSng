@@ -184,7 +184,10 @@ void PSP_process_data(uint8_t code, uint16_t payload_length_received, uint8_t da
       if (rxtx_buf == 'F') {
         PSP_protocol_head(PSP_REQ_RX_FAILSAFE, 32);
         for (uint8_t i = 0; i < 32; i++) {
-          PSP_serialize_uint8(spiReadData()); // failsafe data
+          // failsafe data
+          uint8_t tmp = spiReadData();
+          PSP_serialize_uint8(spiReadData());
+          PSP_serialize_uint8(tmp);
         }
       } else {
         PSP_protocol_head(PSP_REQ_RX_FAILSAFE, 1);
@@ -343,7 +346,10 @@ void PSP_process_data(uint8_t code, uint16_t payload_length_received, uint8_t da
       uint8_t rxtx_buf[33];
       if (payload_length_received == 32) {
         rxtx_buf[0] = 'g';
-        memcpy(rxtx_buf + 1, data_buffer, 32);
+        for (uint8_t i = 0; i < 32; i += 2) {
+          rxtx_buf[1 + i] = data_buffer[i + 1];
+          rxtx_buf[2 + i] = data_buffer[i];
+        }
         tx_packet(rxtx_buf, 33);
       } else {
         rxtx_buf[0] = 'G';
