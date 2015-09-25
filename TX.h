@@ -12,6 +12,7 @@ uint32_t FStime = 0;  // time when button went down...
 uint32_t lastSent = 0;
 
 uint32_t lastTelemetry = 0;
+uint32_t lastSerialPPM = 0;
 
 uint8_t RSSI_rx = 0;
 uint8_t RSSI_tx = 0;
@@ -528,13 +529,12 @@ static inline void processSpektrum(uint8_t c)
 static inline void processSBUS(uint8_t c)
 {
   if (frameIndex == 0) {
-    if (c == SBUS_SYNC) {
+    if ((c == SBUS_SYNC) && ((millis() - lastSerialPPM) > 1)) // prevent locking onto wrong byte in frame
       frameIndex++;
-    }
-  } else if (frameIndex < 24) {
+  } else if (frameIndex < 23) {
     ppmWork.bytes[(frameIndex++)-1] = c;
   } else {
-    if ((frameIndex == 24) && (c == SBUS_TAIL)) {
+    if ((frameIndex == 23) && (c == SBUS_TAIL)) {
       uint8_t set;
       for (set = 0; set < 2; set++) {
         PPM[(set<<3)] = ppmWork.sbus.ch[set].ch0 >> 1;
@@ -555,6 +555,7 @@ static inline void processSBUS(uint8_t c)
     }
     frameIndex = 0;
   }
+  lastSerialPPM = millis();
 }
 
 static inline void processSUMD(uint8_t c)
