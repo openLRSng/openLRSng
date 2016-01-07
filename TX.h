@@ -529,8 +529,9 @@ static inline void processSpektrum(uint8_t c)
 static inline void processSBUS(uint8_t c)
 {
   if (frameIndex == 0) {
-    if ((c == SBUS_SYNC) && ((millis() - lastSerialPPM) > 1)) // prevent locking onto wrong byte in frame
+    if ((c == SBUS_SYNC) && ((millis() - lastSerialPPM) > 1)) { // prevent locking onto wrong byte in frame
       frameIndex++;
+    }
   } else if (frameIndex < 23) {
     ppmWork.bytes[(frameIndex++)-1] = c;
   } else {
@@ -911,7 +912,7 @@ void loop(void)
     }
   }
 
-  if (bind_data.flags & TELEMETRY_FRSKY) {
+  if ((bind_data.flags & TELEMETRY_FRSKY) && lastTelemetry) {
     uint8_t linkQualityTX = countSetBits(linkQuality & 0xfffe);
 
     uint8_t compRX = compositeRSSI(RSSI_rx, linkQualityRX);
