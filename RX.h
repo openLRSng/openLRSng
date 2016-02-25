@@ -687,8 +687,7 @@ void setup()
       (rx_config.pinMapping[TXD_OUTPUT] == PINMAP_SUMD)) {
     Serial.begin(115200);
   } else if (rx_config.pinMapping[TXD_OUTPUT] == PINMAP_SBUS) {
-    Serial.begin(100000);
-    UCSR0C |= 1<<UPM01; // set even parity
+    Serial.begin(100000, SERIAL_8E2); // Even parity, two stop bits
   } else if ((bind_data.flags & TELEMETRY_MASK) == TELEMETRY_FRSKY) {
     Serial.begin(9600);
   } else {
