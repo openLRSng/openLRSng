@@ -9,11 +9,11 @@ CONFIGURATOR UTILITY / BINARY FIRMWARE NOTE:
 ============================================
   This software should be used in source form only by expert users, for normal use 'binary' firmwares can be uploaded and configured by free configuration software available for Windows/Mac/Linux from Chrome web store.
 
-    http://goo.gl/iX7dJx
+  http://goo.gl/iX7dJx
 
   Binary firmware images are also available from
 
-    https://openlrsng.org/releases/
+  https://openlrsng.org/releases/
 
 TRANSMITTER HW:
 ===============
