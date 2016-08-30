@@ -23,11 +23,12 @@ uint32_t sampleRSSI = 0;
 uint16_t linkQuality = 0;
 uint16_t linkQualityRX = 0;
 
-volatile uint8_t ppmAge = 0; // age of PPM data
+volatile uint8_t ppmAge = 255; // age of PPM data
 
 volatile uint8_t ppmCounter = 255; // ignore data until first sync pulse
 
-uint8_t serialMode = 0; // 0 normal, 1 spektrum 1024 , 2 spektrum 2048, 3 SBUS, 4 SUMD
+serialMode_e serialMode = SERIAL_MODE_NONE;
+bool bndMode = true;
 
 struct sbus_help {
   uint16_t ch0 : 11;
@@ -52,6 +53,15 @@ union ppm_msg {
   struct sbus sbus;
 } ppmWork;
 
+uint8_t multiWork[3];
+
+bool multiBind = false;
+bool multiAutoBind = false;
+bool multiRangeCheck = false;
+uint8_t multiProfile = 0;
+bool multiLowPower = false;
+int8_t multiOption = 0;
+uint32_t multiLastProfileChange = 0;
 
 #ifndef BZ_FREQ
 #define BZ_FREQ 2000
@@ -62,13 +72,15 @@ uint8_t ppmDump   = 0;
 uint32_t lastDump = 0;
 #endif
 
+void processChannelsFromSerial(uint8_t c);
+
 /****************************************************
  * Interrupt Vector
  ****************************************************/
 
 static inline void processPulse(uint16_t pulse)
 {
-  if (serialMode) {
+  if (serialMode == SERIAL_MODE_NONE) {
     return;
   }
 
@@ -112,7 +124,7 @@ ISR(TIMER1_CAPT_vect)
   startPulse = stopPulse;         // Save time at pulse start
 }
 
-void setupPPMinput()
+void setupPPMinput(void)
 {
   // Setup timer1 for input capture (PSC=8 -> 0.5ms precision)
   TCCR1A = ((1 << WGM10) | (1 << WGM11));
@@ -147,6 +159,82 @@ void setupPPMinput(void)
 }
 #endif
 
+inline size_t debugPrint(const String &str)
+{
+  size_t result = 0;
+  if (!(bind_data.flags & TELEMETRY_MASK)) {
+      result = rcSerial->print(str);
+  } else {
+#ifdef USE_CONSOLE_SERIAL
+    result = consoleSerial->print(str);
+#endif
+  }
+  return result;
+}
+
+inline void consoleFlush(void)
+{
+#ifdef USE_CONSOLE_SERIAL
+  while (consoleSerial->available()) {
+    consoleSerial->read();
+  }
+#else
+  if (bndMode || serialMode == SERIAL_MODE_NONE) {
+    while (rcSerial->available()) {
+      rcSerial->read();
+    }
+  }
+#endif
+}
+
+inline int consoleDataAvailable()
+{
+  int result = 0;
+#ifdef USE_CONSOLE_SERIAL
+  result = consoleSerial->available();
+#else
+  if (bndMode || serialMode == SERIAL_MODE_NONE) {
+    result = rcSerial->available();
+  }
+#endif
+  return result;
+}
+
+inline int consoleRead()
+{
+  int result = -1;
+#ifdef USE_CONSOLE_SERIAL
+  result = consoleSerial->read();
+#else
+  if (bndMode || serialMode == SERIAL_MODE_NONE) {
+      result = rcSerial->read();
+  }
+#endif
+  return result;
+}
+
+inline size_t consolePrint(const String &str)
+{
+  size_t result = 0;
+#ifdef USE_CONSOLE_SERIAL
+  result = consoleSerial->print(str);
+#else
+  if (bndMode || !(bind_data.flags & TELEMETRY_MASK)) {
+      result = rcSerial->print(str);
+  }
+#endif
+  return result;
+}
+
+inline void processSerial(void)
+{
+  if (serialMode != SERIAL_MODE_NONE) {
+    while (rcSerial->available()) {
+      processChannelsFromSerial(rcSerial->read());
+    }
+  }
+}
+
 void bindMode(void)
 {
   uint32_t prevsend = millis();
@@ -155,13 +243,11 @@ void bindMode(void)
 
   init_rfm(1);
 
-  while (Serial.available()) {
-    Serial.read();    // flush serial
-  }
+  consoleFlush();
 
   Red_LED_OFF;
 
-  while (1) {
+  while (bndMode || !(serialMode == SERIAL_MODE_MULTI && !multiBind)) {
     if (sendBinds & (millis() - prevsend > 200)) {
       prevsend = millis();
       Green_LED_ON;
@@ -187,18 +273,18 @@ void bindMode(void)
       sendBinds = 1;
     }
 
-    while (Serial.available()) {
+    while (consoleDataAvailable()) {
       Red_LED_ON;
       Green_LED_ON;
-      switch (Serial.read()) {
+      switch (consoleRead()) {
 #ifdef CLI
       case '\n':
       case '\r':
 #ifdef CLI_ENABLED
-        Serial.println(F("Enter menu..."));
+        consolePrint("Enter menu...\n");
         handleCLI();
 #else
-        Serial.println(F("CLI not available, use configurator!"));
+        consolePrint("CLI not available, use configurator!\n");
 #endif
         break;
 #endif
@@ -216,6 +302,12 @@ void bindMode(void)
       Red_LED_OFF;
       Green_LED_OFF;
     }
+
+    if (!bndMode) {
+      processSerial();
+    }
+
+    watchdogReset();
   }
 }
 
@@ -304,11 +396,13 @@ just_bind:
 
 static inline void checkBND(void)
 {
-  if ((Serial.available() > 3) &&
-      (Serial.read() == 'B') && (Serial.read() == 'N') &&
-      (Serial.read() == 'D') && (Serial.read() == '!')) {
+  if ((consoleDataAvailable() > 3) &&
+      (consoleRead() == 'B') && (consoleRead() == 'N') &&
+      (consoleRead() == 'D') && (consoleRead() == '!')) {
     buzzerOff();
     bindMode();
+  } else {
+    bndMode = false;
   }
 }
 
@@ -352,14 +446,84 @@ uint8_t rx_buf[9];
 #define SERIAL_BUFSIZE 32
 uint8_t serial_buffer[SERIAL_BUFSIZE];
 uint8_t serial_resend[9];
-uint8_t serial_head;
-uint8_t serial_tail;
-uint8_t serial_okToSend; // 2 if it is ok to send serial instead of servo
+uint8_t serial_head = 0;
+uint8_t serial_tail = 0;
+uint8_t serial_okToSend = 0; // 2 if it is ok to send serial instead of servo
+
+inline void doBeeps(uint8_t numBeeps) {
+  for (uint8_t i = 0; i <= numBeeps; i++) {
+    delay(50);
+    buzzerOn(BZ_FREQ);
+    delay(50);
+    buzzerOff();
+  }
+}
+
+inline void setupRcSerial()
+{
+  if (bind_data.serial_baudrate && (bind_data.serial_baudrate <= SERIAL_MODE_MAX)) {
+    serialMode = (serialMode_e)bind_data.serial_baudrate;
+  } else {
+    serialMode = SERIAL_MODE_NONE;
+  }
+
+  if (serialMode == SERIAL_MODE_SBUS || serialMode == SERIAL_MODE_MULTI) {
+    rcSerial->begin(100000, SERIAL_8E2);
+  } else if (serialMode == SERIAL_MODE_SPEKTRUM1024 || serialMode == SERIAL_MODE_SPEKTRUM2048 || serialMode == SERIAL_MODE_SUMD) {
+    rcSerial->begin(115200);
+  } else { // SERIAL_MODE_NONE
+    // switch to userdefined baudrate here
+    rcSerial->begin(bind_data.serial_baudrate);
+  }
+}
+
+void configureProfile(void)
+{
+  txReadEeprom();
+
+  doBeeps(activeProfile);
+
+  setupRcSerial();
+
+  if (serialMode == SERIAL_MODE_NONE) {
+    // theoretically we should disable PPM input in the cases above
+    // if serial input has been selected. But there is currently no way to 
+    // select serial input once PPM has been enabled, so this is not needed
+    setupPPMinput();
+  }
+
+  altPwrIndex=0;
+  if(tx_config.flags & ALT_POWER) {
+    if (bind_data.hopchannel[6] && bind_data.hopchannel[13] && bind_data.hopchannel[20]) {
+      altPwrIndex=7;
+    } else {
+      altPwrIndex=5;
+    }
+  }
+
+  if (bind_data.flags & TELEMETRY_MASK) {
+    if (bind_data.flags & TELEMETRY_FRSKY) {
+      frskyInit(rcSerial, (bind_data.flags & TELEMETRY_MASK) == TELEMETRY_SMARTPORT,
+        serialMode != SERIAL_MODE_NONE);
+    } else {
+      // ?
+    }
+  }
+
+  init_rfm(0);
+  rfmSetChannel(RF_channel);
+  rx_reset();
+
+  watchdogConfig(WATCHDOG_2S);
+}
+
+inline bool newMultiProfileSelected(bool useTimeout)
+{
+  return multiProfile > 0 && multiProfile <= TX_PROFILE_COUNT && multiProfile - 1 != activeProfile && (!useTimeout || millis() - multiLastProfileChange >= MULTI_OPERATION_TIMEOUT_MS);
+}
 
 void setup(void)
 {
-  uint32_t start;
-
   watchdogConfig(WATCHDOG_OFF);
 
   setupSPI();
@@ -396,85 +560,43 @@ void setup(void)
 #else
   Serial.begin(115200);
 #endif
-  setupProfile();
-  txReadEeprom();
-
-  setupPPMinput();
-  ppmAge = 255;
 
   setupRfmInterrupt();
 
   sei();
 
-  start = millis();
-  while ((ppmAge == 255) && ((millis() - start) < 2000));
+  setupProfile();
+  txReadEeprom();
 
   buzzerOn(BZ_FREQ);
   digitalWrite(BTN, HIGH);
   Red_LED_ON ;
 
-  while (Serial.available()) {
-    Serial.read();
-  }
+  consoleFlush();
 
-  Serial.print("OpenLRSng TX starting ");
-  printVersion(version);
-  Serial.print(" on HW ");
-  Serial.println(BOARD_TYPE);
+  consolePrint("OpenLRSng TX starting " + getVersionString(version) + " on HW " + String(BOARD_TYPE) + "\n");
 
-  delay(50);
+  delay(100);
 
   checkBND();
 
-  if (bind_data.serial_baudrate && (bind_data.serial_baudrate < 5)) {
-    serialMode = bind_data.serial_baudrate;
-    if(serialMode == 3) {
-      //SBUS, 100Kbaud, 8E2
-      TelemetrySerial.begin(100000, SERIAL_8E2);
-    } else {
-      TelemetrySerial.begin(115200);
-    }
-  } else {
-    // switch to userdefined baudrate here
-    TelemetrySerial.begin(bind_data.serial_baudrate);
-  }
   checkButton();
 
   Red_LED_OFF;
   buzzerOff();
 
-  setupPPMinput(); // need to do this to make sure ppm polarity is correct if profile was changed
+  setupRcSerial();
 
-  altPwrIndex=0;
-  if(tx_config.flags & ALT_POWER) {
-    if (bind_data.hopchannel[6] && bind_data.hopchannel[13] && bind_data.hopchannel[20]) {
-      altPwrIndex=7;
-    } else {
-      altPwrIndex=5;
-    }
+  uint32_t timeout = millis() + (serialMode == SERIAL_MODE_MULTI ? 20000 : 2000);
+  while (ppmAge == 255 && millis() < timeout) {
+    processSerial();
   }
 
-  init_rfm(0);
-  rfmSetChannel(RF_channel);
-  rx_reset();
-
-  serial_head = 0;
-  serial_tail = 0;
-  serial_okToSend = 0;
-
-  for (uint8_t i = 0; i <= activeProfile; i++) {
-    delay(50);
-    buzzerOn(BZ_FREQ);
-    delay(50);
-    buzzerOff();
+  if (newMultiProfileSelected(false)) {
+    activeProfile = multiProfile - 1;
   }
 
-  if (bind_data.flags & TELEMETRY_FRSKY) {
-    frskyInit((bind_data.flags & TELEMETRY_MASK) == TELEMETRY_SMARTPORT);
-  } else if (bind_data.flags & TELEMETRY_MASK) {
-    // ?
-  }
-  watchdogConfig(WATCHDOG_2S);
+  configureProfile();
 }
 
 uint8_t compositeRSSI(uint8_t rssi, uint8_t linkq)
@@ -493,6 +615,8 @@ uint8_t compositeRSSI(uint8_t rssi, uint8_t linkq)
 #define SPKTRM_SYNC1 0x03
 #define SPKTRM_SYNC2 0x01
 #define SUMD_HEAD 0xa8
+#define MULTI_HEADER 0x55
+#define MULTI_PROTOCOL_OPENLRS 0x1b
 
 uint8_t frameIndex=0;
 uint32_t srxLast=0;
@@ -510,7 +634,7 @@ static inline void processSpektrum(uint8_t c)
     if (frameIndex==16) { // frameComplete
       for (uint8_t i=1; i<8; i++) {
         uint8_t ch,v;
-        if (serialMode == 1) {
+        if (serialMode == SERIAL_MODE_SPEKTRUM1024) {
           ch = ppmWork.words[i] >> 10;
           v = ppmWork.words[i] & 0x3ff;
         } else {
@@ -564,6 +688,76 @@ static inline void processSBUS(uint8_t c)
   lastSerialPPM = millis();
 }
 
+static inline uint16_t multiToPpm(uint16_t input) {
+  uint32_t value = input;
+  // Taken from https://github.com/pascallanger/DIY-Multiprotocol-TX-Module/blob/master/Multiprotocol/Multiprotocol.h#L478-L483
+  value = (((value - 204) * 1000) / 1639) + 1000;
+  return servoUs2Bits((uint16_t)value);
+}
+
+static inline void processMulti(uint8_t c)
+{
+  if (frameIndex == 0) {
+    if (c == MULTI_HEADER) {
+      frameIndex++;
+    }
+  } else if (frameIndex == 1) {
+    if ((c & 0x1f) == MULTI_PROTOCOL_OPENLRS) {
+      multiWork[0] = c;
+
+      frameIndex++;
+    } else {
+      frameIndex = 0;
+    }
+  } else if (frameIndex <= 3) {
+    multiWork[frameIndex - 1] = c;
+
+    frameIndex++;
+  } else if (frameIndex <= 25) {
+    ppmWork.bytes[frameIndex - 4] = c;
+
+    if (frameIndex == 25) {
+      uint32_t timestamp = millis();
+
+      multiBind = multiWork[0] & 0x80;
+      multiAutoBind = multiWork[0] & 0x40;
+      multiRangeCheck = multiWork[0] & 0x20;
+
+      uint8_t oldMultiProfile = multiProfile;
+      multiProfile = multiWork[1] & 0x0f;
+      if (multiProfile != oldMultiProfile) {
+          multiLastProfileChange = timestamp;
+      }
+
+      multiLowPower = multiWork[1] & 0x80;
+
+      multiOption = multiWork[2];
+
+      for (uint8_t set = 0; set < 2; set++) {
+        PPM[(set << 3)] = multiToPpm(ppmWork.sbus.ch[set].ch0);
+        PPM[(set << 3) + 1] = multiToPpm(ppmWork.sbus.ch[set].ch1);
+        PPM[(set << 3) + 2] = multiToPpm(ppmWork.sbus.ch[set].ch2);
+        PPM[(set << 3) + 3] = multiToPpm(ppmWork.sbus.ch[set].ch3);
+        PPM[(set << 3) + 4] = multiToPpm(ppmWork.sbus.ch[set].ch4);
+        PPM[(set << 3) + 5] = multiToPpm(ppmWork.sbus.ch[set].ch5);
+        PPM[(set << 3) + 6] = multiToPpm(ppmWork.sbus.ch[set].ch6);
+        PPM[(set << 3) + 7] = multiToPpm(ppmWork.sbus.ch[set].ch7);
+      }
+
+#ifdef DEBUG_DUMP_PPM
+      ppmDump = 1;
+#endif
+      ppmAge = 0;
+
+      frameIndex = 0;
+    } else {
+      frameIndex++;
+    }
+  } else {
+    frameIndex = 0;
+  }
+}
+
 static inline void processSUMD(uint8_t c)
 {
   if ((frameIndex == 0) && (c == SUMD_HEAD)) {
@@ -615,12 +809,14 @@ void processChannelsFromSerial(uint8_t c)
   }
   srxLast=now;
 
-  if ((serialMode == 1) || (serialMode == 2)) { // SPEKTRUM
+  if (serialMode == SERIAL_MODE_SPEKTRUM1024 || serialMode == SERIAL_MODE_SPEKTRUM2048) {
     processSpektrum(c);
-  } else if (serialMode==3) { // SBUS
+  } else if (serialMode == SERIAL_MODE_SBUS) {
     processSBUS(c);
-  } else if (serialMode==4) { // SUMD
+  } else if (serialMode == SERIAL_MODE_SUMD) {
     processSUMD(c);
+  } else if (serialMode == SERIAL_MODE_MULTI) {
+    processMulti(c);
   }
 }
 
@@ -629,9 +825,13 @@ uint16_t getChannel(uint8_t ch)
   uint16_t v=512;
   ch = tx_config.chmap[ch];
   if (ch < 16) {
-    cli();  // disable interrupts when copying servo positions, to avoid race on 2 byte variable written by ISR
-    v = PPM[ch];
-    sei();
+    if (serialMode == SERIAL_MODE_NONE) {
+      cli();  // disable interrupts when copying servo positions, to avoid race on 2 byte variable written by ISR
+      v = PPM[ch];
+      sei();
+    } else {
+      v = PPM[ch];
+    }
   } else if ((ch > 0xf1) && (ch < 0xfd)) {
     v = 12 + (ch - 0xf2) * 100;
   } else {
@@ -695,29 +895,28 @@ void loop(void)
 #ifdef DEBUG_DUMP_PPM
   if (ppmDump) {
     uint32_t timeTMP = millis();
-    Serial.print(timeTMP - lastDump);
+    debugPrint((timeTMP - lastDump));
     lastDump = timeTMP;
-    TelemetrySerial.print(':');
+    debugPrint(':');
     for (uint8_t i = 0; i < 16; i++) {
-      TelemetrySerial.print(PPM[i]);
-      TelemetrySerial.print(',');
+      debugPrint(String(PPM[i]) + ',');
     }
-    TelemetrySerial.println();
+    debugPrint('\n');
     ppmDump = 0;
   }
 #endif
 
   if (spiReadRegister(0x0C) == 0) {     // detect the locked module and reboot
-    Serial.println("module locked?");
+    consolePrint("module locked?\n");
     Red_LED_ON;
     init_rfm(0);
     rx_reset();
     Red_LED_OFF;
   }
 
-  while (TelemetrySerial.available()) {
-    uint8_t ch = TelemetrySerial.read();
-    if (serialMode) {
+  while (rcSerial->available()) {
+    uint8_t ch = rcSerial->read();
+    if (serialMode != SERIAL_MODE_NONE) {
       processChannelsFromSerial(ch);
     } else if (((serial_tail + 1) % SERIAL_BUFSIZE) != serial_head) {
       serial_buffer[serial_tail] = ch;
@@ -726,7 +925,7 @@ void loop(void)
   }
 
 #ifdef __AVR_ATmega32U4__
-  if (serialMode) {
+  if (serialMode != SERIAL_MODE_NONE) {
     while (Serial.available()) {
       processChannelsFromSerial(Serial.read());
     }
@@ -756,7 +955,7 @@ void loop(void)
           if (bind_data.flags & TELEMETRY_FRSKY) {
             frskyUserData(rx_buf[i]);
           } else {
-            TelemetrySerial.write(rx_buf[i]);
+            rcSerial->write(rx_buf[i]);
           }
         }
       } else if ((rx_buf[0] & 0x3F) == 0) {
@@ -765,9 +964,7 @@ void loop(void)
         RX_ain1 = rx_buf[3];
 #ifdef TEST_DUMP_AFCC
 #define SIGNIT(x) ((int16_t)(((x&0x200)?0xFC00U:0)|(x&0x3FF)))
-        Serial.print(SIGNIT(rfmGetAFCC()));
-        Serial.print(':');
-        Serial.println(SIGNIT((rx_buf[4] << 8) + rx_buf[5]));
+        debugPrint(String(SIGNIT(rfmGetAFCC())) + ':' + SIGNIT((rx_buf[4] << 8) + rx_buf[5]) + '\n\n');
 #endif
         linkQualityRX = rx_buf[6];
       }
@@ -860,34 +1057,55 @@ void loop(void)
       //Green LED will be on during transmission
       Green_LED_ON;
 
-      {
-        uint8_t power = bind_data.rf_power;
-        if (altPwrIndex && power && (altPwrCount++ == altPwrIndex)) {
-          altPwrCount=0;
+      uint8_t power;
+      if (serialMode == SERIAL_MODE_MULTI && multiOption >= 0) {
+        power = multiOption & 0x07;
+      } else {
+        power = bind_data.rf_power;
+      }
+
+      if (altPwrIndex && power && (altPwrCount++ == altPwrIndex)) {
+        altPwrCount=0;
+        if (power > 0) {
           power--;
         }
-#ifdef TX_MODE1
-        if (tx_config.flags & SW_POWER) {
-          if (!digitalRead(TX_MODE1)) {
-            Red_LED_ON;
-            power=7;
-          }
-        }
-#endif
-        rfmSetPower(power);
       }
+
+      bool useHighPower = false;
+#ifdef TX_MODE1
+      if (tx_config.flags & SW_POWER) {
+        if (!digitalRead(TX_MODE1)) {
+          useHighPower = true;
+        }
+      }
+#endif
+      if (serialMode == SERIAL_MODE_MULTI && !multiLowPower) {
+        useHighPower = true; 
+      }
+
+      if (useHighPower) {
+        Red_LED_ON;
+        power = 7;
+      }
+
+      if (serialMode == SERIAL_MODE_MULTI && multiRangeCheck) {
+        if (power > 3) {
+            power = power - 3;
+        } else {
+            power = 0;
+        }
+      }
+
+      rfmSetPower(power);
 
       // Send the data over RF
       rfmSetChannel(RF_channel);
       tx_packet_async(tx_buf, getPacketSize(&bind_data));
 
-#ifdef TX_MODE1
-      if (tx_config.flags & SW_POWER) {
-        if (!digitalRead(TX_MODE1)) {
-          Red_LED_OFF;
-        }
+      if (useHighPower) {
+        Red_LED_OFF;
       }
-#endif
+
       //Hop to the next frequency
       RF_channel++;
 
@@ -930,4 +1148,20 @@ void loop(void)
   Green_LED_OFF;
 
   checkFS();
+
+  // make sure that serial error does not acidentally cause the TX to drop the link while linked to an RX
+  if (serialMode == SERIAL_MODE_MULTI && (lastReceived == 0 || millis() - lastReceived >= MULTI_OPERATION_TIMEOUT_MS)) {
+    if (newMultiProfileSelected(true)) {
+      activeProfile = multiProfile - 1;
+
+      configureProfile();
+    }
+
+    if (multiBind) {
+      bindMode();
+
+      init_rfm(0);
+      rx_reset();
+    }
+  }
 }

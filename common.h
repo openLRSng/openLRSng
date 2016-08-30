@@ -720,16 +720,19 @@ void beacon_send(bool static_tone)
   Green_LED_OFF
 }
 
+String getVersionString(uint16_t v)
+{
+  String result = String(v >> 8) + '.' + ((v >> 4) & 0x0f);
+  if (version & 0x0f) {
+      result = result + '.' + (v & 0x0f);
+  }
+  return result;
+}
+
 // Print version, either x.y or x.y.z (if z != 0)
 void printVersion(uint16_t v)
 {
-  Serial.print(v >> 8);
-  Serial.print('.');
-  Serial.print((v >> 4) & 0x0f);
-  if (version & 0x0f) {
-    Serial.print('.');
-    Serial.print(v & 0x0f);
-  }
+  Serial.print(getVersionString(v));
 }
 
 // Halt and blink failure code

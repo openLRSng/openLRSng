@@ -11,3 +11,4 @@
 *.hex
 libraries/*
 out
+.idea
