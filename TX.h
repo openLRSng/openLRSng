@@ -428,7 +428,12 @@ void setup(void)
 
   if (bind_data.serial_baudrate && (bind_data.serial_baudrate < 5)) {
     serialMode = bind_data.serial_baudrate;
-    TelemetrySerial.begin((serialMode == 3) ? 100000 : 115200); // SBUS is 100000 rest 115200
+    if(serialMode == 3) {
+      //SBUS, 100Kbaud, 8E2
+      TelemetrySerial.begin(100000, SERIAL_8E2);
+    } else {
+      TelemetrySerial.begin(115200);
+    }
   } else {
     // switch to userdefined baudrate here
     TelemetrySerial.begin(bind_data.serial_baudrate);
@@ -532,10 +537,10 @@ static inline void processSBUS(uint8_t c)
     if ((c == SBUS_SYNC) && ((millis() - lastSerialPPM) > 1)) { // prevent locking onto wrong byte in frame
       frameIndex++;
     }
-  } else if (frameIndex < 23) {
+  } else if (frameIndex < 24) {
     ppmWork.bytes[(frameIndex++)-1] = c;
   } else {
-    if ((frameIndex == 23) && (c == SBUS_TAIL)) {
+    if ((frameIndex == 24) && (c == SBUS_TAIL)) {
       uint8_t set;
       for (set = 0; set < 2; set++) {
         PPM[(set<<3)] = ppmWork.sbus.ch[set].ch0 >> 1;
