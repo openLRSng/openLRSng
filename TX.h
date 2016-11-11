@@ -532,9 +532,9 @@ static inline void processSpektrum(uint8_t c)
 }
 
 static inline uint16_t SBUSToPpm(uint16_t input) {
-  uint32_t value = input;
-  value = (((value - 200) * 1000) / 1600) + 1000;
-  return servoUs2Bits((uint16_t)value);
+  // Rescale [200, 1800] to [1000, 2000]
+  uint16_t value = (((input - 200) * 10) >> 4) + 1000;
+  return servoUs2Bits(value);
 }
 
 static inline void processSBUS(uint8_t c)

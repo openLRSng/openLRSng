@@ -48,9 +48,10 @@ union sbus_msg {
 } sbus;
 
 static inline uint16_t ppmToSBUS(uint16_t input) {
-  uint32_t value = servoBits2Us(input);
-  value = (((value - 1000) * 1600) / 1000) + 200;
-  return (uint16_t)value;
+  uint16_t value = servoBits2Us(input);
+  // Rescale [1000, 2000] to [200, 1800]
+  value = (((value - 1000) << 4) / 10) + 200;
+  return value;
 }
 
 void sendSBUSFrame(uint8_t failsafe, uint8_t lostpack)
