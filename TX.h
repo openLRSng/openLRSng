@@ -1115,6 +1115,8 @@ void loop(void)
 
     } else {
       if (ppmAge == 8) {
+        rx_reset();
+
         Red_LED_ON;
       }
       ppmAge = 9;
