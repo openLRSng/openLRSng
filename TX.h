@@ -159,7 +159,7 @@ void setupPPMinput(void)
 }
 #endif
 
-inline size_t debugPrint(const String &str)
+inline size_t debugPrint(const char str[])
 {
   size_t result = 0;
   if (!(bind_data.flags & TELEMETRY_MASK)) {
@@ -213,7 +213,7 @@ inline int consoleRead()
   return result;
 }
 
-inline size_t consolePrint(const String &str)
+inline size_t consolePrint(const char str[])
 {
   size_t result = 0;
 #ifdef USE_CONSOLE_SERIAL
@@ -225,6 +225,20 @@ inline size_t consolePrint(const String &str)
 #endif
   return result;
 }
+
+inline HardwareSerial *getConsoleSerial()
+{
+  HardwareSerial *result = NULL;
+#ifdef USE_CONSOLE_SERIAL
+  result = consoleSerial;
+#else
+  if (bndMode || !(bind_data.flags & TELEMETRY_MASK)) {
+      result = rcSerial;
+  }
+#endif
+  return result;
+}
+
 
 inline void processSerial(void)
 {
@@ -574,7 +588,9 @@ void setup(void)
 
   consoleFlush();
 
-  consolePrint("OpenLRSng TX starting " + getVersionString(version) + " on HW " + String(BOARD_TYPE) + "\n");
+  consolePrint("OpenLRSng TX starting ");
+  printVersion(version, getConsoleSerial());
+  consolePrint(" on HW BOARD_TYPE\n");
 
   delay(100);
 
@@ -899,7 +915,7 @@ void loop(void)
     lastDump = timeTMP;
     debugPrint(':');
     for (uint8_t i = 0; i < 16; i++) {
-      debugPrint(String(PPM[i]) + ',');
+      debugPrint(PPM[i] + ',');
     }
     debugPrint('\n');
     ppmDump = 0;
@@ -964,7 +980,7 @@ void loop(void)
         RX_ain1 = rx_buf[3];
 #ifdef TEST_DUMP_AFCC
 #define SIGNIT(x) ((int16_t)(((x&0x200)?0xFC00U:0)|(x&0x3FF)))
-        debugPrint(String(SIGNIT(rfmGetAFCC())) + ':' + SIGNIT((rx_buf[4] << 8) + rx_buf[5]) + '\n\n');
+        debugPrint(SIGNIT(rfmGetAFCC())) + ':' + SIGNIT((rx_buf[4] << 8) + rx_buf[5]) + '\n\n');
 #endif
         linkQualityRX = rx_buf[6];
       }
@@ -1115,8 +1131,6 @@ void loop(void)
 
     } else {
       if (ppmAge == 8) {
-        rx_reset();
-
         Red_LED_ON;
       }
       ppmAge = 9;
