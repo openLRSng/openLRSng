@@ -27,6 +27,8 @@ volatile uint8_t ppmAge = 255; // age of PPM data
 
 volatile uint8_t ppmCounter = 255; // ignore data until first sync pulse
 
+bool ppmIsEnabled = false;
+
 serialMode_e serialMode = SERIAL_MODE_NONE;
 bool bndMode = true;
 
@@ -80,7 +82,7 @@ void processChannelsFromSerial(uint8_t c);
 
 static inline void processPulse(uint16_t pulse)
 {
-  if (serialMode == SERIAL_MODE_NONE) {
+  if (serialMode != SERIAL_MODE_NONE) {
     return;
   }
 
@@ -491,6 +493,18 @@ inline void setupRcSerial()
   }
 }
 
+inline void checkSetupPpm(void)
+{
+  if (serialMode == SERIAL_MODE_NONE && !ppmIsEnabled) {
+    // theoretically we should disable PPM input in the cases above
+    // if serial input has been selected. But there is currently no way to 
+    // select serial input once PPM has been enabled, so this is not needed
+    setupPPMinput();
+
+    ppmIsEnabled = true;
+  }
+}
+
 void configureProfile(void)
 {
   txReadEeprom();
@@ -499,12 +513,7 @@ void configureProfile(void)
 
   setupRcSerial();
 
-  if (serialMode == SERIAL_MODE_NONE) {
-    // theoretically we should disable PPM input in the cases above
-    // if serial input has been selected. But there is currently no way to 
-    // select serial input once PPM has been enabled, so this is not needed
-    setupPPMinput();
-  }
+  checkSetupPpm();
 
   altPwrIndex=0;
   if(tx_config.flags & ALT_POWER) {
@@ -602,6 +611,8 @@ void setup(void)
   buzzerOff();
 
   setupRcSerial();
+
+  checkSetupPpm();
 
   uint32_t timeout = millis() + (serialMode == SERIAL_MODE_MULTI ? 20000 : 2000);
   while (ppmAge == 255 && millis() < timeout) {
@@ -1100,7 +1111,6 @@ void loop(void)
       }
 
       if (useHighPower) {
-        Red_LED_ON;
         power = 7;
       }
 
@@ -1117,10 +1127,6 @@ void loop(void)
       // Send the data over RF
       rfmSetChannel(RF_channel);
       tx_packet_async(tx_buf, getPacketSize(&bind_data));
-
-      if (useHighPower) {
-        Red_LED_OFF;
-      }
 
       //Hop to the next frequency
       RF_channel++;
