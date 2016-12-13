@@ -716,7 +716,7 @@ static inline void processSBUS(uint8_t c)
 }
 
 static inline uint16_t multiToPpm(uint16_t input) {
-  uint32_t value = input;
+  int32_t value = input;
   // Taken from https://github.com/pascallanger/DIY-Multiprotocol-TX-Module/blob/master/Multiprotocol/Multiprotocol.h#L478-L483
   value = (((value - 204) * 1000) / 1639) + 1000;
   return servoUs2Bits((uint16_t)value);
