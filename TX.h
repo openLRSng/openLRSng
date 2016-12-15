@@ -228,18 +228,21 @@ inline size_t consolePrint(const char str[])
   return result;
 }
 
+#ifdef USE_CONSOLE_SERIAL
+inline Serial_ *getConsoleSerial()
+{
+  return consoleSerial;
+}
+#else
 inline HardwareSerial *getConsoleSerial()
 {
   HardwareSerial *result = NULL;
-#ifdef USE_CONSOLE_SERIAL
-  result = consoleSerial;
-#else
   if (bndMode || !(bind_data.flags & TELEMETRY_MASK)) {
       result = rcSerial;
   }
-#endif
   return result;
 }
+#endif
 
 
 inline void processSerial(void)
