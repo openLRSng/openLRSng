@@ -721,7 +721,11 @@ void beacon_send(bool static_tone)
 }
 
 // Print version, either x.y or x.y.z (if z != 0)
+#ifdef USE_CONSOLE_SERIAL
+void printVersion(uint16_t v, Serial_ *serial)
+#else
 void printVersion(uint16_t v, HardwareSerial *serial)
+#endif
 {
   if (serial) {
     serial->print(v >> 8);
