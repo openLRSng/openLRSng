@@ -813,6 +813,7 @@ retry:
 
     lastPacketTimeUs = timeTemp; // used saved timestamp to avoid skew by I2C
     numberOfLostPackets = 0;
+    nextBeaconTimeMs = 0;
     linkQuality <<= 1;
     linkQuality |= 1;
 
