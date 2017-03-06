@@ -9,6 +9,11 @@ uint32_t lastPacketTimeUs = 0;
 uint32_t lastRSSITimeUs = 0;
 uint32_t linkLossTimeMs;
 
+uint32_t hopInterval = 0;
+uint32_t hopTimeout = 0;
+uint32_t hopTimeoutSlow = 0;
+uint32_t RSSI_timeout = 0;
+
 uint32_t nextBeaconTimeMs;
 
 uint16_t beaconRSSIavg = 255;
@@ -715,6 +720,10 @@ void setup()
   serial_head = 0;
   serial_tail = 0;
   linkAcquired = 0;
+  hopInterval = getInterval(&bind_data);
+  hopTimeout = hopInterval + 1000;
+  hopTimeoutSlow = hopInterval * hopcount;
+  RSSI_timeout = hopInterval - 1500;
   lastPacketTimeUs = micros();
 
 }
@@ -961,7 +970,7 @@ retry:
 
   // sample RSSI when packet is in the 'air'
   if ((numberOfLostPackets < 2) && (lastRSSITimeUs != lastPacketTimeUs) &&
-      (timeUs - lastPacketTimeUs) > (getInterval(&bind_data) - 1500)) {
+      (timeUs - lastPacketTimeUs) > RSSI_timeout) {
     lastRSSITimeUs = lastPacketTimeUs;
     lastRSSIvalue = rfmGetRSSI(); // Read the RSSI value
     RSSI_sum += lastRSSIvalue;    // tally up for average
@@ -977,7 +986,7 @@ retry:
   }
 
   if (linkAcquired) {
-    if ((numberOfLostPackets < hopcount) && ((timeUs - lastPacketTimeUs) > (getInterval(&bind_data) + 1000))) {
+    if ((numberOfLostPackets < hopcount) && ((timeUs - lastPacketTimeUs) > hopTimeout)) {
       // we lost packet, hop to next channel
       linkQuality <<= 1;
       willhop = 1;
@@ -986,12 +995,12 @@ retry:
         nextBeaconTimeMs = 0;
       }
       numberOfLostPackets++;
-      lastPacketTimeUs += getInterval(&bind_data);
+      lastPacketTimeUs += hopInterval;
       willhop = 1;
       Red_LED_ON;
       updateLBeep(true);
       set_RSSI_output();
-    } else if ((numberOfLostPackets == hopcount) && ((timeUs - lastPacketTimeUs) > (getInterval(&bind_data) * hopcount))) {
+    } else if ((numberOfLostPackets == hopcount) && ((timeUs - lastPacketTimeUs) > hopTimeoutSlow)) {
       // hop slowly to allow resync with TX
       linkQuality = 0;
       willhop = 1;
@@ -1023,7 +1032,7 @@ retry:
     }
   } else {
     // Waiting for first packet, hop slowly
-    if ((timeUs - lastPacketTimeUs) > (getInterval(&bind_data) * hopcount)) {
+    if ((timeUs - lastPacketTimeUs) > hopTimeoutSlow) {
       lastPacketTimeUs = timeUs;
       willhop = 1;
     }
