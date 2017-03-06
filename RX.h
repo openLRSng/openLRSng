@@ -36,8 +36,10 @@ uint16_t failsafePPM[PPM_CHANNELS];
 uint8_t linkAcquired = 0;
 uint8_t numberOfLostPackets = 0;
 
+#ifdef ENABLE_SLAVE_MODE
 volatile uint8_t slaveState = 0; // 0 - no slave, 1 - slave initializing, 2 - slave running, 3- errored
 uint32_t slaveFailedMs = 0;
+#endif
 
 bool willhop = 0, fs_saved = 0;
 
@@ -480,6 +482,23 @@ uint8_t serial_tail;
 uint8_t hopcount;
 
 
+void checkSerial()
+{
+  while (Serial.available() && (((serial_tail + 1) % SERIAL_BUFSIZE) != serial_head)) {
+    serial_buffer[serial_tail] = Serial.read();
+    serial_tail = (serial_tail + 1) % SERIAL_BUFSIZE;
+  }
+}
+
+
+#ifdef ENABLE_SLAVE_MODE
+//#define SLAVE_STATISTICS
+#ifdef SLAVE_STATISTICS
+uint16_t rxBoth   = 0;
+uint16_t rxSlave  = 0;
+uint16_t rxMaster = 0;
+uint32_t rxStatsMs = 0;
+#endif
 uint8_t slaveAct = 0;
 uint8_t slaveCnt = 0;
 
@@ -579,6 +598,39 @@ void reinitSlave()
   }
 }
 
+void slaveHop()
+{
+  if (slaveState == 2) {
+    uint8_t buf;
+    buf = 0x60 + RF_channel;
+    if (myI2C_writeTo(32, &buf, 1, MYI2C_WAIT)) {
+      slaveState = 255;
+      slaveFailedMs = millis();
+    }
+  }
+}
+
+// Return slave state or 255 in case of error
+uint8_t readSlaveState()
+{
+  uint8_t ret = 255, buf;
+  if (slaveState == 2) {
+    ret = myI2C_readFrom(32, &buf, 1, MYI2C_WAIT);
+    if (ret) {
+      slaveState = 255;
+      slaveFailedMs = millis();
+      ret=255;
+    } else {
+      ret=buf;
+    }
+  }
+  return ret;
+}
+
+#endif
+
+
+
 void setup()
 {
   watchdogConfig(WATCHDOG_OFF);
@@ -630,9 +682,12 @@ void setup()
   } else {
     setupOutputs();
 
+	
     if ((rx_config.pinMapping[SDA_OUTPUT] != PINMAP_SDA) ||
         (rx_config.pinMapping[SCL_OUTPUT] != PINMAP_SCL)) {
+	#ifdef ENABLE_SLAVE_MODE
       rx_config.flags &= ~SLAVE_MODE;
+	  #endif
     }
 
     if ((rx_config.flags & ALWAYS_BIND) && (!(rx_config.flags & SLAVE_MODE))) {
@@ -648,6 +703,7 @@ void setup()
   if ((rx_config.pinMapping[SDA_OUTPUT] == PINMAP_SDA) &&
       (rx_config.pinMapping[SCL_OUTPUT] == PINMAP_SCL)) {
     myI2C_init(1);
+	#ifdef ENABLE_SLAVE_MODE
     if (rx_config.flags & SLAVE_MODE) {
       Serial.println("I am slave");
       slaveLoop();
@@ -659,6 +715,7 @@ void setup()
         slaveState = 1;
       }
     }
+	#endif
   }
 
   Serial.print("Entering normal mode");
@@ -679,9 +736,11 @@ void setup()
   RF_Mode = Receive;
   to_rx_mode();
 
+  #ifdef ENABLE_SLAVE_MODE
   if (slaveState) {
     reinitSlave();
   }
+  #endif
 
   if ((rx_config.pinMapping[TXD_OUTPUT] == PINMAP_SPKTRM) ||
       (rx_config.pinMapping[TXD_OUTPUT] == PINMAP_SUMD)) {
@@ -719,51 +778,6 @@ void setup()
 
 }
 
-void checkSerial()
-{
-  while (Serial.available() && (((serial_tail + 1) % SERIAL_BUFSIZE) != serial_head)) {
-    serial_buffer[serial_tail] = Serial.read();
-    serial_tail = (serial_tail + 1) % SERIAL_BUFSIZE;
-  }
-}
-
-void slaveHop()
-{
-  if (slaveState == 2) {
-    uint8_t buf;
-    buf = 0x60 + RF_channel;
-    if (myI2C_writeTo(32, &buf, 1, MYI2C_WAIT)) {
-      slaveState = 255;
-      slaveFailedMs = millis();
-    }
-  }
-}
-
-// Return slave state or 255 in case of error
-uint8_t readSlaveState()
-{
-  uint8_t ret = 255, buf;
-  if (slaveState == 2) {
-    ret = myI2C_readFrom(32, &buf, 1, MYI2C_WAIT);
-    if (ret) {
-      slaveState = 255;
-      slaveFailedMs = millis();
-      ret=255;
-    } else {
-      ret=buf;
-    }
-  }
-  return ret;
-}
-
-//#define SLAVE_STATISTICS
-#ifdef SLAVE_STATISTICS
-uint16_t rxBoth   = 0;
-uint16_t rxSlave  = 0;
-uint16_t rxMaster = 0;
-uint32_t rxStatsMs = 0;
-#endif
-
 //############ MAIN LOOP ##############
 void loop()
 {
@@ -781,15 +795,26 @@ void loop()
 
   timeUs = micros();
 
+  #ifdef ENABLE_SLAVE_MODE
   uint8_t slaveReceived = 0;
   if (5 == readSlaveState()) {
     slaveReceived = 1;
   }
+  #endif
+  
 retry:
-  if ((RF_Mode == Received) || (slaveReceived)) {
+  if ((RF_Mode == Received) 
+	  #ifdef ENABLE_SLAVE_MODE
+	  || (slaveReceived)
+	  #endif	  
+	  ) {
+		  
     uint32_t timeTemp = micros();
 
+	#ifdef ENABLE_SLAVE_MODE
     if (RF_Mode == Received) {
+    #endif
+
       spiSendAddress(0x7f);   // Send the package read command
 
       for (int16_t i = 0; i < getPacketSize(&bind_data); i++) {
@@ -798,6 +823,8 @@ retry:
 
       lastAFCCvalue = rfmGetAFCC();
       Green_LED_ON;
+	  
+	#ifdef ENABLE_SLAVE_MODE	  
     } else {
       uint8_t ret, slave_buf[22];
       ret = myI2C_readFrom(32, slave_buf, getPacketSize(&bind_data) + 1, MYI2C_WAIT);
@@ -810,6 +837,7 @@ retry:
         memcpy(rx_buf, slave_buf + 1, getPacketSize(&bind_data));
       }
     }
+	#endif
 
     lastPacketTimeUs = timeTemp; // used saved timestamp to avoid skew by I2C
     numberOfLostPackets = 0;
@@ -821,7 +849,7 @@ retry:
 
     updateLBeep(false);
 
-#ifdef SLAVE_STATISTICS
+#if defined(ENABLE_SLAVE_MODE) && defined(SLAVE_STATISTICS)
     if (5 == readSlaveState()) {
       if (RF_Mode == Received) {
         rxBoth++;
@@ -1058,10 +1086,12 @@ retry:
     }
 
     rfmSetChannel(RF_channel);
+	#ifdef ENABLE_SLAVE_MODE
     slaveHop();
+	#endif
     willhop = 0;
   }
-
+#ifdef ENABLE_SLAVE_MODE
   if ((slaveState == 255) && ((millis() - slaveFailedMs) > 1000)) {
     slaveFailedMs=millis();
     reinitSlave();
@@ -1077,5 +1107,6 @@ retry:
     Serial.println(rxSlave);
     rxBoth = rxMaster = rxSlave = 0;
   }
+#endif
 #endif
 }

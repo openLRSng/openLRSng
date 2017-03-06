@@ -67,6 +67,7 @@
 //### Enabled Features (some features can be enabled / disabled with compile flag)
 #define CLI // Command-line interface
 #define CONFIGURATOR // Phoenix Serial Protocol (required for Configurator to work)
+//#define ENABLE_SLAVE_MODE // enable/disables i2c slave mode (saves ~1.5K)
 
 //### DEBUG flags, may be dangerous
 //#define TEST_NO_ACK_BY_CH1 // disable sending of acks from RX by channel 1
