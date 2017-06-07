@@ -55,6 +55,18 @@
 #define DIVERSITY_ENABLED   0x80
 #define DEFAULT_FLAGS       (CHANNELS_8 | TELEMETRY_PASSTHRU)
 
+typedef enum {
+    SERIAL_MODE_NONE = 0,
+    SERIAL_MODE_SPEKTRUM1024,
+    SERIAL_MODE_SPEKTRUM2048,
+    SERIAL_MODE_SBUS,
+    SERIAL_MODE_SUMD,
+    SERIAL_MODE_MULTI,
+    SERIAL_MODE_MAX = SERIAL_MODE_MULTI
+} serialMode_e;
+
+#define MULTI_OPERATION_TIMEOUT_MS 5000
+
 // helper macro for European PMR channels
 #define EU_PMR_CH(x) (445993750L + 12500L * (x)) // valid for ch1-ch8
 

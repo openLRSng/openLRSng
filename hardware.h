@@ -7,6 +7,7 @@
 #define Received 4
 
 volatile uint8_t RF_Mode = 0;
+volatile uint32_t lastReceived = 0;
 
 void RFM22B_Int()
 {
@@ -16,6 +17,7 @@ void RFM22B_Int()
 
   if (RF_Mode == Receive) {
     RF_Mode = Received;
+    lastReceived = millis();
   }
 }
 
@@ -56,14 +58,8 @@ struct rxSpecialPinMap {
 };
 
 #if (COMPILE_TX == 1)
-// Needed by dialog code
-static const char *specialStrs[] = { "PPM","RSSI","SDA","SCL","RXD","TXD","AIN","LBEEP",
-                                     "SPKTRM", "SBUS", "SUMD", "LLIND", "", "", "", ""
-                                   };
-#define SPECIALSTR(x) (specialStrs[(x)&0x0f]) // note must be changed if not 16 strings
-#endif
-
 #define CLI_ENABLED
+#endif
 
 //####### Board Pinouts #########
 
@@ -76,7 +72,7 @@ static const char *specialStrs[] = { "PPM","RSSI","SDA","SCL","RXD","TXD","AIN",
 #error TX module cannot be used as RX
 #endif
 
-#define TelemetrySerial Serial
+HardwareSerial *rcSerial = &Serial;
 
 #define PPM_IN           A5
 #define RF_OUT_INDICATOR A4
@@ -161,7 +157,7 @@ void setupRfmInterrupt()
 #error M1 RX not verified yet
 #endif
 
-#define TelemetrySerial Serial
+HardwareSerial *rcSerial = &Serial;
 
 #define PPM_IN     5
 #define BUZZER_ACT 7
@@ -325,7 +321,7 @@ void rxInitHWConfig()
 }
 #endif
 
-#define TelemetrySerial Serial
+HardwareSerial *rcSerial = &Serial;
 
 #define Red_LED          13
 #define Green_LED        12
@@ -381,7 +377,7 @@ void setupRfmInterrupt()
 #endif
 
 #if (COMPILE_TX == 1)
-#define TelemetrySerial Serial
+HardwareSerial *rcSerial = &Serial;
 
 #define USE_ICP1 // use ICP1 for PPM input for less jitter
 
@@ -554,7 +550,7 @@ void setupRfmInterrupt()
 #error TX module cannot be used as RX
 #endif
 
-#define TelemetrySerial Serial
+HardwareSerial *rcSerial = &Serial;
 
 #define USE_ICP1 // use ICP1 for PPM input for less jitter
 #define PPM_IN 8 // ICP1
@@ -663,7 +659,7 @@ void setupRfmInterrupt()
 #if (COMPILE_TX == 1)
 // TX operation
 
-#define TelemetrySerial Serial
+HardwareSerial *rcSerial = &Serial;
 
 #define USE_ICP1 // use ICP1 for PPM input for less jitter
 #define PPM_IN 8 // ICP1
@@ -846,7 +842,10 @@ void setupRfmInterrupt()
 
 #undef CLI_ENABLED
 
-#define TelemetrySerial Serial1
+#define USE_CONSOLE_SERIAL
+Serial_ *consoleSerial = &Serial;
+
+HardwareSerial *rcSerial = &Serial1;
 
 #define USE_ICP1 // use ICP1 for PPM input for less jitter
 #define PPM_IN 4 // ICP1
@@ -952,7 +951,7 @@ ISR(PCINT0_vect)
 #if (COMPILE_TX == 1)
 // TX operation
 
-#define TelemetrySerial Serial
+HardwareSerial *rcSerial = &Serial;
 
 #define USE_ICP1 // use ICP1 for PPM input for less jitter
 #define PPM_IN 8 // ICP1
@@ -1112,7 +1111,7 @@ void setupRfmInterrupt()
 #if (COMPILE_TX == 1)
 // TX operation
 
-#define TelemetrySerial Serial
+HardwareSerial *rcSerial = &Serial;
 
 #define USE_ICP1 // use ICP1 for PPM input for less jitter
 #define PPM_IN 8 // ICP1
@@ -1271,7 +1270,7 @@ void setupRfmInterrupt()
 #if (COMPILE_TX == 1)
 // TX operation
 
-#define TelemetrySerial Serial
+HardwareSerial *rcSerial = &Serial;
 
 #define USE_ICP1 // use ICP1 for PPM input for less jitter
 #define PPM_IN 8 // ICP1
@@ -1423,4 +1422,12 @@ void setupRfmInterrupt()
   attachInterrupt(IRQ_interrupt, RFM22B_Int, FALLING);
 }
 
+#endif
+
+#ifdef CLI_ENABLED
+// Needed by dialog code
+static const char *specialStrs[] = { "PPM","RSSI","SDA","SCL","RXD","TXD","AIN","LBEEP",
+                                     "SPKTRM", "SBUS", "SUMD", "LLIND", "", "", "", ""
+                                   };
+#define SPECIALSTR(x) (specialStrs[(x)&0x0f]) // note must be changed if not 16 strings
 #endif

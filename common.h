@@ -721,15 +721,26 @@ void beacon_send(bool static_tone)
 }
 
 // Print version, either x.y or x.y.z (if z != 0)
+#ifdef USE_CONSOLE_SERIAL
+void printVersion(uint16_t v, Serial_ *serial)
+#else
+void printVersion(uint16_t v, HardwareSerial *serial)
+#endif
+{
+  if (serial) {
+    serial->print(v >> 8);
+    serial->print('.');
+    serial->print((v >> 4) & 0x0f);
+    if (version & 0x0f) {
+      serial->print('.');
+      serial->print(v & 0x0f);
+    }
+  }
+}
+
 void printVersion(uint16_t v)
 {
-  Serial.print(v >> 8);
-  Serial.print('.');
-  Serial.print((v >> 4) & 0x0f);
-  if (version & 0x0f) {
-    Serial.print('.');
-    Serial.print(v & 0x0f);
-  }
+  printVersion(v, &Serial);
 }
 
 // Halt and blink failure code

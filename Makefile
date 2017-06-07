@@ -104,7 +104,7 @@ COPTFLAGS= -g -Os -funsigned-char -funsigned-bitfields -fpack-struct -fshort-enu
 
 CFLAGS=-Wall -ffunction-sections -fdata-sections -mmcu=$(CPU) -DF_CPU=$(CLOCK) -MMD \
 	-DUSB_VID=$(USB_VID) -DUSB_PID=$(USB_PID) -DARDUINO=105 -D__PROG_TYPES_COMPAT__ $(DEFINES)
-CXXFLAGS=-fno-exceptions
+CXXFLAGS=-fno-exceptions -std=gnu++11 -fno-threadsafe-statics
 
 #
 # Arduino libraries used, compilation settings.
@@ -119,23 +119,24 @@ ARDUINO_LIB_OBJS=$(patsubst %.cpp, libraries/%.o, $(addsuffix .cpp,$(ARDUINO_LIB
 #
 # Arduino variant settings
 #
-ARDUINO_VARIANT_PATH=$(ARDUINO_PATH)/hardware/arduino/variants/$(VARIANT)
+ARDUINO_VARIANT_PATH=$(ARDUINO_PATH)/hardware/arduino/avr/variants/$(VARIANT)
 
 #
 # Arduino library files used, compilation settings.
 #
-ARDUINO_CORELIB_PATH=$(ARDUINO_PATH)/hardware/arduino/cores/arduino/
+ARDUINO_CORELIB_PATH=$(ARDUINO_PATH)/hardware/arduino/avr/cores/arduino/
 ARDUINO_CORELIB_SRCS=WInterrupts.c wiring.c wiring_shift.c wiring_digital.c \
-		     wiring_pulse.c wiring_analog.c \
-		     CDC.cpp Print.cpp HardwareSerial.cpp WString.cpp \
-		     Stream.cpp main.cpp USBCore.cpp HID.cpp
+		     wiring_pulse.c wiring_analog.c CDC.cpp Print.cpp \
+			 HardwareSerial.cpp HardwareSerial0.cpp HardwareSerial1.cpp \
+			 WString.cpp Stream.cpp main.cpp USBCore.cpp PluggableUSB.cpp \
+			 hooks.c
 ARDUINO_CORELIB_OBJS= $(patsubst %.c, libraries/%.o, $(patsubst %.cpp, libraries/%.o, $(ARDUINO_CORELIB_SRCS)))
 
 
 #
 # Arduino stdc library files used, compilation settings.
 #
-ARDUINO_LIBC_PATH=$(ARDUINO_PATH)/hardware/arduino/cores/arduino/avr-libc/
+ARDUINO_LIBC_PATH=$(ARDUINO_PATH)/hardware/arduino/avr/cores/arduino/avr-libc/
 ARDUINO_LIBC_SRCS=malloc.c realloc.c
 
 #
