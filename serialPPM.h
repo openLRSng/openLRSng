@@ -47,27 +47,34 @@ union sbus_msg {
   struct sbus_dat msg;
 } sbus;
 
+static inline uint16_t ppmToSBUS(uint16_t input) {
+  uint16_t value = servoBits2Us(input);
+  // Rescale [1000, 2000] to [200, 1800]
+  value = (((value - 1000) << 4) / 10) + 200;
+  return value;
+}
+
 void sendSBUSFrame(uint8_t failsafe, uint8_t lostpack)
 {
   uint32_t now = micros();
   if ((now - sOutLast) > 10000) {
     sOutLast = now;
-    sbus.msg.ch0 = PPM[0]<<1;
-    sbus.msg.ch1 = PPM[1]<<1;
-    sbus.msg.ch2 = PPM[2]<<1;
-    sbus.msg.ch3 = PPM[3]<<1;
-    sbus.msg.ch4 = PPM[4]<<1;
-    sbus.msg.ch5 = PPM[5]<<1;
-    sbus.msg.ch6 = PPM[6]<<1;
-    sbus.msg.ch7 = PPM[7]<<1;
-    sbus.msg.ch8 = PPM[8]<<1;
-    sbus.msg.ch9 = PPM[9]<<1;
-    sbus.msg.ch10 = PPM[10]<<1;
-    sbus.msg.ch11 = PPM[11]<<1;
-    sbus.msg.ch12 = PPM[12]<<1;
-    sbus.msg.ch13 = PPM[13]<<1;
-    sbus.msg.ch14 = PPM[14]<<1;
-    sbus.msg.ch15 = PPM[15]<<1;
+    sbus.msg.ch0 = ppmToSBUS(PPM[0]);
+    sbus.msg.ch1 = ppmToSBUS(PPM[1]);
+    sbus.msg.ch2 = ppmToSBUS(PPM[2]);
+    sbus.msg.ch3 = ppmToSBUS(PPM[3]);
+    sbus.msg.ch4 = ppmToSBUS(PPM[4]);
+    sbus.msg.ch5 = ppmToSBUS(PPM[5]);
+    sbus.msg.ch6 = ppmToSBUS(PPM[6]);
+    sbus.msg.ch7 = ppmToSBUS(PPM[7]);
+    sbus.msg.ch8 = ppmToSBUS(PPM[8]);
+    sbus.msg.ch9 = ppmToSBUS(PPM[9]);
+    sbus.msg.ch10 = ppmToSBUS(PPM[10]);
+    sbus.msg.ch11 = ppmToSBUS(PPM[11]);
+    sbus.msg.ch12 = ppmToSBUS(PPM[12]);
+    sbus.msg.ch13 = ppmToSBUS(PPM[13]);
+    sbus.msg.ch14 = ppmToSBUS(PPM[14]);
+    sbus.msg.ch15 = ppmToSBUS(PPM[15]);
     sbus.msg.status = (failsafe ? 0x08 : 0) | (lostpack ? 0x04: 0);
     Serial.write(SBUS_SYNC);
     for (uint8_t i = 0; i<23; i++) {
