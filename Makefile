@@ -109,12 +109,11 @@ CXXFLAGS=-fno-exceptions -std=gnu++11 -fno-threadsafe-statics
 #
 # Arduino libraries used, compilation settings.
 #
-ARDUINO_LIBS=
-ARDUINO_LIB_PATH=$(ARDUINO_PATH)/libraries/
-ARDUINO_LIB_DIRS=$(addprefix $(ARDUINO_LIB_PATH),$(ARDUINO_LIBS))
-ARDUINO_LIB_INCL=$(addsuffix $(ARDUINO_LIBS),-I$(ARDUINO_LIB_PATH))
-ARDUINO_LIB_SRCS=$(addsuffix .cpp,$(addprefix $(ARDUINO_LIB_PATH),$(ARDUINO_LIBS)/$(ARDUINO_LIBS)))
-ARDUINO_LIB_OBJS=$(patsubst %.cpp, libraries/%.o, $(addsuffix .cpp,$(ARDUINO_LIBS)))
+ARDUINO_LIBS=HID
+ARDUINO_LIB_PATH=$(ARDUINO_PATH)/hardware/arduino/avr/libraries/
+ARDUINO_LIB_DIRS=$(addsuffix /src, $(addprefix $(ARDUINO_LIB_PATH), $(ARDUINO_LIBS)))
+ARDUINO_LIB_INCL=$(addprefix -I, $(ARDUINO_LIB_DIRS))
+ARDUINO_LIB_OBJS=$(patsubst %.cpp, libraries/%.o, $(addsuffix .cpp, $(ARDUINO_LIBS)))
 
 #
 # Arduino variant settings
@@ -126,10 +125,10 @@ ARDUINO_VARIANT_PATH=$(ARDUINO_PATH)/hardware/arduino/avr/variants/$(VARIANT)
 #
 ARDUINO_CORELIB_PATH=$(ARDUINO_PATH)/hardware/arduino/avr/cores/arduino/
 ARDUINO_CORELIB_SRCS=WInterrupts.c wiring.c wiring_shift.c wiring_digital.c \
-		     wiring_pulse.c wiring_analog.c CDC.cpp Print.cpp \
-			 HardwareSerial.cpp HardwareSerial0.cpp HardwareSerial1.cpp \
-			 WString.cpp Stream.cpp main.cpp USBCore.cpp PluggableUSB.cpp \
-			 hooks.c
+			wiring_pulse.c wiring_analog.c CDC.cpp Print.cpp \
+			HardwareSerial.cpp HardwareSerial0.cpp HardwareSerial1.cpp \
+			WString.cpp Stream.cpp main.cpp USBCore.cpp PluggableUSB.cpp \
+			hooks.c
 ARDUINO_CORELIB_OBJS= $(patsubst %.c, libraries/%.o, $(patsubst %.cpp, libraries/%.o, $(ARDUINO_CORELIB_SRCS)))
 
 
@@ -156,6 +155,11 @@ OUT_FOLDER=out
 OBJS=openLRSng.o $(ARDUINO_LIB_OBJS) $(LIBRARIES_FOLDER)/libcore.a
 
 #
+# Default target
+#
+default: 433
+
+#
 # Master target
 #
 all: mkdirs openLRSng.hex
@@ -175,7 +179,7 @@ define cxx-command
 	@$(CXX) -c $(COPTFLAGS) $(CXXFLAGS) $(CFLAGS) $(INCLUDE) -o $@ $<
 endef
 
-.PHONY: all clean upload astyle 433 868 915 allfw
+.PHONY: all clean upload astyle 433 868 915 allfw default
 
 %.o: %.ino
 	$(ino-command)
