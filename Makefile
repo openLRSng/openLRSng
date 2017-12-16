@@ -109,7 +109,7 @@ CXXFLAGS=-fno-exceptions -std=gnu++11 -fno-threadsafe-statics
 #
 # Arduino libraries used, compilation settings.
 #
-ARDUINO_LIBS=HID
+ARDUINO_LIBS=
 ARDUINO_LIB_PATH=$(ARDUINO_PATH)/hardware/arduino/avr/libraries/
 ARDUINO_LIB_DIRS=$(addsuffix /src, $(addprefix $(ARDUINO_LIB_PATH), $(ARDUINO_LIBS)))
 ARDUINO_LIB_INCL=$(addprefix -I, $(ARDUINO_LIB_DIRS))
