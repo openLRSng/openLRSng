@@ -74,6 +74,9 @@ void bindPrint(void)
   Serial.print(F("B) Micro (half) PPM    :"));
   printYesNo(tx_config.flags & MICROPPM);
 
+  Serial.print(F("C) TX console baudrate:"));
+  Serial.println(tx_config.console_baud_rate);
+  
   Serial.print(F("Calculated packet interval: "));
   Serial.print(getInterval(&bind_data));
   Serial.print(F(" == "));
@@ -165,6 +168,7 @@ void CLI_menu_headers(void)
     printVersion(version);
     Serial.println(F(" - System configuration"));
     Serial.println(F("Use numbers [0-9] to edit parameters"));
+    Serial.println(F("[C] set TX configuration serial baudrate"));
     Serial.println(F("[S] save settings to EEPROM and exit menu"));
     Serial.println(F("[X] revert changes and exit menu"));
     Serial.println(F("[I] reinitialize settings to sketch defaults"));
@@ -199,6 +203,9 @@ void CLI_menu_headers(void)
     break;
   case 9:
     Serial.println(F("Set serial baudrate: "));
+    break;
+  case 10:
+    Serial.println(F("Set TX config serial baudrate: "));
     break;
   }
 
@@ -703,6 +710,10 @@ void handleCLImenu(char c)
       tx_config.flags ^= MICROPPM;
       CLI_menu = -1;
       break;
+    case 'c':
+    case 'C':
+      CLI_menu = 10;
+      break;
     case 'z':
     case 'Z':
       CLI_RX_config();
@@ -775,6 +786,12 @@ void handleCLImenu(char c)
         case 9:
           if ((value >0) && (value <= 115200)) {
             bind_data.serial_baudrate = value;
+            valid_input = 1;
+          }
+          break;
+        case 10:
+          if ((value >0) && (value <= 115200)) {
+            tx_config.console_baud_rate = value;
             valid_input = 1;
           }
           break;

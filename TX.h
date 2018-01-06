@@ -218,7 +218,7 @@ inline int consoleRead()
   return result;
 }
 
-inline size_t consolePrint(const char str[])
+inline size_t consolePrint(const char* str)
 {
   size_t result = 0;
 #ifdef USE_CONSOLE_SERIAL
@@ -584,18 +584,18 @@ void setup(void)
 #endif
   buzzerInit();
 
-#ifdef __AVR_ATmega32U4__
-  Serial.begin(0); // Suppress warning on overflow on Leonardo
-#else
-  Serial.begin(115200);
-#endif
-
   setupRfmInterrupt();
 
   sei();
 
   setupProfile();
   txReadEeprom();
+
+#ifdef __AVR_ATmega32U4__
+  Serial.begin(0); // Suppress warning on overflow on Leonardo
+#else
+  Serial.begin(tx_config.console_baud_rate);
+#endif
 
   buzzerOn(BZ_FREQ);
   digitalWrite(BTN, HIGH);
