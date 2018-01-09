@@ -648,6 +648,7 @@ uint8_t beaconGetRSSI()
 
 void beacon_send(bool static_tone)
 {
+  watchdogConfig(WATCHDOG_4S);
   Green_LED_ON
   ItStatus1 = spiReadRegister(0x03);   // read status, clear interrupt
   ItStatus2 = spiReadRegister(0x04);
@@ -718,6 +719,7 @@ void beacon_send(bool static_tone)
   }
   spiWriteRegister(0x07, RF22B_PWRSTATE_READY);
   Green_LED_OFF
+  watchdogConfig(WATCHDOG_2S);
 }
 
 // Print version, either x.y or x.y.z (if z != 0)
