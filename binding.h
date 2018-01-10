@@ -38,6 +38,7 @@
 #define SLAVE_MODE          0x04
 #define IMMEDIATE_OUTPUT    0x08
 #define STATIC_BEACON       0x10
+#define INVERTED_PPMOUT      0x40
 #define WATCHDOG_USED       0x80 // read only flag, only sent to configurator
 
 // BIND_DATA flag masks

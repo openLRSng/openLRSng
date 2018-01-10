@@ -154,6 +154,8 @@ void rxPrint(void)
   printYesNo(rx_config.flags & SLAVE_MODE);
   Serial.print(F("Q) Output before link (=FS) : "));
   printYesNo(rx_config.flags & IMMEDIATE_OUTPUT);
+  Serial.print(F("T) Inverted PPM output: "));
+  printYesNo(rx_config.flags & INVERTED_PPMOUT);
 }
 
 void CLI_menu_headers(void)
@@ -461,6 +463,13 @@ void handleRXmenu(char c)
     case 'Q':
       Serial.println(F("Toggled 'immediate output'"));
       rx_config.flags ^= IMMEDIATE_OUTPUT;
+      CLI_menu = -1;
+      RX_menu_headers();
+      break;
+    case 't':
+    case 'T':
+      Serial.println(F("Toggled 'inverted PPM output'"));
+      rx_config.flags ^= INVERTED_PPMOUT;
       CLI_menu = -1;
       RX_menu_headers();
       break;
