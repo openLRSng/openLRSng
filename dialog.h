@@ -531,7 +531,7 @@ void handleRXmenu(char c)
         case 23:
           if ((CLI_buffer[0] | 0x20) == 'p') {
             value = strtoul(CLI_buffer + 1, NULL, 0);
-            if ((value >= 1) && (value <= 8)) {
+            if ((value >= 1) && (value <= 16)) {
               value=EU_PMR_CH(value);
             } else {
               value = 1; //invalid

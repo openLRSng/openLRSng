@@ -68,7 +68,7 @@ typedef enum {
 #define MULTI_OPERATION_TIMEOUT_MS 5000
 
 // helper macro for European PMR channels
-#define EU_PMR_CH(x) (445993750L + 12500L * (x)) // valid for ch1-ch8
+#define EU_PMR_CH(x) (445993750L + 12500L * (x)) // valid for ch1-ch16 (Jan 2016  ECC update)
 
 // helper macro for US FRS channels 1-7
 #define US_FRS_CH(x) (462537500L + 25000L * (x)) // valid for ch1-ch7
