@@ -287,10 +287,17 @@ void setupOutputs()
 
   if (rx_config.pinMapping[PPM_OUTPUT] == PINMAP_PPM) {
     digitalWrite(OUTPUT_PIN[PPM_OUTPUT], HIGH);
+
 #ifdef USE_OCR1B
     TCCR1A = (1 << WGM11) | (1 << COM1B1);
+	if(rx_config.flags & INVERTED_PPMOUT) {
+		TCCR1A |= (1 << COM1B0);
+	}
 #else
     TCCR1A = (1 << WGM11) | (1 << COM1A1);
+	if(rx_config.flags & INVERTED_PPMOUT) {
+		TCCR1A |= (1 << COM1A0);
+	}
 #endif
   } else {
     TCCR1A = (1 << WGM11);
