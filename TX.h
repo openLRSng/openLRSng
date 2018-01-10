@@ -1,6 +1,9 @@
 /****************************************************
  * OpenLRSng transmitter code
  ****************************************************/
+#define STR(S) #S
+#define XSTR(S) STR(S)
+
 uint8_t RF_channel = 0;
 
 uint8_t altPwrIndex = 0; // every nth packet at lower power
@@ -602,7 +605,7 @@ void setup(void)
 
   consolePrint("OpenLRSng TX starting ");
   printVersion(version, getConsoleSerial());
-  consolePrint(" on HW BOARD_TYPE\n");
+  consolePrint(" on HW " XSTR(BOARD_TYPE) "\n");
 
   delay(100);
 
