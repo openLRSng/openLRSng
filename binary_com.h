@@ -48,7 +48,7 @@ extern uint8_t rxcNumberOfOutputs;
 extern uint16_t rxcVersion;
 uint8_t rxcConnect();
 uint16_t getChannel(uint8_t ch);
-void setupPPMinput();
+void checkSetupPpm(void);
 uint8_t PSP_crc;
 
 #define AS_U8ARRAY(x) ((uint8_t *)(x))
@@ -373,7 +373,7 @@ void PSP_process_data(uint8_t code, uint16_t payload_length_received, uint8_t da
       for (uint16_t i = 0; i < sizeof(tx_config); i++) {
         AS_U8ARRAY(&tx_config)[i] = data_buffer[i];
       }
-      setupPPMinput(); // resetup to handle the invert flag live
+      checkSetupPpm(); // resetup to handle the invert flag live
       PSP_serialize_uint8(0x01);
     } else {
       PSP_serialize_uint8(0x00);
