@@ -129,7 +129,7 @@ ISR(TIMER1_CAPT_vect)
   startPulse = stopPulse;         // Save time at pulse start
 }
 
-void setupPPMinput(void)
+static void setupPPMinput(void)
 {
   // Setup timer1 for input capture (PSC=8 -> 0.5ms precision)
   TCCR1A = ((1 << WGM10) | (1 << WGM11));
@@ -153,7 +153,7 @@ ISR(PPM_Signal_Interrupt)
   }
 }
 
-void setupPPMinput(void)
+static void setupPPMinput(void)
 {
   // Setup timer1 for input capture (PSC=8 -> 0.5ms precision)
   TCCR1A = ((1 << WGM10) | (1 << WGM11));
@@ -609,6 +609,8 @@ void setup(void)
 
   delay(100);
 
+  checkSetupPpm();
+
   checkBND();
 
   checkButton();
@@ -617,8 +619,6 @@ void setup(void)
   buzzerOff();
 
   setupRcSerial();
-
-  checkSetupPpm();
 
   uint32_t timeout = millis() + (serialMode == SERIAL_MODE_MULTI ? 20000 : 2000);
   while (ppmAge == 255 && millis() < timeout) {
