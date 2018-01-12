@@ -816,9 +816,9 @@ void loop()
   if (5 == readSlaveState()) {
     slaveReceived = 1;
   }
-  #endif
-  
 retry:
+  #endif
+
   if ((RF_Mode == Received) 
 	  #ifdef ENABLE_SLAVE_MODE
 	  || (slaveReceived)
