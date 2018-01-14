@@ -3,6 +3,9 @@
  ****************************************************/
 
 #include <avr/eeprom.h>
+#define STR(S) #S
+#define XSTR(S) STR(S)
+
 uint8_t RF_channel = 0;
 
 uint32_t lastPacketTimeUs = 0;
@@ -641,7 +644,22 @@ uint8_t readSlaveState()
 
 #endif
 
-
+#ifdef CONFIGURATOR
+static inline void checkBinaryMode(void)
+{
+	if ((Serial.available() > 3) &&
+		(Serial.read() == 'B') && (Serial.read() == 'N') &&
+		(Serial.read() == 'D') && (Serial.read() == '!')) 
+	{
+		delay(250);
+		while(Serial.available()) {
+			if(Serial.read() == 'B') {
+				binaryMode();
+			}
+		}
+	}
+}
+#endif
 
 void setup()
 {
@@ -664,23 +682,20 @@ void setup()
   Serial.begin(115200);
   rxReadEeprom();
   failsafeLoad();
+  
   Serial.print("OpenLRSng RX starting ");
   printVersion(version);
-  Serial.print(" on HW ");
-  Serial.println(BOARD_TYPE);
+  Serial.println(" on HW " XSTR(BOARD_TYPE));
+  
+#ifdef CONFIGURATOR
+  delay(100); 
+  checkBinaryMode();
+#endif
 
   setupRfmInterrupt();
 
   sei();
   Red_LED_ON;
-
-  if (checkIfConnected(OUTPUT_PIN[2], OUTPUT_PIN[3])) { // ch1 - ch2 --> force scannerMode
-    while (1) {
-      Red_LED_OFF;
-      Green_LED_OFF;
-      scannerMode();
-    }
-  }
 
   if (checkIfConnected(OUTPUT_PIN[0], OUTPUT_PIN[1]) || (!bindReadEeprom())) {
     Serial.print("EEPROM data not valid or bind jumpper set, forcing bind\n");
@@ -694,7 +709,6 @@ void setup()
   } else {
     setupOutputs();
 
-	
     if ((rx_config.pinMapping[SDA_OUTPUT] != PINMAP_SDA) ||
         (rx_config.pinMapping[SCL_OUTPUT] != PINMAP_SCL)) {
 	#ifdef ENABLE_SLAVE_MODE

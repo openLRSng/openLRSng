@@ -88,8 +88,11 @@
 #include "wd.h"
 #include "common.h"
 
-#if (COMPILE_TX == 1)
+#ifdef CONFIGURATOR
 #include "binary_com.h"
+#endif
+
+#if (COMPILE_TX == 1)
 #include "rxc.h"
 #ifdef CLI_ENABLED
 #include "dialog.h"
