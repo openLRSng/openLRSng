@@ -553,6 +553,12 @@ inline bool newMultiProfileSelected(bool useTimeout)
 
 void setup(void)
 {
+#ifdef __AVR_ATmega32U4__
+// mimic standard bootloader start-up delay
+// necessary for Configurator connection stability
+  delay(850);  
+#endif
+
   watchdogConfig(WATCHDOG_OFF);
 
   setupSPI();
