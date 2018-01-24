@@ -87,6 +87,7 @@ typedef enum {
 #define BINDING_POWER     0x06 // not lowest since may result fail with RFM23BP
 
 #define TELEMETRY_PACKETSIZE 9
+#define MAX_PACKETSIZE 21
 
 #define BIND_MAGIC (0xDEC1BE15 + (OPENLRSNG_VERSION & 0xfff0))
 #define BINDING_VERSION ((OPENLRSNG_VERSION & 0x0ff0)>>4)
@@ -129,6 +130,7 @@ struct tx_config {
 #define TX_CONFIG_GETMINCH() (tx_config.flags >> 28)
 #define TX_CONFIG_SETMINCH(x) (tx_config.flags = (tx_config.flags & 0x0fffffff) | (((uint32_t)(x) & 0x0f) << 28))
 
+// 27 bytes
 struct RX_config {
   uint8_t  rx_type; // RX type fillled in by RX, do not change
   uint8_t  pinMapping[13];
@@ -143,7 +145,7 @@ struct RX_config {
   uint8_t  pwmStopDelay;
 } rx_config;
 
-
+// 18 bytes
 struct bind_data {
   uint8_t version;
   uint32_t serial_baudrate;
@@ -505,4 +507,3 @@ void rxReadEeprom()
 }
 
 #endif
-

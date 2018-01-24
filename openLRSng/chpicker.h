@@ -34,7 +34,7 @@ uint8_t chooseChannelsPerRSSI()
       chRSSImax[ch] = 255;
       continue; // do not break so we set all maxes to 255 to block them out
     }
-    rfmSetChannel(ch);
+    setHopChannel(ch);
     delay(1);
     chRSSImax[ch] = 0;
     while ((millis() - start) < 500) {

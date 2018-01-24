@@ -263,6 +263,9 @@ void bindMode(void)
   uint8_t  tx_buf[sizeof(bind_data) + 1];
   bool  sendBinds = 1;
 
+  tx_buf[0] = 'b';
+  memcpy(tx_buf + 1, &bind_data, sizeof(bind_data));
+
   init_rfm(1);
 
   consoleFlush();
@@ -274,18 +277,15 @@ void bindMode(void)
       prevsend = millis();
       Green_LED_ON;
       buzzerOn(BZ_FREQ);
-      tx_buf[0] = 'b';
-      memcpy(tx_buf + 1, &bind_data, sizeof(bind_data));
       tx_packet(tx_buf, sizeof(bind_data) + 1);
       Green_LED_OFF;
       buzzerOff();
-      RF_Mode = Receive;
       rx_reset();
       delay(50);
-      if (RF_Mode == Received) {
-        RF_Mode = Receive;
-        spiSendAddress(0x7f);   // Send the package read command
-        if ('B' == spiReadData()) {
+      if (RF_Mode == RECEIVED) {
+        uint8_t rxb;
+        rfmGetPacket(rxb, 1);
+        if (rxb == 'B') {
           sendBinds = 0;
         }
       }
@@ -462,8 +462,8 @@ static inline void checkFS(void)
   }
 }
 
-uint8_t tx_buf[21];
-uint8_t rx_buf[9];
+uint8_t tx_buf[MAX_PACKETSIZE];
+uint8_t rx_buf[TELEMETRY_PACKETSIZE];
 
 #define SERIAL_BUFSIZE 32
 uint8_t serial_buffer[SERIAL_BUFSIZE];
@@ -503,7 +503,7 @@ inline void checkSetupPpm(void)
 {
   if (serialMode == SERIAL_MODE_NONE && !ppmIsEnabled) {
     // theoretically we should disable PPM input in the cases above
-    // if serial input has been selected. But there is currently no way to 
+    // if serial input has been selected. But there is currently no way to
     // select serial input once PPM has been enabled, so this is not needed
     setupPPMinput();
 
@@ -540,7 +540,7 @@ void configureProfile(void)
   }
 
   init_rfm(0);
-  rfmSetChannel(RF_channel);
+  setHopChannel(RF_channel);
   rx_reset();
 
   watchdogConfig(WATCHDOG_2S);
@@ -556,7 +556,7 @@ void setup(void)
 #ifdef __AVR_ATmega32U4__
 // mimic standard bootloader start-up delay
 // necessary for Configurator connection stability
-  delay(850);  
+  delay(850);
 #endif
 
   watchdogConfig(WATCHDOG_OFF);
@@ -683,6 +683,7 @@ static inline void processSpektrum(uint8_t c)
         if (ch < 16) {
           PPM[ch] = v;
         }
+
 #ifdef DEBUG_DUMP_PPM
         ppmDump = 1;
 #endif
@@ -937,27 +938,24 @@ uint16_t getChannel(uint8_t ch)
 
 void loop(void)
 {
+    watchdogReset();
 #ifdef DEBUG_DUMP_PPM
   if (ppmDump) {
     uint32_t timeTMP = millis();
     debugPrint((timeTMP - lastDump));
     lastDump = timeTMP;
-    debugPrint(':');
+    debugPrint(":");
     for (uint8_t i = 0; i < 16; i++) {
-      debugPrint(PPM[i] + ',');
+      debugPrint(PPM[i]);
+      debugPrint(",");
     }
-    debugPrint('\n');
+    debugPrint("\n");
     ppmDump = 0;
   }
+  watchdogReset();
 #endif
 
-  if (spiReadRegister(0x0C) == 0) {     // detect the locked module and reboot
-    consolePrint("module locked?\n");
-    Red_LED_ON;
-    init_rfm(0);
-    rx_reset();
-    Red_LED_OFF;
-  }
+  check_module();
 
   while (rcSerial->available()) {
     uint8_t ch = rcSerial->read();
@@ -977,18 +975,15 @@ void loop(void)
   }
 #endif
 
-  if (RF_Mode == Received) {
+  if (RF_Mode == RECEIVED) {
     // got telemetry packet
     lastTelemetry = micros();
     if (!lastTelemetry) {
       lastTelemetry = 1; //fixup rare case of zero
     }
     linkQuality |= 1;
-    RF_Mode = Receive;
-    spiSendAddress(0x7f); // Send the package read command
-    for (int16_t i = 0; i < 9; i++) {
-      rx_buf[i] = spiReadData();
-    }
+
+  rfmGetPacket(rx_buf, TELEMETRY_PACKETSIZE);
 
     if ((tx_buf[0] ^ rx_buf[0]) & 0x40) {
       tx_buf[0] ^= 0x40; // swap sequence to ack
@@ -1125,7 +1120,7 @@ void loop(void)
       }
 #endif
       if (serialMode == SERIAL_MODE_MULTI && !multiLowPower) {
-        useHighPower = true; 
+        useHighPower = true;
       }
 
       if (useHighPower) {
@@ -1143,7 +1138,7 @@ void loop(void)
       rfmSetPower(power);
 
       // Send the data over RF
-      rfmSetChannel(RF_channel);
+      setHopChannel(RF_channel);
       tx_packet_async(tx_buf, getPacketSize(&bind_data));
 
       //Hop to the next frequency
@@ -1165,8 +1160,8 @@ void loop(void)
   if (tx_done() == 1) {
     if (bind_data.flags & TELEMETRY_MASK) {
       linkQuality <<= 1;
-      RF_Mode = Receive;
       rx_reset();
+    //to_rx_mode();
       // tell loop to sample downlink RSSI
       sampleRSSI = micros();
       if (sampleRSSI == 0) {

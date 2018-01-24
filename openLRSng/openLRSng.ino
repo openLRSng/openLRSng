@@ -86,6 +86,8 @@
 #include "binding.h"
 #include "hardware.h"
 #include "wd.h"
+#include "SPI.h"
+#include "RFM.h"
 #include "common.h"
 
 #ifdef CONFIGURATOR
@@ -101,6 +103,7 @@
 #include "chpicker.h"
 #include "TX.h"
 #else
+#include "beacon.h"
 #include "I2C.h"
 #include "serialPPM.h"
 #include "RX.h"
