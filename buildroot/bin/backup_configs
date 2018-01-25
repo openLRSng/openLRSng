@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+
+cp src/openLRSng.ino     src/openLRSng.default

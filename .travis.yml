@@ -1,0 +1,124 @@
+dist: trusty
+sudo: false
+
+language: python
+python:
+  - "2.7"
+
+notifications:
+  email: false
+
+# Cache PlatformIO packages using Travis CI container-based infrastructure
+sudo: false
+cache:
+  pip: true
+  directories:
+  - "~/.platformio"
+
+env:
+  - TEST_PLATFORM="-e BOARD_TYPE_0"
+
+before_install:
+  #
+  # Fetch the tag information for the current branch
+  - git fetch origin --tags
+  #
+  # Publish the buildroot script folder
+  - chmod +x ${TRAVIS_BUILD_DIR}/buildroot/bin/*
+  - export PATH=${TRAVIS_BUILD_DIR}/buildroot/bin/:${PATH}
+
+install:
+  #- pip install -U platformio
+  - pip install -U https://github.com/platformio/platformio-core/archive/develop.zip
+
+before_script:
+  # Update PlatformIO packages
+  - platformio update
+  #
+  # Change current working directory to the build dir
+  - cd ${TRAVIS_BUILD_DIR}
+  #
+  # Backup default configuration (used by restore_configs)
+  - backup_configs
+  #
+  #
+script:
+  #
+  # Build every config
+  #
+  - restore_configs
+  - opt_enable BOARD_TYPE COMPILE_TX
+  #
+  - export TEST_PLATFORM="-e BOARD_TYPE_0"
+  - opt_set BOARD_TYPE 0
+  # TX-only
+  #  - opt_set COMPILE_TX 0
+  #  - build_pio ${TRAVIS_BUILD_DIR} ${TEST_PLATFORM}
+  - opt_set COMPILE_TX 1
+  - build_pio ${TRAVIS_BUILD_DIR} ${TEST_PLATFORM}
+  #
+  - export TEST_PLATFORM="-e BOARD_TYPE_1"
+  - opt_set BOARD_TYPE 1
+  # TX-only
+  #  - opt_set COMPILE_TX 0
+  #  - build_pio ${TRAVIS_BUILD_DIR} ${TEST_PLATFORM}
+  - opt_set COMPILE_TX 1
+  - build_pio ${TRAVIS_BUILD_DIR} ${TEST_PLATFORM}
+  #
+  - export TEST_PLATFORM="-e BOARD_TYPE_2"
+  - opt_set BOARD_TYPE 2
+  - opt_set COMPILE_TX 0
+  - build_pio ${TRAVIS_BUILD_DIR} ${TEST_PLATFORM}
+  - opt_set COMPILE_TX 1
+  - build_pio ${TRAVIS_BUILD_DIR} ${TEST_PLATFORM}
+  #
+  - export TEST_PLATFORM="-e BOARD_TYPE_3"
+  - opt_set BOARD_TYPE 3
+  - opt_set COMPILE_TX 0
+  - build_pio ${TRAVIS_BUILD_DIR} ${TEST_PLATFORM}
+  - opt_set COMPILE_TX 1
+  - build_pio ${TRAVIS_BUILD_DIR} ${TEST_PLATFORM}
+  #
+  - export TEST_PLATFORM="-e BOARD_TYPE_4"
+  - opt_set BOARD_TYPE 4
+  # TX-only
+  #  - opt_set COMPILE_TX 0
+  #  - build_pio ${TRAVIS_BUILD_DIR} ${TEST_PLATFORM}
+  - opt_set COMPILE_TX 1
+  - build_pio ${TRAVIS_BUILD_DIR} ${TEST_PLATFORM}
+  #
+  - export TEST_PLATFORM="-e BOARD_TYPE_5"
+  - opt_set BOARD_TYPE 5
+  - opt_set COMPILE_TX 0
+  - build_pio ${TRAVIS_BUILD_DIR} ${TEST_PLATFORM}
+  - opt_set COMPILE_TX 1
+  - build_pio ${TRAVIS_BUILD_DIR} ${TEST_PLATFORM}
+  #
+  - export TEST_PLATFORM="-e BOARD_TYPE_6"
+  - opt_set BOARD_TYPE 6
+  # TX-only
+  #  - opt_set COMPILE_TX 0
+  #  - build_pio ${TRAVIS_BUILD_DIR} ${TEST_PLATFORM}
+  - opt_set COMPILE_TX 1
+  - build_pio ${TRAVIS_BUILD_DIR} ${TEST_PLATFORM}
+  #
+  - export TEST_PLATFORM="-e BOARD_TYPE_7"
+  - opt_set BOARD_TYPE 7
+  - opt_set COMPILE_TX 0
+  - build_pio ${TRAVIS_BUILD_DIR} ${TEST_PLATFORM}
+  - opt_set COMPILE_TX 1
+  - build_pio ${TRAVIS_BUILD_DIR} ${TEST_PLATFORM}
+  #
+  - export TEST_PLATFORM="-e BOARD_TYPE_8"
+  - opt_set BOARD_TYPE 8
+  - opt_set COMPILE_TX 0
+  - build_pio ${TRAVIS_BUILD_DIR} ${TEST_PLATFORM}
+  - opt_set COMPILE_TX 1
+  - build_pio ${TRAVIS_BUILD_DIR} ${TEST_PLATFORM}
+  #
+  - export TEST_PLATFORM="-e BOARD_TYPE_9"
+  - opt_set BOARD_TYPE 9
+  - opt_set COMPILE_TX 0
+  - build_pio ${TRAVIS_BUILD_DIR} ${TEST_PLATFORM}
+  - opt_set COMPILE_TX 1
+  - build_pio ${TRAVIS_BUILD_DIR} ${TEST_PLATFORM}

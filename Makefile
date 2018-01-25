@@ -146,13 +146,14 @@ INCLUDE=-I$(ARDUINO_CORELIB_PATH) -I$(ARDUINO_VARIANT_PATH) $(ARDUINO_LIB_INCL) 
 #
 # Project folders
 #
+SOURCES_FOLDER=src
 LIBRARIES_FOLDER=libraries
 OUT_FOLDER=out
 
 #
 # Target object files
 #
-OBJS=openLRSng.o $(ARDUINO_LIB_OBJS) $(LIBRARIES_FOLDER)/libcore.a
+OBJS=$(SOURCES_FOLDER)/openLRSng.o $(ARDUINO_LIB_OBJS) $(LIBRARIES_FOLDER)/libcore.a
 
 #
 # Default target
@@ -181,13 +182,13 @@ endef
 
 .PHONY: all clean upload astyle 433 868 915 allfw default
 
-%.o: %.ino
+$(SOURCES_FOLDER)/%.o: $(SOURCES_FOLDER)/%.ino
 	$(ino-command)
 
-%.o: %.c
+$(SOURCES_FOLDER)/%.o: %.c
 	$(cc-command)
 
-%.o: %.cpp
+$(SOURCES_FOLDER)/%.o: %.cpp
 	$(cxx-command)
 
 $(LIBRARIES_FOLDER)/%.o: %.c
