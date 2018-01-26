@@ -1,3 +1,5 @@
 #!/usr/bin/env bash
 
-eval "sed -i 's/\(#define \b${1}\b\).*$/\1 ${2}/g' src/openLRSng.ino"
+SOURCES_FOLDER=$(grep src_dir platformio.ini| awk '{print $NF}')
+
+eval "sed -i 's/\(#define \b${1}\b\).*$/\1 ${2}/g' $SOURCES_FOLDER/openLRSng.ino"
