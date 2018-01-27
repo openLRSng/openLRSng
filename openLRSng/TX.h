@@ -283,9 +283,8 @@ void bindMode(void)
       rx_reset();
       delay(50);
       if (RF_Mode == RECEIVED) {
-        uint8_t rxb;
-        rfmGetPacket(rxb, 1);
-        if (rxb == 'B') {
+        rfmGetPacket(tx_buf, 1);
+        if (tx_buf[0] == 'B') {
           sendBinds = 0;
         }
       }
