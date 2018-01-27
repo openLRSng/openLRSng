@@ -66,4 +66,3 @@ void watchdogConfig(uint8_t x)
     SREG = _sreg;
   }
 }
-

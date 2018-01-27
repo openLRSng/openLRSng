@@ -82,7 +82,6 @@ void outputDownAll()
 #error F_CPU not supported
 #endif
 
-
 volatile uint16_t nextICR1;
 
 ISR(TIMER1_OVF_vect)
@@ -293,14 +292,14 @@ void setupOutputs()
 
 #ifdef USE_OCR1B
     TCCR1A = (1 << WGM11) | (1 << COM1B1);
-	if(rx_config.flags & INVERTED_PPMOUT) {
-		TCCR1A |= (1 << COM1B0);
-	}
+  if(rx_config.flags & INVERTED_PPMOUT) {
+    TCCR1A |= (1 << COM1B0);
+  }
 #else
     TCCR1A = (1 << WGM11) | (1 << COM1A1);
-	if(rx_config.flags & INVERTED_PPMOUT) {
-		TCCR1A |= (1 << COM1A0);
-	}
+  if(rx_config.flags & INVERTED_PPMOUT) {
+    TCCR1A |= (1 << COM1A0);
+  }
 #endif
   } else {
     TCCR1A = (1 << WGM11);
@@ -367,32 +366,32 @@ void updateLBeep(bool packetLost)
 uint8_t bindReceive(uint32_t timeout)
 {
   uint32_t start = millis();
-  uint8_t  rxb;
+  uint8_t rxc_buf[33];
+  uint8_t len;
   init_rfm(1);
-  RF_Mode = Receive;
   to_rx_mode();
   Serial.println("Waiting bind\n");
 
   while ((!timeout) || ((millis() - start) < timeout)) {
-    if (RF_Mode == Received) {
+    if (RF_Mode == RECEIVED) {
       Serial.println("Got pkt\n");
-      spiSendAddress(0x7f);   // Send the package read command
-      rxb = spiReadData();
-      if (rxb == 'b') {
+      len=rfmGetPacketLength();
+      rfmGetPacket(rxc_buf, len);
+
+      if (rxc_buf[0] == 'b') {
         for (uint8_t i = 0; i < sizeof(bind_data); i++) {
-          *(((uint8_t*) &bind_data) + i) = spiReadData();
+          *(((uint8_t*) &bind_data) + i) = rxc_buf[i + 1];
         }
 
         if (bind_data.version == BINDING_VERSION) {
           Serial.println("data good\n");
-          rxb = 'B';
-          tx_packet(&rxb, 1); // ACK that we got bound
+          rxc_buf[0] = 'B';
+          tx_packet(rxc_buf, 1); // ACK that we got bound
           Green_LED_ON; //signal we got bound on LED:s
           return 1;
         }
-      } else if ((rxb == 'p') || (rxb == 'i')) {
-        uint8_t rxc_buf[sizeof(rx_config) + 1];
-        if (rxb == 'p') {
+      } else if ((rxc_buf[0] == 'p') || (rxc_buf[0] == 'i')) {
+        if (rxc_buf[0] == 'p') {
           rxc_buf[0] = 'P';
           timeout = 0;
         } else {
@@ -406,8 +405,7 @@ uint8_t bindReceive(uint32_t timeout)
         }
         memcpy(rxc_buf + 1, &rx_config, sizeof(rx_config));
         tx_packet(rxc_buf, sizeof(rx_config) + 1);
-      } else if (rxb == 't') {
-        uint8_t rxc_buf[sizeof(rxSpecialPins) + 5];
+      } else if (rxc_buf[0] == 't') {
         timeout = 0;
         rxc_buf[0] = 'T';
         rxc_buf[1] = (version >> 8);
@@ -416,15 +414,14 @@ uint8_t bindReceive(uint32_t timeout)
         rxc_buf[4] = sizeof(rxSpecialPins) / sizeof(rxSpecialPins[0]);
         memcpy(rxc_buf + 5, &rxSpecialPins, sizeof(rxSpecialPins));
         tx_packet(rxc_buf, sizeof(rxSpecialPins) + 5);
-      } else if (rxb == 'u') {
+      } else if (rxc_buf[0] == 'u') {
         for (uint8_t i = 0; i < sizeof(rx_config); i++) {
-          *(((uint8_t*) &rx_config) + i) = spiReadData();
+          *(((uint8_t*) &rx_config) + i) =rxc_buf[i + 1];
         }
         accessEEPROM(0, true);
-        rxb = 'U';
-        tx_packet(&rxb, 1); // ACK that we updated settings
-      } else if (rxb == 'f') {
-        uint8_t rxc_buf[33];
+        rxc_buf[0] = 'U';
+        tx_packet(rxc_buf, 1); // ACK that we updated settings
+      } else if (rxc_buf[0] == 'f') {
         rxc_buf[0]='F';
         for (uint8_t i = 0; i < 16; i++) {
           uint16_t us = failsafePPM[i];
@@ -432,22 +429,21 @@ uint8_t bindReceive(uint32_t timeout)
           rxc_buf[i * 2 + 2] = (us & 0xff);
         }
         tx_packet(rxc_buf, 33);
-      } else if (rxb == 'g') {
+      } else if (rxc_buf[0] == 'g') {
         for (uint8_t i = 0; i < 16 ; i++) {
-          failsafePPM[i] = ((uint16_t)spiReadData() << 8) + spiReadData();
+          failsafePPM[i] = ((uint16_t) rxc_buf[i * 2 + 1] << 8) + rxc_buf[i * 2 + 2];
         }
-        rxb = 'G';
+        rxc_buf[0] = 'G';
         failsafeSave();
-        tx_packet(&rxb, 1);
-      } else if (rxb == 'G') {
+        tx_packet(rxc_buf, 1);
+      } else if (rxc_buf[0] == 'G') {
         for (uint8_t i = 0; i < 16 ; i++) {
           failsafePPM[i] = 0;
         }
         failsafeSave();
-        rxb = 'G';
-        tx_packet(&rxb, 1);
+        rxc_buf[0] = 'G';
+        tx_packet(rxc_buf, 1);
       }
-      RF_Mode = Receive;
       rx_reset();
     }
   }
@@ -574,13 +570,12 @@ void slaveLoop()
       Red_LED_OFF;
     } else if (slaveState == 3) {
       Green_LED_OFF;
-      rfmSetChannel(RF_channel);
-      RF_Mode = Receive;
+      setHopChannel(RF_channel);
       rx_reset();
       slaveState = 4; // in RX mode
     } else if (slaveState == 4) {
-      if (RF_Mode == Received) {
-        spiSendAddress(0x7f);   // Send the package read command
+      if (RF_Mode == RECEIVED) {
+        spiSendAddress(RFM22B_FIFO);   // Send the package read command
         for (int16_t i = 0; i < getPacketSize(&bind_data); i++) {
           rx_buf[i] = spiReadData();
         }
@@ -647,17 +642,17 @@ uint8_t readSlaveState()
 #ifdef CONFIGURATOR
 static inline void checkBinaryMode(void)
 {
-	if ((Serial.available() > 3) &&
-		(Serial.read() == 'B') && (Serial.read() == 'N') &&
-		(Serial.read() == 'D') && (Serial.read() == '!')) 
-	{
-		delay(250);
-		while(Serial.available()) {
-			if(Serial.read() == 'B') {
-				binaryMode();
-			}
-		}
-	}
+  if ((Serial.available() > 3) &&
+    (Serial.read() == 'B') && (Serial.read() == 'N') &&
+    (Serial.read() == 'D') && (Serial.read() == '!'))
+  {
+    delay(250);
+    while(Serial.available()) {
+      if(Serial.read() == 'B') {
+        binaryMode();
+      }
+    }
+  }
 }
 #endif
 
@@ -682,13 +677,13 @@ void setup()
   Serial.begin(115200);
   rxReadEeprom();
   failsafeLoad();
-  
+
   Serial.print("OpenLRSng RX starting ");
   printVersion(version);
   Serial.println(" on HW " XSTR(BOARD_TYPE));
-  
+
 #ifdef CONFIGURATOR
-  delay(100); 
+  delay(100);
   checkBinaryMode();
 #endif
 
@@ -711,9 +706,9 @@ void setup()
 
     if ((rx_config.pinMapping[SDA_OUTPUT] != PINMAP_SDA) ||
         (rx_config.pinMapping[SCL_OUTPUT] != PINMAP_SCL)) {
-	#ifdef ENABLE_SLAVE_MODE
+  #ifdef ENABLE_SLAVE_MODE
       rx_config.flags &= ~SLAVE_MODE;
-	  #endif
+    #endif
     }
 
     if ((rx_config.flags & ALWAYS_BIND) && (!(rx_config.flags & SLAVE_MODE))) {
@@ -729,7 +724,7 @@ void setup()
   if ((rx_config.pinMapping[SDA_OUTPUT] == PINMAP_SDA) &&
       (rx_config.pinMapping[SCL_OUTPUT] == PINMAP_SCL)) {
     myI2C_init(1);
-	#ifdef ENABLE_SLAVE_MODE
+  #ifdef ENABLE_SLAVE_MODE
     if (rx_config.flags & SLAVE_MODE) {
       Serial.println("I am slave");
       slaveLoop();
@@ -741,7 +736,7 @@ void setup()
         slaveState = 1;
       }
     }
-	#endif
+  #endif
   }
 
   Serial.print("Entering normal mode");
@@ -750,7 +745,7 @@ void setup()
 
   init_rfm(0);   // Configure the RFM22B's registers for normal operation
   RF_channel = 0;
-  rfmSetChannel(RF_channel);
+  setHopChannel(RF_channel);
 
   // Count hopchannels as we need it later
   hopcount=0;
@@ -759,7 +754,6 @@ void setup()
   }
 
   //################### RX SYNC AT STARTUP #################
-  RF_Mode = Receive;
   to_rx_mode();
 
   #ifdef ENABLE_SLAVE_MODE
@@ -814,13 +808,7 @@ void loop()
   uint32_t timeUs, timeMs;
 
   watchdogReset();
-
-  if (spiReadRegister(0x0C) == 0) {     // detect the locked module and reboot
-    Serial.println("RX hang");
-    init_rfm(0);
-    to_rx_mode();
-  }
-
+  check_module();
   checkSerial();
 
   timeUs = micros();
@@ -833,28 +821,23 @@ void loop()
 retry:
   #endif
 
-  if ((RF_Mode == Received) 
-	  #ifdef ENABLE_SLAVE_MODE
-	  || (slaveReceived)
-	  #endif	  
-	  ) {
-		  
+  if ((RF_Mode == RECEIVED)
+    #ifdef ENABLE_SLAVE_MODE
+    || (slaveReceived)
+    #endif
+    ) {
+
     uint32_t timeTemp = micros();
 
-	#ifdef ENABLE_SLAVE_MODE
-    if (RF_Mode == Received) {
+  #ifdef ENABLE_SLAVE_MODE
+    if (RF_Mode == RECEIVED) {
     #endif
 
-      spiSendAddress(0x7f);   // Send the package read command
-
-      for (int16_t i = 0; i < getPacketSize(&bind_data); i++) {
-        rx_buf[i] = spiReadData();
-      }
-
+      rfmGetPacket(rx_buf, getPacketSize(&bind_data));
       lastAFCCvalue = rfmGetAFCC();
       Green_LED_ON;
-	  
-	#ifdef ENABLE_SLAVE_MODE	  
+
+  #ifdef ENABLE_SLAVE_MODE
     } else {
       uint8_t ret, slave_buf[22];
       ret = myI2C_readFrom(32, slave_buf, getPacketSize(&bind_data) + 1, MYI2C_WAIT);
@@ -867,7 +850,7 @@ retry:
         memcpy(rx_buf, slave_buf + 1, getPacketSize(&bind_data));
       }
     }
-	#endif
+  #endif
 
     lastPacketTimeUs = timeTemp; // used saved timestamp to avoid skew by I2C
     numberOfLostPackets = 0;
@@ -881,7 +864,7 @@ retry:
 
 #if defined(ENABLE_SLAVE_MODE) && defined(SLAVE_STATISTICS)
     if (5 == readSlaveState()) {
-      if (RF_Mode == Received) {
+      if (RF_Mode == RECEIVED) {
         rxBoth++;
       } else {
         rxSlave++;
@@ -896,6 +879,7 @@ retry:
       unpackChannels(bind_data.flags & 7, PPM, rx_buf + 1);
       set_PPM_rssi();
       sei();
+//#define DEBUG_DUMP_PPM
 #ifdef DEBUG_DUMP_PPM
       for (uint8_t i = 0; i < 8; i++) {
         Serial.print(PPM[i]);
@@ -1005,8 +989,6 @@ retry:
     }
 
     updateSwitches();
-
-    RF_Mode = Receive;
     rx_reset();
 
     willhop = 1;
@@ -1115,10 +1097,11 @@ retry:
       rfmSetCarrierFrequency(bind_data.rf_frequency);
     }
 
-    rfmSetChannel(RF_channel);
-	#ifdef ENABLE_SLAVE_MODE
+    setHopChannel(RF_channel);
+
+  #ifdef ENABLE_SLAVE_MODE
     slaveHop();
-	#endif
+  #endif
     willhop = 0;
   }
 #ifdef ENABLE_SLAVE_MODE

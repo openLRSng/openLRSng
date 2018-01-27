@@ -4,6 +4,12 @@
 
 #define EDIT_BUFFER_SIZE 100
 
+// Needed by dialog code
+static const char *specialStrs[] = { "PPM","RSSI","SDA","SCL","RXD","TXD","AIN","LBEEP",
+                                     "SPKTRM", "SBUS", "SUMD", "LLIND", "", "", "", ""
+                                   };
+#define SPECIALSTR(x) (specialStrs[(x)&0x0f]) // note must be changed if not 16 strings
+
 int8_t  CLI_menu = 0;
 char    CLI_buffer[EDIT_BUFFER_SIZE + 1];
 uint8_t CLI_buffer_position = 0;
@@ -331,10 +337,9 @@ void handleRXmenu(char c)
       memcpy(tx_buf + 1, &rx_config, sizeof(rx_config));
       tx_packet(tx_buf, sizeof(rx_config) + 1);
       rx_reset();
-      RF_Mode = Receive;
       delay(200);
-      if (RF_Mode == Received) {
-        spiSendAddress(0x7f);   // Send the package read command
+      if (RF_Mode == RECEIVED) {
+        spiSendAddress(RFM22B_FIFO);   // Send the package read command
         tx_buf[0] = spiReadData();
         if (tx_buf[0] == 'U') {
           Serial.println(F("*****************************"));
@@ -351,10 +356,9 @@ void handleRXmenu(char c)
       tx_buf[0] = 'i';
       tx_packet(tx_buf, 1);
       rx_reset();
-      RF_Mode = Receive;
       delay(200);
-      if (RF_Mode == Received) {
-        spiSendAddress(0x7f); // Send the package read command
+      if (RF_Mode == RECEIVED) {
+        spiSendAddress(RFM22B_FIFO); // Send the package read command
         tx_buf[0] = spiReadData();
         for (uint8_t i = 0; i < sizeof(rx_config); i++) {
           tx_buf[i + 1] = spiReadData();

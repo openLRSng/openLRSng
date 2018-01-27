@@ -1,31 +1,5 @@
 // Generic definitions needed always
 
-#define Available 0
-#define Transmit 1
-#define Transmitted 2
-#define Receive 3
-#define Received 4
-
-volatile uint8_t RF_Mode = 0;
-volatile uint32_t lastReceived = 0;
-
-void RFM22B_Int()
-{
-  if (RF_Mode == Transmit) {
-    RF_Mode = Transmitted;
-  }
-
-  if (RF_Mode == Receive) {
-    RF_Mode = Received;
-    lastReceived = millis();
-  }
-}
-
-typedef struct pinMask {
-  uint8_t B,C,D;
-} pinMask_t;
-
-
 #define RX_FLYTRON8CH 0x01
 #define RX_OLRSNG4CH  0x02
 #define RX_OLRSNG12CH 0x03
@@ -48,9 +22,15 @@ typedef struct pinMask {
 #define PINMAP_SUMD   0x2a // SUMD output
 #define PINMAP_LLIND  0x2b // LinkLoss indication (digital output)
 
+void RFM22B_Int(void);
+
 // Following table is used by the dialog code to
 // determine possible extra functions for each output.
-
+typedef struct pinMask {
+  uint8_t B;
+  uint8_t C;
+  uint8_t D;
+} pinMask_t;
 
 struct rxSpecialPinMap {
   uint8_t output;
@@ -1385,7 +1365,6 @@ void rxInitHWConfig()
 
 #define buzzerOff(foo) buzzerOn(0)
 
-
 #define  nIRQ_1 (PIND & 0x04)==0x04 //D2
 #define  nIRQ_0 (PIND & 0x04)==0x00 //D2
 
@@ -1422,12 +1401,4 @@ void setupRfmInterrupt()
   attachInterrupt(IRQ_interrupt, RFM22B_Int, FALLING);
 }
 
-#endif
-
-#ifdef CLI_ENABLED
-// Needed by dialog code
-static const char *specialStrs[] = { "PPM","RSSI","SDA","SCL","RXD","TXD","AIN","LBEEP",
-                                     "SPKTRM", "SBUS", "SUMD", "LLIND", "", "", "", ""
-                                   };
-#define SPECIALSTR(x) (specialStrs[(x)&0x0f]) // note must be changed if not 16 strings
 #endif
