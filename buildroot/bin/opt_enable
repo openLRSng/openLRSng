@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+SOURCES_FOLDER=$(grep src_dir platformio.ini| awk '{print $NF}')
+
 for opt in "$@" ; do
-  eval "sed -i 's/\/\/[[:blank:]]*\(#define \b${opt}\b\)/\1/g' src/openLRSng.ino"
+  eval "sed -i 's/\/\/[[:blank:]]*\(#define \b${opt}\b\)/\1/g' $SOURCES_FOLDER/openLRSng.ino"
 done

@@ -1,3 +1,5 @@
 #!/usr/bin/env bash
 
-eval "echo \"#define ${1} ${2}\" >>src/openLRSng.ino"
+SOURCES_FOLDER=$(grep src_dir platformio.ini| awk '{print $NF}')
+
+eval "echo \"#define ${1} ${2}\" >>$SOURCES_FOLDER/openLRSng.ino"
