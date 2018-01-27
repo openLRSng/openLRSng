@@ -272,9 +272,8 @@ void rfmInitBeacon()
 
 void rfmClearIntStatus(void)
 {
-uint8_t c;
-  c=spiReadRegister(RFM22B_INTSTAT1);
-  c=spiReadRegister(RFM22B_INTSTAT2);
+  spiReadRegister(RFM22B_INTSTAT1);
+  spiReadRegister(RFM22B_INTSTAT2);
 }
 
 void rfmClearInterrupts(void)
