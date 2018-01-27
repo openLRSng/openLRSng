@@ -216,7 +216,7 @@ void PSP_process_data(uint8_t code, uint16_t payload_length_received, uint8_t da
   case PSP_REQ_BIND_DATA:
     PSP_protocol_head(PSP_REQ_BIND_DATA, sizeof(bind_data));
     {
-      for (uint16_t i = 0; i < sizeof(bind_data); i++) {
+      for (uint8_t i = 0; i < sizeof(bind_data); i++) {
         PSP_serialize_uint8(AS_U8ARRAY(&bind_data)[i]);
       }
     }
@@ -224,7 +224,7 @@ void PSP_process_data(uint8_t code, uint16_t payload_length_received, uint8_t da
   case PSP_REQ_RX_CONFIG:
     PSP_protocol_head(PSP_REQ_RX_CONFIG, sizeof(rx_config));
     {
-      for (uint16_t i = 0; i < sizeof(rx_config); i++) {
+      for (uint8_t i = 0; i < sizeof(rx_config); i++) {
         PSP_serialize_uint8(AS_U8ARRAY(&rx_config)[i]);
       }
     }
@@ -247,7 +247,7 @@ void PSP_process_data(uint8_t code, uint16_t payload_length_received, uint8_t da
   case PSP_REQ_SPECIAL_PINS:
     PSP_protocol_head(PSP_REQ_SPECIAL_PINS, sizeof(struct rxSpecialPinMap) * rxcSpecialPinCount);
     {
-      for (uint16_t i = 0; i < sizeof(struct rxSpecialPinMap) * rxcSpecialPinCount; i++) {
+      for (uint8_t i = 0; i < sizeof(struct rxSpecialPinMap) * rxcSpecialPinCount; i++) {
         PSP_serialize_uint8(AS_U8ARRAY(&rxcSpecialPins)[i]);
       }
     }
@@ -271,19 +271,18 @@ void PSP_process_data(uint8_t code, uint16_t payload_length_received, uint8_t da
     }
     break;
   case PSP_REQ_RX_FAILSAFE: {
-    uint8_t rxtx_buf;
-    rxtx_buf = 'f';
-    tx_packet(&rxtx_buf, 1);
+    uint8_t rxtx_buf[(PPM_CHANNELS * 2) + 1];
+    rxtx_buf[0] = 'f';
+    tx_packet(rxtx_buf, 1);
     rx_reset();
     delay(200);
 
     if (RF_Mode == RECEIVED) {
-      spiSendAddress(0x7f);
-      rxtx_buf = spiReadData();
-      if (rxtx_buf == 'F') {
-        PSP_protocol_head(PSP_REQ_RX_FAILSAFE, 32);
-        for (uint8_t i = 0; i < 32; i++) {
-          PSP_serialize_uint8(spiReadData()); // failsafe data
+      rfmGetPacket(rxtx_buf, sizeof(rxtx_buf));
+      if (rxtx_buf[0] == 'F') {
+        PSP_protocol_head(PSP_REQ_RX_FAILSAFE, (PPM_CHANNELS * 2));
+        for (uint8_t i = 0; i < (PPM_CHANNELS * 2); i++) {
+          PSP_serialize_uint8(rxtx_buf[i + 1]); // failsafe data
         }
       } else {
         PSP_protocol_head(PSP_REQ_RX_FAILSAFE, 1);
@@ -313,14 +312,14 @@ void PSP_process_data(uint8_t code, uint16_t payload_length_received, uint8_t da
         tx_config.flags &=~ WATCHDOG_USED;
       }
 
-      for (uint16_t i = 0; i < sizeof(tx_config); i++) {
+      for (uint8_t i = 0; i < sizeof(tx_config); i++) {
         PSP_serialize_uint8(AS_U8ARRAY(&tx_config)[i]);
       }
     }
   }
   break;
   case PSP_REQ_PPM_IN: {
-    PSP_protocol_head(PSP_REQ_PPM_IN, 33);
+    PSP_protocol_head(PSP_REQ_PPM_IN, ((PPM_CHANNELS * 2) + 1));
 
     PSP_serialize_uint8((ppmAge < 255) ? ppmAge++ : ppmAge);
     for (uint8_t i = 0; i < 16; i++) {
@@ -334,16 +333,13 @@ void PSP_process_data(uint8_t code, uint16_t payload_length_received, uint8_t da
       PSP_serialize_uint8(defaultProfile);
     }
     break;
+
     // SET
   case PSP_SET_BIND_DATA:
     PSP_protocol_head(PSP_SET_BIND_DATA, 1);
 
     if (payload_length_received == sizeof(bind_data)) {
-
-      for (uint16_t i = 0; i < sizeof(bind_data); i++) {
-        AS_U8ARRAY(&bind_data)[i] = data_buffer[i];
-      }
-
+      memcpy(&bind_data, data_buffer, sizeof(bind_data));
       PSP_serialize_uint8(0x01);
     } else {
       PSP_serialize_uint8(0x00);
@@ -353,10 +349,7 @@ void PSP_process_data(uint8_t code, uint16_t payload_length_received, uint8_t da
     PSP_protocol_head(PSP_SET_RX_CONFIG, 1);
 
     if (payload_length_received == sizeof(rx_config)) {
-      for (uint16_t i = 0; i < sizeof(rx_config); i++) {
-        AS_U8ARRAY(&rx_config)[i] = data_buffer[i];
-      }
-
+      memcpy(&rx_config, data_buffer, sizeof(rx_config));
       PSP_serialize_uint8(0x01);
     } else {
       PSP_serialize_uint8(0x00);
@@ -369,19 +362,17 @@ void PSP_process_data(uint8_t code, uint16_t payload_length_received, uint8_t da
     break;
   case PSP_SET_RX_SAVE_EEPROM:
     PSP_protocol_head(PSP_SET_RX_SAVE_EEPROM, 1);
-
     {
-      uint8_t tx_buf[1 + sizeof(rx_config)];
+      uint8_t tx_buf[sizeof(rx_config) + 1];
       tx_buf[0] = 'u';
-      memcpy(tx_buf + 1, &rx_config, sizeof(rx_config));
-      tx_packet(tx_buf, sizeof(rx_config) + 1);
+      memcpy((tx_buf + 1), &rx_config, sizeof(rx_config));
+      tx_packet(tx_buf, sizeof(tx_buf));
       rx_reset();
       delay(800);
 
       if (RF_Mode == RECEIVED) {
-        spiSendAddress(0x7f); // Send the package read command
-        tx_buf[0] = spiReadData();
-        if (tx_buf[0]=='U') {
+        rfmGetPacket(tx_buf, 1);
+        if (tx_buf[0] == 'U') {
           PSP_serialize_uint8(0x01); // success
         } else {
           PSP_serialize_uint8(0x00); // fail
@@ -402,23 +393,17 @@ void PSP_process_data(uint8_t code, uint16_t payload_length_received, uint8_t da
   case PSP_SET_RX_RESTORE_DEFAULT:
     PSP_protocol_head(PSP_SET_RX_RESTORE_DEFAULT, 1);
 
-    uint8_t tx_buf[1 + sizeof(rx_config)];
+    uint8_t tx_buf[sizeof(rx_config) + 1];
     tx_buf[0] = 'i';
     tx_packet(tx_buf,1);
     rx_reset();
     delay(800);
 
     if (RF_Mode == RECEIVED) {
-      spiSendAddress(0x7f);   // Send the package read command
-      tx_buf[0] = spiReadData();
-
-      for (uint8_t i = 0; i < sizeof(rx_config); i++) {
-        tx_buf[i + 1] = spiReadData();
-      }
-
-      memcpy(&rx_config, tx_buf + 1, sizeof(rx_config));
+      rfmGetPacket(tx_buf, sizeof(tx_buf));
 
       if (tx_buf[0] == 'I') {
+        memcpy(&rx_config, (tx_buf + 1), sizeof(rx_config));
         PSP_serialize_uint8(0x01); // success
       } else {
         PSP_serialize_uint8(0x00); // fail
@@ -437,11 +422,12 @@ void PSP_process_data(uint8_t code, uint16_t payload_length_received, uint8_t da
   case PSP_SET_RX_FAILSAFE:
     PSP_protocol_head(PSP_SET_RX_FAILSAFE, 1);
     {
-      uint8_t rxtx_buf[33];
-      if (payload_length_received == 32) {
+      uint8_t rxtx_buf[(PPM_CHANNELS * 2) + 1];
+ 
+      if (payload_length_received == (PPM_CHANNELS * 2)) {
         rxtx_buf[0] = 'g';
-        memcpy(rxtx_buf + 1, data_buffer, 32);
-        tx_packet(rxtx_buf, 33);
+        memcpy((rxtx_buf + 1), data_buffer, (PPM_CHANNELS * 2));
+        tx_packet(rxtx_buf, sizeof(rxtx_buf));
       } else {
         rxtx_buf[0] = 'G';
         tx_packet(rxtx_buf, 1);
@@ -450,8 +436,8 @@ void PSP_process_data(uint8_t code, uint16_t payload_length_received, uint8_t da
       delay(1100);
 
       if (RF_Mode == RECEIVED) {
-        spiSendAddress(0x7f);
-        if (spiReadData() == 'G') {
+        rfmGetPacket(tx_buf, 1);
+        if (tx_buf[0] == 'G') {
           PSP_serialize_uint8(0x01);
         } else {
           PSP_serialize_uint8(0x00);
@@ -465,7 +451,7 @@ void PSP_process_data(uint8_t code, uint16_t payload_length_received, uint8_t da
     PSP_protocol_head(PSP_SET_TX_CONFIG, 1);
 
     if (payload_length_received == sizeof(tx_config)) {
-      for (uint16_t i = 0; i < sizeof(tx_config); i++) {
+      for (uint8_t i = 0; i < sizeof(tx_config); i++) {
         AS_U8ARRAY(&tx_config)[i] = data_buffer[i];
       }
       checkSetupPpm(); // resetup to handle the invert flag live
@@ -505,7 +491,7 @@ void PSP_process_data(uint8_t code, uint16_t payload_length_received, uint8_t da
   case PSP_REQ_BIND_DATA:
     PSP_protocol_head(PSP_REQ_BIND_DATA, sizeof(bind_data));
     {
-      for (uint16_t i = 0; i < sizeof(bind_data); i++) {
+      for (uint8_t i = 0; i < sizeof(bind_data); i++) {
         PSP_serialize_uint8(AS_U8ARRAY(&bind_data)[i]);
       }
     }
@@ -524,7 +510,7 @@ void PSP_process_data(uint8_t code, uint16_t payload_length_received, uint8_t da
 #elif (RFMTYPE == 915)
       rx_config.rx_type |= (0x02 << 6);
 #endif
-      for (uint16_t i = 0; i < sizeof(rx_config); i++) {
+      for (uint8_t i = 0; i < sizeof(rx_config); i++) {
         PSP_serialize_uint8(AS_U8ARRAY(&rx_config)[i]);
       }
     }
@@ -547,7 +533,7 @@ void PSP_process_data(uint8_t code, uint16_t payload_length_received, uint8_t da
   case PSP_REQ_SPECIAL_PINS:
     PSP_protocol_head(PSP_REQ_SPECIAL_PINS, sizeof(rxSpecialPins));
     {
-      for (uint16_t i = 0; i < sizeof(rxSpecialPins); i++) {
+      for (uint8_t i = 0; i < sizeof(rxSpecialPins); i++) {
         PSP_serialize_uint8(AS_U8ARRAY(&rxSpecialPins)[i]);
       }
     }
@@ -565,11 +551,10 @@ void PSP_process_data(uint8_t code, uint16_t payload_length_received, uint8_t da
     }
     break;
   case PSP_REQ_RX_FAILSAFE:
-  PSP_protocol_head(PSP_REQ_RX_FAILSAFE, 32);
+  PSP_protocol_head(PSP_REQ_RX_FAILSAFE, (PPM_CHANNELS * 2));
   {
-    for (uint8_t i = 0; i < 16; i++) {
-      uint16_t us = failsafePPM[i];
-      PSP_serialize_uint16(us); // failsafe data
+    for (uint8_t i = 0; i < PPM_CHANNELS; i++) {
+      PSP_serialize_uint16(failsafePPM[i]); // failsafe data
     }
   }
   break;
@@ -579,7 +564,7 @@ void PSP_process_data(uint8_t code, uint16_t payload_length_received, uint8_t da
     PSP_protocol_head(PSP_SET_RX_CONFIG, 1);
   {
     if (payload_length_received == sizeof(rx_config)) {
-      for (uint16_t i = 0; i < sizeof(rx_config); i++) {
+      for (uint8_t i = 0; i < sizeof(rx_config); i++) {
         AS_U8ARRAY(&rx_config)[i] = data_buffer[i];
       }
       PSP_serialize_uint8(0x01);
@@ -606,16 +591,10 @@ void PSP_process_data(uint8_t code, uint16_t payload_length_received, uint8_t da
   case PSP_SET_RX_FAILSAFE:
     PSP_protocol_head(PSP_SET_RX_FAILSAFE, 1);
     {
-      if (payload_length_received == 32) {
-     memcpy(failsafePPM,data_buffer, 32);
-    // for (uint8_t i = 0; i < 16 ; i++) {
-          // failsafePPM[i] = ((uint16_t)spiReadData() << 8) + spiReadData();
-        // }
+      if (payload_length_received == (PPM_CHANNELS * 2)) {
+        memcpy(failsafePPM, data_buffer, sizeof(failsafePPM));
       } else {
-      memset(failsafePPM,0,sizeof(failsafePPM));
-    // for (uint8_t i = 0; i < 16 ; i++) {
-      // failsafePPM[i] = 0;
-    // }
+        memset(failsafePPM,0,sizeof(failsafePPM));
       }
     failsafeSave();
     PSP_serialize_uint8(0x01);

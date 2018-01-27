@@ -106,5 +106,8 @@
 #include "beacon.h"
 #include "I2C.h"
 #include "serialPPM.h"
+#ifdef ENABLE_SLAVE_MODE
+#include "RX_slave.h"
+#endif
 #include "RX.h"
 #endif
