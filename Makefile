@@ -205,7 +205,7 @@ clean: clean_compilation_products
 
 clean_compilation_products:
 	@$(RM) -rf $(LIBRARIES_FOLDER)
-	@$(RM) -f *.[aod] *.elf *.eep *.d *.hex
+	@$(RM) -f $(SOURCES_FOLDER)/*.[aod] $(SOURCES_FOLDER)/*.elf $(SOURCES_FOLDER)/*.eep $(SOURCES_FOLDER)/*.hex
 
 mkdirs:
 	@$(MKDIR) -p $(LIBRARIES_FOLDER)
