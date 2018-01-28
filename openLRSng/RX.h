@@ -379,7 +379,7 @@ uint8_t bindReceive(uint32_t timeout)
       rfmGetPacket(rxc_buf, len);
 
       if (rxc_buf[0] == 'b') {
-        for (uint8_t i = 0; i < sizeof(bind_data); i++) {
+        for (uint8_t i = 0; i < sizeof(bind_data) && i < sizeof(rxc_buf); i++) {
           *(((uint8_t*) &bind_data) + i) = rxc_buf[i + 1];
         }
 
