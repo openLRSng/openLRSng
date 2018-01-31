@@ -323,9 +323,8 @@ void bindInitDefaults(void)
 
   bind_data.rf_magic = DEFAULT_RF_MAGIC;
 
-  for (uint8_t c = 0; c < MAXHOPS; c++) {
-    bind_data.hopchannel[c] = (c < sizeof(default_hop_list)) ? default_hop_list[c] : 0;
-  }
+  memset(bind_data.hopchannel, 0, sizeof(bind_data.hopchannel));
+  memcpy(bind_data.hopchannel, default_hop_list, sizeof(default_hop_list));
 
   bind_data.modem_params = DEFAULT_DATARATE;
   bind_data.flags = DEFAULT_FLAGS;
@@ -467,9 +466,7 @@ void failsafeSave(void)
 void failsafeLoad(void)
 {
   if (!accessEEPROM(2, false)) {
-    for (uint8_t i = 0; i < 16; i++) {
-      failsafePPM[i]=0;
-    }
+    memset(failsafePPM, 0, sizeof(failsafePPM));
   }
 }
 
@@ -477,7 +474,6 @@ void rxInitHWConfig();
 
 void rxInitDefaults(bool save)
 {
-
   rxInitHWConfig();
 
   rx_config.flags = ALWAYS_BIND;
@@ -492,9 +488,7 @@ void rxInitDefaults(bool save)
 
   if (save) {
     accessEEPROM(0, true);
-    for (uint8_t i = 0; i < 16; i++) {
-      failsafePPM[i]=0;
-    }
+    memset(failsafePPM, 0, sizeof(failsafePPM));
     failsafeSave();
   }
 }

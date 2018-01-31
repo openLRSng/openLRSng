@@ -205,12 +205,12 @@ void init_rfm(uint8_t isbind)
 
   if (isbind) {
     rfmSetModemRegs(&bind_params);
-  rfmSetPower(BINDING_POWER);
-  rfmSetCarrierFrequency(BINDING_FREQUENCY);
+    rfmSetPower(BINDING_POWER);
+    rfmSetCarrierFrequency(BINDING_FREQUENCY);
   } else {
     rfmSetModemRegs(&modem_params[bind_data.modem_params]);
-  rfmSetPower(bind_data.rf_power);
-  rfmSetCarrierFrequency(bind_data.rf_frequency);
+    rfmSetPower(bind_data.rf_power);
+    rfmSetCarrierFrequency(bind_data.rf_frequency);
   }
 }
 
@@ -240,7 +240,7 @@ void check_module(void)
 {
   if (rfmGetGPIO1() == 0) {
     // detect the locked module and reboot
-  Serial.println("RFM Module Locked");
+    Serial.println("RFM Module Locked");
     Red_LED_ON;
     init_rfm(0);
     rx_reset();
