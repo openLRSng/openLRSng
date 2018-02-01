@@ -89,12 +89,10 @@ void updateSwitches(void);
 void failsafeApply(void);
 void setupOutputs(void);
 void checkSerial(void);
-void checkBinaryMode(void);
 void outputUp(uint8_t no);
 void outputDownAll(void);
 void processPacketRC(void);
 void processPacketData(void);
-
 void handlePacketTelem(void);
 void handlePacketRX(void);
 void checkLinkState(void);
@@ -1010,7 +1008,7 @@ void dumpPPM(void)
 #endif
 
 #ifdef CONFIGURATOR
-static inline void checkBinaryMode(void)
+void checkBinaryMode(void)
 {
   if ((Serial.available() > 3) &&
       (Serial.read() == 'B') && (Serial.read() == 'N') &&
