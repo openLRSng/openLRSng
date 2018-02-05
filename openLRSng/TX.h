@@ -1160,7 +1160,6 @@ void loop(void)
     if (bind_data.flags & TELEMETRY_MASK) {
       linkQuality <<= 1;
       rx_reset();
-    //to_rx_mode();
       // tell loop to sample downlink RSSI
       sampleRSSI = micros();
       if (sampleRSSI == 0) {

@@ -22,10 +22,8 @@ void fatalBlink(uint8_t blinks);
 
 void RFM22B_Int(void);
 void init_rfm(uint8_t isbind);
+void tx_reset(void);
 void rx_reset(void);
-void to_rx_mode(void);
-void to_tx_mode(void);
-void to_sleep_mode(void);
 void setHopChannel(uint8_t ch);
 
 uint8_t tx_done(void);
@@ -40,7 +38,7 @@ const static uint8_t pktsizes[8] = { 0, 7, 11, 12, 16, 17, 21, 0 };
 
 void RFM22B_Int()
 {
-  rfmSetReadyMode();
+  rfmSetReadyMode(); // step down to 'ready' mode to reduce power consumption 
   if (RF_Mode == TRANSMIT) {
     RF_Mode = TRANSMITTED;
   } else if (RF_Mode == RECEIVE) {
@@ -62,8 +60,8 @@ uint8_t getChannelCount(struct bind_data *bd)
 uint32_t getInterval(struct bind_data *bd)
 {
   uint32_t ret;
-  // Sending a x byte packet on bps y takes about (emperical)
-  // usec = (x + 15) * 8200000 / baudrate
+  // Sending an 'x' byte packet at 'y' bps takes approx. (emperical):
+  // usec = (x + 15 {20 w/ diversity}) * 8200000 / bps
 #define BYTES_AT_BAUD_TO_USEC(bytes, bps, div) ((uint32_t)((bytes) + (div?20:15)) * 8200000L / (uint32_t)(bps))
 
   ret = (BYTES_AT_BAUD_TO_USEC(getPacketSize(bd), modem_params[bd->modem_params].bps, bd->flags&DIVERSITY_ENABLED) + 2000);
@@ -192,7 +190,8 @@ void init_rfm(uint8_t isbind)
   digitalWrite(SDN_pin, 0);
   delay(50);
   #endif
-  rfmSetReadyMode();
+  rfmSetReadyMode(); // turn on the XTAL and give it time to settle
+  delayMicroseconds(600);
   rfmClearIntStatus();
   rfmInit(bind_data.flags&DIVERSITY_ENABLED);
   rfmSetStepSize(bind_data.rf_channel_spacing);
@@ -214,18 +213,11 @@ void init_rfm(uint8_t isbind)
   }
 }
 
-void to_tx_mode(void)
+void tx_reset(void)
 {
   tx_start = micros();
   RF_Mode = TRANSMIT;
   rfmSetTX();
-  delay(1); // allow for PLL ramp-up, ~850us
-}
-
-void to_rx_mode(void)
-{
-  rfmClearIntStatus();
-  rx_reset();
 }
 
 void rx_reset(void)
@@ -257,7 +249,7 @@ void tx_packet_async(uint8_t* pkt, uint8_t size)
 {
   rfmSendPacket(pkt, size);
   rfmClearIntStatus();
-  to_tx_mode();
+  tx_reset();
 }
 
 void tx_packet(uint8_t* pkt, uint8_t size)
@@ -304,7 +296,7 @@ void scannerMode(void)
   uint8_t rssiMin = 0, rssiMax = 0;
   uint32_t rssiSum = 0;
   Serial.println("scanner mode");
-  to_rx_mode();
+  rx_reset();
 
   while (startFreq != 1000) { // if startFreq == 1000, break (used to exit scannerMode)
     while (Serial.available()) {

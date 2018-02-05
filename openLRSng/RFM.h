@@ -96,6 +96,7 @@ void rfmSetHeader(uint8_t iHdr, uint8_t bHdr);
 void rfmSetPower(uint8_t p);
 void rfmSetReadyMode(void);
 void rfmSetStepSize(uint8_t sp);
+void rfmSetDirectOut(uint8_t enable);
 void rfmSetModemRegs(struct rfm22_modem_regs* r);
 uint8_t rfmGetRSSI(void);
 uint8_t rfmGetGPIO1(void);
@@ -135,6 +136,7 @@ void rfmGetPacket(uint8_t *buf, uint8_t size)
 void rfmSetPower(uint8_t power)
 {
   spiWriteRegister(RFM22B_TXPOWER, power);
+  delayMicroseconds(25); // PA ramp up/down time
 }
 
 void rfmSetChannel(uint8_t ch)
@@ -165,14 +167,14 @@ void rfmSendPacket(uint8_t* pkt, uint8_t size)
 void rfmSetTX()
 {
   spiWriteRegister(RFM22B_OPMODE1, RFM22B_OPMODE_TX);
-  delayMicroseconds(850); // allow for PLL & PA ramp-up, ~850us
+  delayMicroseconds(200); // allow for PLL & PA ramp-up, ~200us
 }
 
 void rfmSetRX()
 {
   spiWriteRegister(RFM22B_INTEN1, RFM22B_RX_PACKET_RECEIVED_INTERRUPT);
   spiWriteRegister(RFM22B_OPMODE1, RFM22B_OPMODE_RX);
-  delayMicroseconds(800);  // allow for PLL ramp-up, ~800us
+  delayMicroseconds(200);  // allow for PLL ramp-up, ~200us
 }
 
 void rfmSetStepSize(uint8_t sp)
@@ -214,6 +216,7 @@ void rfmSetCarrierFrequency(uint32_t f)
   spiWriteRegister(RFM22B_BANDSEL, 0x40 + (hbsel ? 0x20 : 0) + (fb & 0x1f));
   spiWriteRegister(RFM22B_CARRFREQ1, (fc >> 8));
   spiWriteRegister(RFM22B_CARRFREQ0, (fc & 0xff));
+  delayMicroseconds(200); // VCO / PLL calibration delay
 }
 
 void rfmClearFIFO(uint8_t diversity)
@@ -262,12 +265,23 @@ void rfmInit(uint8_t diversity)
   spiWriteRegister(RFM22B_FHCH,        0x00);   // set to hop channel 0
 }
 
-void rfmInitBeacon()
+void rfmSetDirectOut(uint8_t enable)
 {
-  // setup for direct output, i.e. beacon tones
-  spiWriteRegister(RFM22B_ENPACK, 0x00);    //disable packet handling
-  spiWriteRegister(RFM22B_MODCTL2, 0x12);    // trclk=[00] no clock, dtmod=[01] direct using SPI, fd8=0 eninv=0 modtyp=[10] FSK
-  spiWriteRegister(RFM22B_FREQDEV, 0x02);    // fd (frequency deviation) 2*625Hz == 1.25kHz
+ static uint8_t r1 = 0, r2 = 0, r3 = 0;
+  if (enable) {
+    r1 = spiReadRegister(RFM22B_ENPACK);
+    r2 = spiReadRegister(RFM22B_MODCTL2);
+    r3 = spiReadRegister(RFM22B_FREQDEV);
+    // setup for direct output, i.e. beacon tones
+    spiWriteRegister(RFM22B_ENPACK, 0x00);    //disable packet handling
+    spiWriteRegister(RFM22B_MODCTL2, 0x12);    // trclk=[00] no clock, dtmod=[01] direct using SPI, fd8=0 eninv=0 modtyp=[10] FSK
+    spiWriteRegister(RFM22B_FREQDEV, 0x02);    // fd (frequency deviation) 2*625Hz == 1.25kHz
+  } else {
+    // restore previous values
+    spiWriteRegister(RFM22B_ENPACK, r1);
+    spiWriteRegister(RFM22B_MODCTL2, r2);
+    spiWriteRegister(RFM22B_FREQDEV, r3); 
+  }
 }
 
 void rfmClearIntStatus(void)
