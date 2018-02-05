@@ -32,6 +32,7 @@ uint32_t hopInterval = 0;
 uint32_t hopTimeout = 0;
 uint32_t hopTimeoutSlow = 0;
 uint32_t RSSI_timeout = 0;
+uint32_t pktTimeDelta = 0;
 uint32_t nextBeaconTimeMs;
 uint32_t timeUs = 0;
 uint32_t timeMs= 0;
@@ -210,7 +211,7 @@ void setup(void)
   init_rfm(0);   // Configure the RFM22B's registers for normal operation
   RF_channel = 0;
   setHopChannel(RF_channel);
-  to_rx_mode();
+  rx_reset();
 
 #ifdef ENABLE_SLAVE_MODE
   checkSlaveState();
@@ -318,17 +319,19 @@ void loop(void)
   watchdogReset();
   check_module();
   checkSerial();
-  timeUs = micros();
 
   handlePacketRX();
+
   timeUs = micros();
   timeMs = millis();
-  checkRSSI();
+  pktTimeDelta = (timeUs - lastPacketTimeUs);  
 
+  checkRSSI();
+  
   if (linkAcquired) {
     // check RC link status after initial 'lock'
     checkLinkState();
-  } else if ((timeUs - lastPacketTimeUs) > hopTimeoutSlow) {
+  } else if (pktTimeDelta > hopTimeoutSlow) {
     // Still waiting for first packet, so hop slowly
     lastPacketTimeUs = timeUs;
     willhop = 1;
@@ -431,8 +434,8 @@ retry:
 #endif
 
       updateSwitches();
-      rx_reset();
       willhop = 1;
+      rx_reset();
       Green_LED_OFF;
 
 #ifdef ENABLE_SLAVE_MODE
@@ -766,8 +769,7 @@ void updateLBeep(bool packetLost)
 void checkRSSI(void)
 {
   // sample RSSI when packet is in the 'air'
-  if ((numberOfLostPackets < 2) && (lastRSSITimeUs != lastPacketTimeUs) &&
-      (timeUs - lastPacketTimeUs) > RSSI_timeout) {
+  if ((numberOfLostPackets < 2) && (lastRSSITimeUs != lastPacketTimeUs) && (pktTimeDelta > RSSI_timeout)) {
     lastRSSITimeUs = lastPacketTimeUs;
     lastRSSIvalue = rfmGetRSSI(); // Read the RSSI value
     RSSI_sum += lastRSSIvalue;    // tally up for average
@@ -785,7 +787,7 @@ void checkRSSI(void)
 
 void checkLinkState(void)
 {
-  if ((numberOfLostPackets < hopcount) && ((timeUs - lastPacketTimeUs) > hopTimeout)) {
+  if ((numberOfLostPackets < hopcount) && (pktTimeDelta > hopTimeout)) {
     // we lost a packet, so hop to next channel
     linkQuality <<= 1;
     willhop = 1;
@@ -799,7 +801,7 @@ void checkLinkState(void)
     Red_LED_ON;
     updateLBeep(true);
     set_RSSI_output();
-  } else if ((numberOfLostPackets == hopcount) && ((timeUs - lastPacketTimeUs) > hopTimeoutSlow)) {
+  } else if ((numberOfLostPackets == hopcount) && (pktTimeDelta > hopTimeoutSlow)) {
     // hop slowly to allow re-sync with TX
     linkQuality = 0;
     willhop = 1;
@@ -832,20 +834,20 @@ void checkFailsafeButton(void)
 
 void handleFailsafe(void)
 {
-  if (rx_config.failsafeDelay && (!failsafeActive) && ((timeMs - linkLossTimeMs) > delayInMs(rx_config.failsafeDelay))) {
+  uint32_t timeMsDelta = (timeMs - linkLossTimeMs);
+  if (rx_config.failsafeDelay && (!failsafeActive) && (timeMsDelta > delayInMs(rx_config.failsafeDelay))) {
     failsafeActive = 1;
     failsafeApply();
     nextBeaconTimeMs = (timeMs + delayInMsLong(rx_config.beacon_deadtime)) | 1; //beacon activating...
   }
-  if (rx_config.pwmStopDelay && (!disablePWM) && ((timeMs - linkLossTimeMs) > delayInMs(rx_config.pwmStopDelay))) {
+  if (rx_config.pwmStopDelay && (!disablePWM) && (timeMsDelta > delayInMs(rx_config.pwmStopDelay))) {
     disablePWM = 1;
   }
-  if (rx_config.ppmStopDelay && (!disablePPM) && ((timeMs - linkLossTimeMs) > delayInMs(rx_config.ppmStopDelay))) {
+  if (rx_config.ppmStopDelay && (!disablePPM) && (timeMsDelta > delayInMs(rx_config.ppmStopDelay))) {
     disablePPM = 1;
   }
   if ((rx_config.beacon_frequency) && (nextBeaconTimeMs) && ((timeMs - nextBeaconTimeMs) < 0x80000000)) {
     beacon_send((rx_config.flags & STATIC_BEACON));
-    init_rfm(0);   // go back to normal RX
     rx_reset();
     nextBeaconTimeMs = (millis() +  (1000UL * rx_config.beacon_interval)) | 1; // avoid 0 in time
   }
@@ -873,7 +875,7 @@ uint8_t bindReceive(uint32_t timeout)
   uint8_t rxc_buf[33];
   uint8_t len;
   init_rfm(1);
-  to_rx_mode();
+  rx_reset();
   Serial.println("Waiting bind\n");
   while ((!timeout) || ((millis() - start) < timeout)) {
     if (RF_Mode == RECEIVED) {
@@ -884,7 +886,7 @@ uint8_t bindReceive(uint32_t timeout)
       case 'b': { // GET bind_data
         memcpy(&bind_data, (rxc_buf + 1), sizeof(bind_data));
         if (bind_data.version == BINDING_VERSION) {
-          Serial.println("data good\n");
+          Serial.println("data good");
           rxc_buf[0] = 'B';
           tx_packet(rxc_buf, 1); // ACK that we got bound
           Green_LED_ON; //signal we got bound on LED:s
