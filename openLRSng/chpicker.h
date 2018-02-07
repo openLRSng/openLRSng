@@ -1,3 +1,6 @@
+#ifndef _CHPICKER_H_
+#define _CHPICKER_H_
+
 //OpenLRSng adaptive channel picker
 
 inline void swap(uint8_t *a, uint8_t i, uint8_t j)
@@ -92,3 +95,5 @@ uint8_t chooseChannelsPerRSSI()
 
   return 1;
 }
+
+#endif

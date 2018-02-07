@@ -1,3 +1,6 @@
+#ifndef _I2C_H_
+#define _I2C_H_
+
 #include <util/twi.h>
 #include <Arduino.h>
 #define I2C_FREQ 200000
@@ -307,3 +310,4 @@ uint8_t myI2C_readFrom(uint8_t address, uint8_t* data, uint8_t length, uint8_t f
   return 0;
 }
 
+#endif

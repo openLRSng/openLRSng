@@ -1,3 +1,6 @@
+#ifndef _FRSKYTX_H_
+#define _FRSKYTX_H_
+
 // FrSky emulation on TX side
 //
 
@@ -161,3 +164,5 @@ void frskyUpdate(uint8_t a1, uint8_t a2, uint8_t rx, uint8_t tx, uint8_t prof)
     }
   }
 }
+
+#endif

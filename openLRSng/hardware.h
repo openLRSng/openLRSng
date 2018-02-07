@@ -1,3 +1,6 @@
+#ifndef _HARDWARE_H_
+#define _HARDWARE_H_
+
 // Generic definitions needed always
 
 #define RX_FLYTRON8CH 0x01
@@ -1400,5 +1403,7 @@ void setupRfmInterrupt()
 {
   attachInterrupt(IRQ_interrupt, RFM22B_Int, FALLING);
 }
+
+#endif
 
 #endif
