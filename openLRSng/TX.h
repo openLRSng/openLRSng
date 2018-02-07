@@ -697,9 +697,9 @@ static inline void processSpektrum(uint8_t c)
   }
 }
 
-static inline uint16_t SBUSToPpm(uint16_t input) {
-  // Rescale [200, 1800] to [1000, 2000]
-  uint16_t value = (((input - 200) * 10) >> 4) + 1000;
+static inline uint16_t SBUStoPPM(uint16_t input)
+{
+  uint16_t value = ((input * 5) >> 3) + 880;
   return servoUs2Bits(value);
 }
 
@@ -715,14 +715,14 @@ static inline void processSBUS(uint8_t c)
     if ((frameIndex == 24) && (c == SBUS_TAIL)) {
       uint8_t set;
       for (set = 0; set < 2; set++) {
-        PPM[(set<<3)] = SBUSToPpm(ppmWork.sbus.ch[set].ch0);
-        PPM[(set<<3)+1] = SBUSToPpm(ppmWork.sbus.ch[set].ch1);
-        PPM[(set<<3)+2] = SBUSToPpm(ppmWork.sbus.ch[set].ch2);
-        PPM[(set<<3)+3] = SBUSToPpm(ppmWork.sbus.ch[set].ch3);
-        PPM[(set<<3)+4] = SBUSToPpm(ppmWork.sbus.ch[set].ch4);
-        PPM[(set<<3)+5] = SBUSToPpm(ppmWork.sbus.ch[set].ch5);
-        PPM[(set<<3)+6] = SBUSToPpm(ppmWork.sbus.ch[set].ch6);
-        PPM[(set<<3)+7] = SBUSToPpm(ppmWork.sbus.ch[set].ch7);
+        PPM[(set<<3)] = SBUStoPPM(ppmWork.sbus.ch[set].ch0);
+        PPM[(set<<3)+1] = SBUStoPPM(ppmWork.sbus.ch[set].ch1);
+        PPM[(set<<3)+2] = SBUStoPPM(ppmWork.sbus.ch[set].ch2);
+        PPM[(set<<3)+3] = SBUStoPPM(ppmWork.sbus.ch[set].ch3);
+        PPM[(set<<3)+4] = SBUStoPPM(ppmWork.sbus.ch[set].ch4);
+        PPM[(set<<3)+5] = SBUStoPPM(ppmWork.sbus.ch[set].ch5);
+        PPM[(set<<3)+6] = SBUStoPPM(ppmWork.sbus.ch[set].ch6);
+        PPM[(set<<3)+7] = SBUStoPPM(ppmWork.sbus.ch[set].ch7);
       }
       if ((ppmWork.sbus.status & 0x08)==0) {
 #ifdef DEBUG_DUMP_PPM
