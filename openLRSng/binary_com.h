@@ -1,3 +1,6 @@
+#ifndef _BINARY_COM_H_
+#define _BINARY_COM_H_
+
 /*
     Implementation of PSP (Phoenix Serial Protocol)
 
@@ -618,4 +621,6 @@ void PSP_process_data(uint8_t code, uint16_t payload_length_received, uint8_t da
   // send over crc
   PSP_protocol_tail();
 }
+#endif
+
 #endif

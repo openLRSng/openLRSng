@@ -1,3 +1,6 @@
+#ifndef _BINDING_H_
+#define _BINDING_H_
+
 // OpenLRSng binding
 
 // Factory setting values, modify via the CLI
@@ -426,36 +429,6 @@ void txReadEeprom()
 }
 #endif
 
-// non linear mapping
-// 0 - 0
-// 1-99    - 100ms - 9900ms (100ms res)
-// 100-189 - 10s  - 99s   (1s res)
-// 190-209 - 100s - 290s (10s res)
-// 210-255 - 5m - 50m (1m res)
-uint32_t delayInMs(uint16_t d)
-{
-  uint32_t ms;
-  if (d < 100) {
-    ms = d;
-  } else if (d < 190) {
-    ms = (d - 90) * 10UL;
-  } else if (d < 210) {
-    ms = (d - 180) * 100UL;
-  } else {
-    ms = (d - 205) * 600UL;
-  }
-  return ms * 100UL;
-}
-
-// non linear mapping
-// 0-89    - 10s - 99s
-// 90-109  - 100s - 290s (10s res)
-// 110-255 - 5m - 150m (1m res)
-uint32_t delayInMsLong(uint8_t d)
-{
-  return delayInMs((uint16_t)d + 100);
-}
-
 #if (COMPILE_TX != 1)
 // following is only needed on receiver
 void failsafeSave(void)
@@ -499,5 +472,7 @@ void rxReadEeprom()
     rxInitDefaults(1);
   }
 }
+
+#endif
 
 #endif

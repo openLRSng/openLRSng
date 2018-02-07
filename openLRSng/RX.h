@@ -1,3 +1,6 @@
+#ifndef _RX_H_
+#define _RX_H_
+
 /****************************************************
  * OpenLRSng receiver code
  ****************************************************/
@@ -1023,4 +1026,6 @@ void checkBinaryMode(void)
     }
   }
 }
+#endif
+
 #endif

@@ -1,3 +1,6 @@
+#ifndef _SERIALPPM_H_
+#define _SERIALPPM_H_
+
 #define SPKTRM_SYNC1 0x03
 #define SPKTRM_SYNC2 0x01
 
@@ -110,3 +113,5 @@ void sendSUMDFrame(uint8_t failsafe)
     Serial.write(CRC16_value & 0xff);
   }
 }
+
+#endif

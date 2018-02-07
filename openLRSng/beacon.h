@@ -1,25 +1,9 @@
+#ifndef _BEACON_H_
+#define _BEACON_H_
+
 uint8_t beaconGetRSSI(void);
 void beacon_tone(int16_t hz, int16_t len);
 void beacon_send(bool static_tone);
-
-void beacon_tone(int16_t hz, int16_t len)
-{
-  //duration is now in half seconds.
-  int16_t d = 500000 / hz; // better resolution
-
-  if (d < 1) {
-    d = 1;
-  }
-
-  int16_t cycles = (len * 500000 / d) >> 1;
-
-  for (int16_t i = 0; i < cycles; i++) {
-    SDI_on;
-    delayMicroseconds(d);
-    SDI_off;
-    delayMicroseconds(d);
-  }
-}
 
 uint8_t beaconGetRSSI(void)
 {
@@ -40,6 +24,25 @@ uint8_t beaconGetRSSI(void)
 
   Green_LED_OFF
   return rssiSUM>>2;
+}
+
+void beacon_tone(int16_t hz, int16_t len)
+{
+  //duration is now in half seconds.
+  int16_t d = 500000 / hz; // better resolution
+
+  if (d < 1) {
+    d = 1;
+  }
+
+  int16_t cycles = (len * 500000 / d) >> 1;
+
+  for (int16_t i = 0; i < cycles; i++) {
+    SDI_on;
+    delayMicroseconds(d);
+    SDI_off;
+    delayMicroseconds(d);
+  }
 }
 
 void beacon_send(bool static_tone)
@@ -94,3 +97,5 @@ void beacon_send(bool static_tone)
   Green_LED_OFF
   watchdogConfig(WATCHDOG_2S);
 }
+
+#endif

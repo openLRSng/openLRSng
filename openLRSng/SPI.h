@@ -1,5 +1,6 @@
-#ifndef _SPI_H
-#define _SPI_H
+#ifndef _SPI_H_
+#define _SPI_H_
+
 // **** bit-banged SPI routines
 
 #define NOP() __asm__ __volatile__("nop")

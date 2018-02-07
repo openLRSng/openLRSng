@@ -1,3 +1,6 @@
+#ifndef _RXC_H_
+#define _RXC_H_
+
 /*
   RX connection handling
 */
@@ -64,3 +67,4 @@ uint8_t rxcConnect()
   return 1; // ok,
 }
 
+#endif

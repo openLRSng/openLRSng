@@ -1,3 +1,6 @@
+#ifndef _WD_H_
+#define _WD_H_
+
 static inline void watchdogReset();
 #define WATCHDOG_OFF    (0)
 #define WATCHDOG_16MS   (_BV(WDE))
@@ -66,3 +69,5 @@ void watchdogConfig(uint8_t x)
     SREG = _sreg;
   }
 }
+
+#endif

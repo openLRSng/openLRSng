@@ -1,3 +1,6 @@
+#ifndef _DIALOG_H_
+#define _DIALOG_H_
+
 /*
   Simple CLI dialog
 */
@@ -844,3 +847,4 @@ void handleCLI()
   }
 }
 
+#endif
