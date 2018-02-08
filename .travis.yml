@@ -19,7 +19,6 @@ env:
   - TEST_PLATFORM="-e BOARD_TYPE_0"
 
 before_install:
-  #
   # Fetch the tag information for the current branch
   - git fetch origin --tags
   #
@@ -28,8 +27,11 @@ before_install:
   - export PATH=${TRAVIS_BUILD_DIR}/buildroot/bin/:${PATH}
 
 install:
-  #- pip install -U platformio
+  # Install PlatformIO core
   - pip install -U https://github.com/platformio/platformio-core/archive/develop.zip
+  #
+  # Enable warnings-as-errors build option
+  - export PLATFORMIO_BUILD_FLAGS="-Werror"
 
 before_script:
   # Update PlatformIO packages
@@ -41,9 +43,10 @@ before_script:
   # Backup default configuration (used by restore_configs)
   - backup_configs
   #
-  #
+  # Enable strict CI checking for PlatformIO
+  - export CI=true
+
 script:
-  #
   # Build every config
   #
   - restore_configs
