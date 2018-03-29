@@ -277,6 +277,8 @@ void check_module(void)
 
 void setHopChannel(uint8_t ch)
 {
+  uint8_t magicLSB = (bind_data.rf_magic & 0xFF) ^ ch;
+  rfmSetHeader(3, magicLSB);
   rfmSetChannel(bind_data.hopchannel[ch]);
 }
 
