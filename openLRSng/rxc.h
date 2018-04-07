@@ -13,7 +13,7 @@ uint16_t rxcVersion;
 
 uint8_t rxcConnect()
 {
-  uint8_t tx_buf[sizeof(rx_config) + 1];
+  uint8_t tx_buf[sizeof(rxcSpecialPins) + 5];
   uint32_t last_time = micros();
   tx_buf[0] = 't';
   init_rfm(1);
@@ -28,7 +28,7 @@ uint8_t rxcConnect()
     return 2; // timeout
   }
 
-  rfmGetPacket(tx_buf, (sizeof(rx_config)+1));
+  rfmGetPacket(tx_buf, rfmGetPacketLength());
 
   if (tx_buf[0] != 'T') {
     return 3; // error, bad data
@@ -42,9 +42,7 @@ uint8_t rxcConnect()
     return 3;
   }
 
-  for (uint8_t i = 0; i < sizeof(struct rxSpecialPinMap) * rxcSpecialPinCount; i++) {
-    *(((uint8_t*)&rxcSpecialPins) + i) = tx_buf[5 + i];
-  }
+  memcpy(rxcSpecialPins, tx_buf + 5, sizeof(rxSpecialPinMap) * rxcSpecialPinCount);
 
   tx_buf[0] = 'p'; // ask for config dump
   tx_packet(tx_buf, 1);
@@ -55,15 +53,14 @@ uint8_t rxcConnect()
     return 2; //timeout
   }
 
-  rfmGetPacket(tx_buf, (sizeof(rx_config) + 1));
+  rfmGetPacket(tx_buf, sizeof(rx_config) + 1);
 
   if (tx_buf[0] != 'P') {
     return 3; // error, bad data
   }
 
-  for (uint8_t i = 0; i < sizeof(rx_config); i++) {
-    *(((uint8_t*)&rx_config) + i) = tx_buf[1 + i];
-  }
+  memcpy(&rx_config, tx_buf + 1, sizeof(rx_config));
+
   return 1; // ok,
 }
 
