@@ -985,7 +985,8 @@ void loop(void)
     }
     linkQuality |= 1;
 
-  rfmGetPacket(rx_buf, TELEMETRY_PACKETSIZE);
+    rfmGetPacket(rx_buf, TELEMETRY_PACKETSIZE);
+    rx_reset();
 
     if ((tx_buf[0] ^ rx_buf[0]) & 0x40) {
       tx_buf[0] ^= 0x40; // swap sequence to ack
