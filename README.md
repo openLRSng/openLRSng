@@ -71,7 +71,7 @@ RECEIVER HW:
 
 SOFTWARE CONFIGURATION:
 =======================
-  Only hardware related selections are done in the openLRSng.ino.
+  Only hardware related selections are done in the openLRSng.ino (Arduino) or platformio.ini (VSCode/PlatformIO).
 
   Run time configuration is done by connecting to the TX module (which is put into binding mode) with serial terminal. For best restults use real terminal program like Putty, TeraTerm, minicom(Linux) but it is possible to use Arduino Serial Monitor too.
   Sending '<CR>' (enter) will enter the menu which will guide further. It should be noted that doing edits will automatically change 'RF magic' to force rebinding, if you want to use a specific magic set that using the command (and further automatic changes are ceased for the edit session).
